@@ -1,0 +1,270 @@
+SP2 Data Model Log
+==================
+
+Date: 2026-04-19
+
+Goal
+----
+Define the revised minimal data model for:
+
+- exported/imported course pack format
+- local runtime app storage
+
+This revision reflects the simplified v1 scope:
+
+- functionality-first
+- no platform/course-hosting layer
+- no raw source materials inside the pack
+- no professor feedback loop yet
+- no persisted citation table yet
+
+
+1. Pack Data Model
+------------------
+
+Pack philosophy
+---------------
+The exported pack is a portable AI-ready bundle derived from course materials.
+
+It contains:
+- pack metadata
+- chunked text
+- embedding vectors
+
+It does NOT contain:
+- raw textbooks
+- PDFs
+- lecture recordings
+- original source files
+
+Recommended v1 pack files
+-------------------------
+- `pack.json`
+- `chunks.json`
+- `vectors.npy`
+
+
+Entity: Pack
+------------
+Stored in: `pack.json`
+
+Purpose:
+- identify the pack
+- describe compatibility requirements
+- define default assistant behavior
+
+Fields:
+- `pack_id`
+- `title`
+- `version`
+- `description`
+- `embedding_model`
+- `embedding_dim`
+- `tutor_mode`
+- `default_top_k`
+- `created_at`
+- `builder_version`
+
+Field notes:
+- `pack_id`: unique logical identifier for this pack
+- `title`: user-facing course/bundle title
+- `version`: exported version label
+- `description`: optional human-readable summary
+- `embedding_model`: must match query embedding model at runtime
+- `embedding_dim`: vector dimension used in `vectors.npy`
+- `tutor_mode`: assistant behavior mode for v1
+- `default_top_k`: default retrieval count
+- `created_at`: build/export timestamp
+- `builder_version`: SP2 builder version that created the pack
+
+
+Entity: Chunk
+-------------
+Stored in: `chunks.json`
+
+Purpose:
+- represent each searchable text chunk in the pack
+
+Fields:
+- `chunk_id`
+- `source_id`
+- `source_type`
+- `source_title`
+- `text`
+- `chunk_index`
+- `page`
+- `section`
+- `topic`
+- `char_count`
+
+Field notes:
+- `chunk_id`: unique chunk identifier
+- `source_id`: logical source identifier inside the pack
+- `source_type`: lecture / textbook / assignment / other
+- `source_title`: user-facing source label
+- `text`: chunk text used for retrieval and grounding
+- `chunk_index`: chunk order within the source
+- `page`: optional page reference
+- `section`: optional section heading
+- `topic`: optional topic/category label
+- `char_count`: optional helper field for diagnostics
+
+
+Entity: Vector
+--------------
+Stored in: `vectors.npy`
+
+Purpose:
+- provide embeddings for semantic retrieval
+
+Rules:
+- one vector per chunk
+- vector order must match `chunks.json` order
+- `chunks.json[0]` corresponds to `vectors[0]`
+- `chunks.json[1]` corresponds to `vectors[1]`
+
+Notes:
+- vector ids are not required if ordering is guaranteed
+
+
+2. Runtime App Data Model
+-------------------------
+
+Runtime storage philosophy
+--------------------------
+The local runtime app should remain small and operationally simple.
+
+Use:
+- SQLite for app/runtime state
+- LanceDB for installed searchable chunk/index data
+
+Revised distinction:
+- pack format = portable archive/files
+- runtime state = local app storage
+- retrieval index = local searchable installed representation
+
+
+SQLite Runtime Entities
+-----------------------
+
+Entity: InstalledPack
+---------------------
+Purpose:
+- track packs imported into the local student app
+
+Fields:
+- `id`
+- `pack_id`
+- `title`
+- `version`
+- `install_path`
+- `installed_at`
+- `is_active`
+
+Field notes:
+- `id`: local DB primary key
+- `pack_id`: logical pack id from `pack.json`
+- `title`: user-facing title
+- `version`: installed pack version
+- `install_path`: local unpacked pack path
+- `installed_at`: install timestamp
+- `is_active`: whether currently enabled/visible
+
+
+Entity: ChatSession
+-------------------
+Purpose:
+- one conversation thread for a given pack
+
+Fields:
+- `id`
+- `pack_id`
+- `title`
+- `created_at`
+- `updated_at`
+
+
+Entity: ChatMessage
+-------------------
+Purpose:
+- store both user questions and assistant answers
+
+Fields:
+- `id`
+- `session_id`
+- `pack_id`
+- `role`
+- `content`
+- `created_at`
+
+Field notes:
+- `role` does NOT mean professor/student
+- `role` means chat turn type:
+  - `user`
+  - `assistant`
+
+
+Dropped For v1
+--------------
+- no separate `MessageSource` table
+- no stored retrieval scores
+- no persisted citation records yet
+
+Reason:
+- citations can be generated and displayed at answer time
+- we want to keep v1 runtime persistence minimal
+
+
+LanceDB Runtime Entity
+----------------------
+
+Entity: InstalledChunkIndex
+---------------------------
+Recommended table name:
+- `course_chunks`
+
+Purpose:
+- searchable local retrieval corpus for imported packs
+
+Fields:
+- `chunk_id`
+- `pack_id`
+- `source_id`
+- `source_type`
+- `source_title`
+- `text`
+- `vector`
+- `chunk_index`
+- `page`
+- `section`
+- `topic`
+
+Notes:
+- this is the local search representation after import
+- the app may import pack data from files into this table
+
+
+3. Summary
+----------
+
+Pack-side entities
+- Pack
+- Chunk
+- Vector
+
+Runtime SQLite entities
+- InstalledPack
+- ChatSession
+- ChatMessage
+
+Runtime LanceDB entity
+- course_chunks
+
+
+4. Design Principles
+--------------------
+- keep pack format simple and inspectable
+- keep runtime persistence minimal
+- keep retrieval data separate from app session state
+- avoid over-modeling platform/professor concepts in v1
+- postpone analytics/citation persistence until a real need appears

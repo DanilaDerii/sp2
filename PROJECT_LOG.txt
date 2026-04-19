@@ -1,0 +1,234 @@
+SP2 Project Log
+================
+
+Date: 2026-04-17
+
+Purpose
+-------
+SP2 is being designed as a local-first course AI assistant platform.
+The product direction is:
+
+- one reusable local app
+- downloadable course-specific packs/modules
+- teacher-side preprocessing for heavy document ingestion
+- student-side lightweight local runtime for asking questions against installed course packs
+
+
+High-Level Product Direction
+----------------------------
+- Students should install one app, not one app per course.
+- Each course should be represented as a modular downloadable course pack.
+- Course packs should contain preprocessed course knowledge so students do not need to parse raw PDFs locally.
+- Retrieval should be isolated per course by default.
+- The app should support local LLM usage and local retrieval without hosted APIs.
+- The v1 product direction is functionality-first, not platform-first.
+- SP2 should complement systems like MS Teams rather than replace them.
+
+
+Locked Stack So Far
+-------------------
+Backend:
+- Python
+- FastAPI
+
+Frontend:
+- TypeScript
+- frontend app not scaffolded yet
+
+Metadata storage:
+- SQLite
+
+Vector store:
+- LanceDB
+
+Audio transcription:
+- faster-whisper
+
+Document parsing / OCR:
+- Docling
+- intended mainly for authoring / teacher-side preprocessing
+
+Local model runtime:
+- Ollama
+- Ollama is treated as an external machine-level runtime, not a pip dependency
+
+Embedding direction:
+- one shared embedding model should be used for both:
+  - teacher-side chunk embeddings
+  - student-side question embeddings
+- embedding model should be fixed for v1 to avoid retrieval mismatch
+
+
+Architecture Decisions Discussed
+--------------------------------
+1. Course packaging model
+- preferred approach is one app plus many downloadable course packs
+- not one separate app per course
+- professor exports AI-ready pack
+- student imports AI-ready pack into local app
+
+2. Separation of responsibilities
+- teacher/build pipeline can use heavy tooling like Docling
+- student/runtime side should stay lighter
+- heavy separation is deferred for now, but we should keep the ingestion boundary clean
+
+3. Parsing distinction
+- Docling is for course material parsing
+- student questions do not need heavy parsing
+- student questions only need lightweight preprocessing, embedding, retrieval, and answer generation
+
+4. Retrieval constraint
+- chunk embeddings and student-question embeddings must come from the same embedding model family/version
+- otherwise vector retrieval quality will degrade or fail
+
+5. Database direction
+- we decided not to use Postgres + pgvector for SP2
+- rationale: local packaging and local-first setup are better served by SQLite + LanceDB
+
+6. Product scope refinement
+- we do NOT want to build a full course platform in v1
+- professor should be able to use the app as a local pack builder
+- professor will likely gather source materials from an existing platform such as MS Teams
+- professor shares the built pack back through normal channels such as Teams / Drive / similar
+- student app consumes the supplementary AI pack in parallel with the existing LMS/course directory
+
+7. Feedback loops
+- feedback / analytics loop for professor is intentionally deferred for now
+- current focus is:
+  - professor builds pack
+  - student imports pack
+  - student asks questions locally
+
+8. Pack content decision
+- course pack should NOT contain raw source materials such as textbooks, PDFs, or lecture recordings
+- course pack should contain only AI-ready derived data from those sources
+- this includes things like:
+  - extracted/normalized text
+  - chunks
+  - chunk metadata
+  - embeddings
+  - retrieval-ready/index-ready data
+
+9. Pack format direction
+- pack should be file-based, not a portable Postgres-style database
+- likely export format:
+  - structured folder zipped into a custom extension such as `.sp2pack`
+- app runtime may still choose to load imported pack data into SQLite/LanceDB locally
+- distinction:
+  - pack format = portable file archive
+  - runtime state/index = local installed representation
+
+10. Revised minimal data model
+- simplified v1 pack files:
+  - `pack.json`
+  - `chunks.json`
+  - `vectors.npy`
+- pack should contain only AI-ready derived data, not raw source materials
+- runtime SQLite entities reduced to:
+  - `InstalledPack`
+  - `ChatSession`
+  - `ChatMessage`
+- runtime `ChatMessage.role` means chat turn type:
+  - `user`
+  - `assistant`
+- no separate persisted citation/source table for v1
+- runtime retrieval corpus should be represented locally in LanceDB
+- detailed revision captured in `DATA_MODEL_LOG.txt`
+
+
+Environment / Setup Progress
+----------------------------
+1. Created `/home/d/sp2`
+2. Initialized git repository
+3. Renamed default branch to `main`
+4. Added starter project files:
+   - `.gitignore`
+   - `README.md`
+   - `requirements.txt`
+   - `requirements-docs.txt`
+   - `backend/__init__.py`
+   - `backend/app.py`
+5. Added `.python-version`
+6. Initially tested environment with Python 3.14 from system
+7. Decided that latest Arch Python was too risky for compatibility
+8. Changed project target to Python 3.12.2
+9. Rebuilt `.venv` using Python 3.12.2
+10. Reinstalled core runtime dependencies into the fresh venv
+
+
+Current Python Target
+---------------------
+- Python 3.12.2
+
+Current active environment:
+- `.venv` created from Python 3.12.2
+
+
+Current Installed Runtime State
+-------------------------------
+Core runtime packages are installed in `.venv`, including:
+- fastapi
+- uvicorn
+- python-dotenv
+- pydantic
+- lancedb
+- pyarrow
+- faster-whisper
+- httpx
+
+Ollama status:
+- not managed through `requirements.txt`
+- installed separately on the local machine
+- verified installed and running on Arch Linux
+- backend will communicate with it through its local HTTP API
+- verified local generation model:
+  - `qwen2.5:3b`
+- verified local embedding model:
+  - `all-minilm`
+
+Docling status:
+- Docling was previously installed in an older environment during exploration
+- current clean 3.12.2 runtime venv does NOT include Docling
+- Docling can be added later by installing `requirements-docs.txt`
+- no venv rebuild is needed to add it later
+
+
+Important Notes Learned
+-----------------------
+- `requirements.txt` cannot lock the Python interpreter version by itself
+- Python version is effectively locked by:
+  - `.python-version`
+  - creating the venv from the intended interpreter
+- venv rebuild is needed when changing Python version
+- venv rebuild is NOT needed when only adding more packages later
+
+- On this Linux environment, Docling pulls a very heavy dependency tree through torch
+- because of that, splitting runtime and heavy document requirements is the right move
+
+
+Repository Files Present
+------------------------
+- `.gitignore`
+- `.python-version`
+- `README.md`
+- `requirements.txt`
+- `requirements-docs.txt`
+- `backend/__init__.py`
+- `backend/app.py`
+- `PROJECT_LOG.txt`
+- `DATA_MODEL_LOG.txt`
+
+
+Open Items / Likely Next Steps
+------------------------------
+1. Scaffold frontend in `sp2/frontend`
+2. Add initial local dev workflow for frontend + backend
+3. Add first SQLite metadata layer
+4. Add first LanceDB vector layer
+5. Define normalized internal document schema
+6. Define course-pack schema / manifest structure
+7. Define professor-side build flow in more detail
+8. Define student-side import/use flow in more detail
+9. Decide initial fixed embedding model for v1
+10. Add Ollama integration layer
+11. Later, decide whether Docling stays in shared venv or moves to separate authoring environment

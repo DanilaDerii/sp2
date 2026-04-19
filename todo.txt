@@ -1,0 +1,50 @@
+1. Pack build/import workflow
+We’ve talked about it conceptually, but not operationally.
+
+We should still define:
+
+what exactly professor does step by step
+what exactly happens during import
+when LanceDB index is created:
+during pack build
+or on student import
+what happens if embedding model mismatch is detected
+This is a big one.
+
+2. Assistant behavior
+We mentioned tutor mode, but we have not really locked:
+
+should it answer directly?
+should it guide like a TA?
+should assignment questions be treated differently?
+should it ever say “this is not in the pack”?
+This affects prompts and UX a lot.
+
+3. Source granularity
+We still need one decision:
+
+what counts as a source item?
+one PDF = one source?
+each lecture = one source?
+textbook chapters separate?
+how much metadata do we require in chunk generation?
+Not huge, but important for citations and navigation.
+
+4. Import/update semantics
+We have “version,” but not the behavior.
+seed control? 
+
+We should decide:
+
+if student imports same pack_id with newer version, does it replace old one?
+can multiple versions coexist?
+how do we identify duplicates?
+5. First vertical slice
+We should choose the exact first thing we will build.
+
+I’d recommend one of these:
+
+professor-side pack builder prototype
+student-side import + retrieval prototype
+full tiny end-to-end demo with fake source data
+This matters because it determines build order.
