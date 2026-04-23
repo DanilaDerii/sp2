@@ -12,4 +12,11 @@ data/
 artifacts/
 *.sqlite
 *.db
+*.sp2pack
+*.npy
+*.mp3
+*.mp4
+*.wav
+*.pdf
+wget-log
 
