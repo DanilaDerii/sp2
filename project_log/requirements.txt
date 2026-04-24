@@ -1,9 +1,9 @@
 fastapi
 uvicorn[standard]
 python-dotenv
+python-multipart
 pydantic
 lancedb
 pyarrow
 faster-whisper
 httpx
-

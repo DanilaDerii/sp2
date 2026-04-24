@@ -1,0 +1,671 @@
+SP2 Project Log
+================
+
+Date: 2026-04-17
+
+Purpose
+-------
+SP2 is being designed as a local-first course AI assistant platform.
+The product direction is:
+
+- one reusable local app
+- downloadable course-specific packs/modules
+- teacher-side preprocessing for heavy document ingestion
+- student-side lightweight local runtime for asking questions against installed course packs
+
+
+High-Level Product Direction
+----------------------------
+- Students should install one app, not one app per course.
+- Each course should be represented as a modular downloadable course pack.
+- Course packs should contain preprocessed course knowledge so students do not need to parse raw PDFs locally.
+- Retrieval should be isolated per course by default.
+- The app should support local LLM usage and local retrieval without hosted APIs.
+- The v1 product direction is functionality-first, not platform-first.
+- SP2 should complement systems like MS Teams rather than replace them.
+
+
+Locked Stack So Far
+-------------------
+Backend:
+- Python
+- FastAPI
+
+Frontend:
+- TypeScript
+- frontend app not scaffolded yet
+
+Metadata storage:
+- SQLite
+
+Vector store:
+- LanceDB
+
+Audio transcription:
+- faster-whisper
+
+Document parsing / OCR:
+- Docling
+- intended mainly for authoring / teacher-side preprocessing
+
+Local model runtime:
+- Ollama
+- Ollama is treated as an external machine-level runtime, not a pip dependency
+
+Embedding direction:
+- one shared embedding model should be used for both:
+  - teacher-side chunk embeddings
+  - student-side question embeddings
+- embedding model should be fixed for v1 to avoid retrieval mismatch
+
+
+Architecture Decisions Discussed
+--------------------------------
+1. Course packaging model
+- preferred approach is one app plus many downloadable course packs
+- not one separate app per course
+- professor exports AI-ready pack
+- student imports AI-ready pack into local app
+
+2. Separation of responsibilities
+- teacher/build pipeline can use heavy tooling like Docling
+- student/runtime side should stay lighter
+- heavy separation is deferred for now, but we should keep the ingestion boundary clean
+
+3. Parsing distinction
+- Docling is for course material parsing
+- student questions do not need heavy parsing
+- student questions only need lightweight preprocessing, embedding, retrieval, and answer generation
+
+4. Retrieval constraint
+- chunk embeddings and student-question embeddings must come from the same embedding model family/version
+- otherwise vector retrieval quality will degrade or fail
+
+5. Database direction
+- we decided not to use Postgres + pgvector for SP2
+- rationale: local packaging and local-first setup are better served by SQLite + LanceDB
+
+6. Product scope refinement
+- we do NOT want to build a full course platform in v1
+- professor should be able to use the app as a local pack builder
+- professor will likely gather source materials from an existing platform such as MS Teams
+- professor shares the built pack back through normal channels such as Teams / Drive / similar
+- student app consumes the supplementary AI pack in parallel with the existing LMS/course directory
+
+7. Feedback loops
+- feedback / analytics loop for professor is intentionally deferred for now
+- current focus is:
+  - professor builds pack
+  - student imports pack
+  - student asks questions locally
+
+8. Pack content decision
+- course pack should NOT contain raw source materials such as textbooks, PDFs, or lecture recordings
+- course pack should contain only AI-ready derived data from those sources
+- this includes things like:
+  - extracted/normalized text
+  - chunks
+  - chunk metadata
+  - embeddings
+  - retrieval-ready/index-ready data
+
+9. Pack format direction
+- pack should be file-based, not a portable Postgres-style database
+- likely export format:
+  - structured folder zipped into a custom extension such as `.sp2pack`
+- app runtime may still choose to load imported pack data into SQLite/LanceDB locally
+- distinction:
+  - pack format = portable file archive
+  - runtime state/index = local installed representation
+
+10. Revised minimal data model
+- simplified v1 pack files:
+  - `pack.json`
+  - `chunks.json`
+  - `vectors.npy`
+- pack should contain only AI-ready derived data, not raw source materials
+- runtime SQLite entities reduced to:
+  - `InstalledPack`
+  - `ChatSession`
+  - `ChatMessage`
+- runtime `ChatMessage.role` means chat turn type:
+  - `user`
+  - `assistant`
+- no separate persisted citation/source table for v1
+- runtime retrieval corpus should be represented locally in LanceDB
+- detailed revision captured in `DATA_MODEL_LOG.txt`
+
+11. V1 pack build/import workflow
+- professor-side builder is responsible for the heavy pipeline
+- professor provides source materials such as:
+  - textbook PDFs
+  - lecture slides/PDFs
+  - optional supplementary lecture videos
+- builder processes sources sequentially for easier debugging in v1
+- pipeline outputs only derived AI-ready data:
+  - extracted/normalized text
+  - chunks
+  - chunk metadata
+  - embeddings
+- exported v1 pack remains:
+  - `pack.json`
+  - `chunks.json`
+  - `vectors.npy`
+- exported format for v1 should be plain `.zip`
+- exported zip is supplementary course data only and must NOT include original PDFs, textbooks, slides, or videos
+- professor shares the zip through normal course channels such as Teams
+- student app imports the zip, validates pack compatibility, and creates the local runtime state from it
+
+12. V1 retrieval/runtime decision
+- embedding model should be fixed for v1 across both build side and student runtime side
+- this avoids retrieval mismatch and makes debugging simpler
+- chunk metadata should preserve referencing helpers when available, including:
+  - source title
+  - source type
+  - chunk index
+  - page or page range for PDF-derived chunks
+  - section / topic / subtopic when parsing can recover it
+  - timestamp or timestamp range for video-derived transcript chunks
+- LanceDB should NOT be exported as part of the pack
+- instead, the student app should read `chunks.json` + `vectors.npy` on import and populate the local LanceDB index then
+- SQLite remains responsible for installed pack metadata and chat history
+
+13. V1 assistant behavior direction
+- assistant behavior should stay minimal in v1 so we can focus on making the retrieval pipeline work first
+- tutor style, direct-answer style, and assignment-specific behavior can be refined later once the system is working end to end
+- for early debugging, the assistant should explicitly say when the answer is not in the installed pack / retrieval database
+- this makes retrieval failures and pack-coverage gaps easier to spot during development
+
+14. V1 source granularity / referencing direction
+- source granularity should primarily support clean referencing rather than an overly complex source model in v1
+- for now, each imported source file should be treated as a source item
+- chunk metadata should preserve enough structure to reference:
+  - source file / source title
+  - topic / subtopic when parsing can recover it
+  - exact page or page range for document-derived chunks
+- this should be enough for early citations and navigation without overdesigning the first schema
+
+15. V1 import/update semantics
+- pack update/replacement semantics are intentionally deferred for v1
+- we do not need to fully decide yet how duplicate imports, newer versions of the same `pack_id`, or multi-version coexistence should behave
+- for now, the priority is getting single-pack import, retrieval, and chat working end to end
+
+
+Environment / Setup Progress
+----------------------------
+1. Created `/home/d/sp2`
+2. Initialized git repository
+3. Renamed default branch to `main`
+4. Added starter project files:
+   - `.gitignore`
+   - `README.md`
+   - `requirements.txt`
+   - `requirements-docs.txt`
+   - `backend/__init__.py`
+   - `backend/app.py`
+5. Added `.python-version`
+6. Initially tested environment with Python 3.14 from system
+7. Decided that latest Arch Python was too risky for compatibility
+8. Changed project target to Python 3.12.2
+9. Rebuilt `.venv` using Python 3.12.2
+10. Reinstalled core runtime dependencies into the fresh venv
+
+
+Current Python Target
+---------------------
+- Python 3.12.2
+
+Current active environment:
+- `.venv` created from Python 3.12.2
+
+
+Current Installed Runtime State
+-------------------------------
+Core runtime packages are installed in `.venv`, including:
+- fastapi
+- uvicorn
+- python-dotenv
+- pydantic
+- lancedb
+- pyarrow
+- faster-whisper
+- httpx
+
+Ollama status:
+- not managed through `requirements.txt`
+- installed separately on the local machine
+- verified installed and running on Arch Linux
+- backend will communicate with it through its local HTTP API
+- verified local generation model:
+  - `qwen2.5:3b`
+- verified local embedding model:
+  - `all-minilm`
+
+Docling status:
+- Docling was previously installed in an older environment during exploration
+- current clean 3.12.2 runtime venv does NOT include Docling
+- Docling can be added later by installing `requirements-docs.txt`
+- no venv rebuild is needed to add it later
+
+
+Important Notes Learned
+-----------------------
+- `requirements.txt` cannot lock the Python interpreter version by itself
+- Python version is effectively locked by:
+  - `.python-version`
+  - creating the venv from the intended interpreter
+- venv rebuild is needed when changing Python version
+- venv rebuild is NOT needed when only adding more packages later
+
+- On this Linux environment, Docling pulls a very heavy dependency tree through torch
+- because of that, splitting runtime and heavy document requirements is the right move
+
+
+Repository Files Present
+------------------------
+- `.gitignore`
+- `.python-version`
+- `README.md`
+- `requirements.txt`
+- `requirements-docs.txt`
+- `backend/__init__.py`
+- `backend/app.py`
+- `PROJECT_LOG.txt`
+- `DATA_MODEL_LOG.txt`
+
+
+Open Items / Likely Next Steps
+------------------------------
+1. Scaffold frontend in `sp2/frontend`
+2. Add initial local dev workflow for frontend + backend
+3. Add first SQLite metadata layer
+4. Add first LanceDB vector layer
+5. Define normalized internal document schema
+6. Define course-pack schema / manifest structure in more detail
+7. Add Ollama integration layer
+8. Later, decide whether Docling stays in shared venv or moves to separate authoring environment
+
+
+Prototype App Plan
+==================
+
+Date: 2026-04-24
+
+Goal
+----
+Build one local-first web app that contains both the teacher workflow and the student workflow.
+
+The app should act as:
+- a teacher-side pack builder
+- a student-side pack importer/runtime
+- a local AI chat interface over imported course-pack data
+
+This is currently the preferred prototype direction because it lets us prove the full product loop inside one app without prematurely splitting the system into multiple applications.
+
+
+High-Level UX Direction
+-----------------------
+- landing page should immediately present two modes:
+  - teacher POV
+  - student POV
+- both modes live inside the same web application
+- all RAG, AI, and database components remain local to the machine
+- app should not rely on hosted APIs for the core prototype workflow
+
+
+Teacher POV
+-----------
+Purpose:
+- let a professor prepare AI-ready course packs from source materials
+
+Expected user flow:
+1. Teacher opens the teacher page from the landing page
+2. Teacher selects source files from local storage
+3. Selected files may include:
+   - textbook PDFs
+   - lecture slides / lecture PDFs
+   - optional supplementary lecture videos
+4. Teacher starts the build pipeline
+5. The app processes the selected files locally
+6. The app outputs the derived pack files
+7. The app compresses the pack into a downloadable `.zip`
+8. Teacher downloads that zip and shares it through the normal course channel such as Teams
+
+Teacher-side pipeline responsibilities:
+- parse source materials
+- extract text
+- normalize/clean extracted text
+- chunk the text
+- attach chunk metadata
+- generate embeddings using the fixed v1 embedding model
+- write pack artifacts for export
+
+Teacher-side output:
+- `pack.json`
+- `chunks.json`
+- `vectors.npy`
+- compressed into plain `.zip` for v1
+
+Important teacher-side constraints:
+- exported zip must contain only derived AI-ready data
+- exported zip must NOT contain original course materials such as PDFs, textbooks, slides, or videos
+- build pipeline should run sequentially in v1 to keep debugging simpler
+
+
+Student POV
+-----------
+Purpose:
+- let a student import an exported pack and use it locally for retrieval and chat
+
+Expected user flow:
+1. Student opens the student page from the landing page
+2. Student clicks import and selects a course-pack `.zip`
+3. The app imports the pack into local runtime storage
+4. The app validates the pack metadata and compatibility
+5. The app creates the required local databases / indexes from the imported files
+6. The imported pack becomes available in the student-side UI
+7. Student selects the pack and navigates to chat
+
+Student-side import responsibilities:
+- unpack the zip into local installed-pack storage
+- read `pack.json`
+- read `chunks.json`
+- read `vectors.npy`
+- populate SQLite app/runtime metadata
+- populate local LanceDB retrieval index from chunk + vector data
+
+Important student-side constraints:
+- LanceDB should be created locally during student import
+- LanceDB should not be shipped as part of the exported pack
+- SQLite should store installed-pack metadata and chat history
+
+
+Chat / Retrieval Flow
+---------------------
+Purpose:
+- allow the student to ask questions against the imported course-pack data
+
+Expected runtime flow:
+1. Student chooses an installed pack
+2. Student opens the AI chat page for that pack
+3. Student submits a question
+4. The app embeds the question using the same fixed v1 embedding model
+5. LanceDB retrieves the closest chunks for that question
+6. Retrieved chunks are passed into the answer-generation step as context
+7. The assistant responds using that retrieved context
+
+Debug-first behavior for v1:
+- assistant behavior should remain simple for now
+- if the answer is not present in the installed pack / retrieval database, the assistant should explicitly say so
+- this is primarily for debugging retrieval quality and pack coverage during early development
+
+
+Information Architecture
+------------------------
+Preferred early page structure:
+
+1. Landing page
+- choose teacher POV or student POV
+
+2. Teacher page
+- file selection
+- list of selected materials
+- build/start action
+- progress/status display
+- download exported zip
+
+3. Student page
+- import zip action
+- list of installed packs
+- select pack
+- navigate to chat
+
+4. Chat page
+- ask questions against selected installed pack
+- show retrieved references where possible
+- show explicit debug message when answer is not in the database
+
+
+Why This Prototype Shape Is Preferred
+-------------------------------------
+- one app is simpler to build and demo than multiple separate apps
+- teacher and student workflows remain clearly separated in UI while sharing one local runtime
+- it validates the whole course-pack lifecycle end to end:
+  - build
+  - export
+  - import
+  - index
+  - chat
+- it stays aligned with the local-first direction already decided for SP2
+
+
+Recommended Build Order
+-----------------------
+1. Scaffold the frontend shell for landing page, teacher page, student page, and chat page
+2. Add the teacher-side source selection and build UI
+3. Add the student-side zip import UI
+4. Implement import-time creation/population of SQLite + LanceDB
+5. Implement the chat/retrieval path over imported pack data
+6. Replace temporary/stubbed internals with the full parsing/chunking/embedding pipeline as needed
+
+This order is meant to get a working prototype shell visible early while still converging toward the intended architecture.
+
+
+Implementation Progress Update
+==============================
+
+Date: 2026-04-24
+
+Current Working Backend State
+-----------------------------
+- backend storage foundation is now implemented
+- teacher-side v1 pack build path is implemented for a single PDF source
+- student-side import path is implemented
+- first student-side retrieval + chat backend path is implemented
+- frontend is still not started yet
+
+
+Current Runtime/Data Layout
+---------------------------
+- local runtime/app data is currently stored under:
+  - `backend/data/sqlite/`
+  - `backend/data/lancedb/`
+  - `backend/data/packs/`
+  - `backend/data/tmp/`
+- SQLite file path:
+  - `backend/data/sqlite/app.db`
+- LanceDB root path:
+  - `backend/data/lancedb/`
+
+
+SQLite Status
+-------------
+Implemented in:
+- `backend/storage/sqlite.py`
+
+Current v1 tables:
+- `installed_packs`
+- `chat_sessions`
+- `chat_messages`
+
+Current status:
+- bootstrap works
+- CRUD helpers exist for all three tables
+- import seeds `installed_packs`
+- chat persistence is NOT wired yet
+
+Important note:
+- student chat currently answers questions successfully but does not yet persist:
+  - chat session creation
+  - user messages
+  - assistant messages
+
+
+LanceDB Status
+--------------
+Implemented in:
+- `backend/storage/lancedb.py`
+
+Current status:
+- local chunk table bootstrap works
+- insert/list/delete/search helpers exist
+- imported packs seed chunk rows into LanceDB successfully
+- retrieval works against imported pack data
+
+Important environment note:
+- LanceDB works on the actual machine/runtime
+- LanceDB local connect hangs inside the Codex sandbox
+- this is a tool/sandbox limitation, not a project-runtime failure
+- when needed, LanceDB runtime verification may require escalated execution in this environment
+
+
+Teacher-Side RAG Pipeline Status
+--------------------------------
+Implemented files:
+- `backend/teacher/rag/docling_worker.py`
+- `backend/teacher/rag/chunker.py`
+- `backend/teacher/rag/embedder.py`
+- `backend/teacher/rag/pack_writer.py`
+- `backend/teacher/rag/zip_exporter.py`
+- `backend/teacher/rag/pipeline.py`
+
+Current behavior:
+- input:
+  - one PDF path
+- pipeline stages:
+  - Docling text extraction
+  - chunking
+  - embedding through local Ollama
+  - write `pack.json`
+  - write `chunks.json`
+  - write `vectors.npy`
+  - export `.zip`
+
+Current locked embedding model:
+- `all-minilm:latest`
+
+Current teacher-side generation/runtime dependency:
+- local Ollama API at `http://127.0.0.1:11434`
+
+Real tested teacher-side artifact:
+- source PDF:
+  - `/home/d/Downloads/OS-Lecture-07.pdf`
+- produced pack directory:
+  - `backend/data/tmp/os_lecture_07_pack/`
+- produced zip:
+  - `backend/data/tmp/os_lecture_07_pack.zip`
+
+Observed output from real test:
+- page count:
+  - `59`
+- chunk count:
+  - `59`
+- embedding dimension:
+  - `384`
+
+
+Student Import Status
+---------------------
+Implemented files:
+- `backend/student/importer.py`
+- `backend/student/routes.py`
+
+Current behavior:
+- import pack zip
+- validate required files:
+  - `pack.json`
+  - `chunks.json`
+  - `vectors.npy`
+- install unpacked pack under `backend/data/packs/`
+- seed SQLite `installed_packs`
+- seed LanceDB `course_chunks`
+
+Real tested student-side installed pack:
+- imported zip:
+  - `backend/data/tmp/os_lecture_07_pack.zip`
+- installed pack directory:
+  - `backend/data/packs/os-lecture-07-v1`
+
+Observed import result:
+- `pack_id`:
+  - `os-lecture-07`
+- version:
+  - `v1`
+- installed chunk count:
+  - `59`
+- embedding dimension:
+  - `384`
+
+
+Student Retrieval + Chat Status
+-------------------------------
+Implemented files:
+- `backend/student/retrieval.py`
+- `backend/student/chat.py`
+- `backend/student/schemas.py`
+- `backend/student/routes.py`
+
+Current FastAPI routes:
+- `/health`
+- `/student/import-pack`
+- `/student/chat`
+
+Current chat behavior:
+- embed question with `all-minilm:latest`
+- retrieve top chunks from LanceDB scoped by `pack_id`
+- if retrieval is too weak, return debug fallback:
+  - `This is not in the database.`
+- otherwise call local generation model and answer from retrieved context
+
+Current generation model:
+- `qwen2.5:3b`
+
+Real tested chat result:
+- direct terminal POST to `/student/chat` with:
+  - `pack_id = os-lecture-07`
+  - question:
+    - `What is deadlock?`
+- result:
+  - answer succeeded
+  - retrieval succeeded
+  - `used_debug_fallback = false`
+
+
+Ollama Runtime Status
+---------------------
+Verified current local models:
+- `all-minilm:latest`
+- `qwen2.5:3b`
+
+Verified:
+- `ollama` installed
+- local Ollama API reachable
+- embeddings and generation runtime available for backend work
+
+
+Important Repo/Layout Note
+--------------------------
+- repo content currently has an unusual split:
+  - backend code lives under repo root `backend/`
+  - documentation / requirements files currently live under `project_log/`
+- examples:
+  - `project_log/PROJECT_LOG.txt`
+  - `project_log/README.md`
+  - `project_log/requirements.txt`
+- this was discovered during implementation and should be remembered in future threads
+
+
+Immediate Next Step
+-------------------
+The next backend task we stopped at is:
+- add chat persistence to SQLite
+
+Recommended exact behavior for next session:
+- if `session_id` is provided to chat:
+  - append user + assistant messages to that session
+- if `session_id` is not provided:
+  - create a new `chat_session`
+  - save the user question
+  - save the assistant answer
+
+This is the main missing backend capability after the first end-to-end prototype chat success.
