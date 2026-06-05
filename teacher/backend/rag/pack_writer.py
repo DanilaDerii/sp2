@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from backend.teacher.rag.embedder import EmbeddedChunk
+from .embedder import EmbeddedChunk
 
 DEFAULT_TUTOR_MODE = "debug"
 DEFAULT_TOP_K = 5

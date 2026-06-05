@@ -12,4 +12,7 @@ data/
 artifacts/
 *.sqlite
 *.db
-
+student/storage/sqlite_storage/
+student/storage/lance_storage/
+.agents/
+.codex

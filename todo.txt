@@ -1,0 +1,12 @@
+1. tutor_mode in pack.zip export is not corresponnign to anything in installed_pack table 
+
+2. reorganise the environments for teacher
+
+3. think about things to amend in teacher/ pack.zip export formating
+ie. make it with respect to sqlite table fields
+
+4. add readme's for each subdir
+
+5. reorganise project developement guidelines for better context sharing
+
+6. jsut put some work in project_log directory

@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from backend.teacher.rag.chunker import ChunkedText, chunk_extracted_document
-from backend.teacher.rag.docling_worker import ExtractedDocument, extract_pdf_text
-from backend.teacher.rag.embedder import EmbeddedChunk, embed_chunks
-from backend.teacher.rag.pack_writer import (
+from .chunker import ChunkedText, chunk_extracted_document
+from .docling_worker import ExtractedDocument, extract_pdf_text
+from .embedder import EmbeddedChunk, embed_chunks
+from .pack_writer import (
     DEFAULT_BUILDER_VERSION,
     DEFAULT_TOP_K,
     DEFAULT_TUTOR_MODE,
@@ -14,7 +14,7 @@ from backend.teacher.rag.pack_writer import (
     build_pack_metadata,
     write_pack_directory,
 )
-from backend.teacher.rag.zip_exporter import export_pack_zip
+from .zip_exporter import export_pack_zip
 
 
 @dataclass(slots=True)

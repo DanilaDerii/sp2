@@ -1,0 +1,103 @@
+SQLite
+
+this is storage for student interactions with assistant
+
+installed_packs
+- id                 primary key
+- pack_id            from pack.json
+- title
+- version
+- description
+- embedding_model
+- embedding_dim
+- default_top_k
+- builder_version
+- pack_created_at    created_at from pack.json
+- install_path
+- installed_at
+- is_active
+
+threads
+- id                 primary key
+- installed_pack_id  foreign key -> installed_packs.id
+- title
+- created_at
+- updated_at
+
+messages
+- id                 primary key
+- thread_id          foreign key -> threads.id
+- role
+- content
+- created_at
+
+
+
+LanceDB
+
+
+pack_chunks
+- chunk_id
+- installed_pack_id
+- pack_id
+- source_id
+- source_type
+- source_title
+- text
+- vector
+- chunk_index
+- page
+- section
+- topic
+
+
+
+####teacher export####
+
+
+pack.json - pack metadata
+
+{
+  "pack_id": "...",
+  "title": "...",
+  "version": "v1",
+  "description": "...",
+  "embedding_model": "all-minilm:latest",
+  "embedding_dim": 384,
+  "tutor_mode": "debug",
+  "default_top_k": 5,
+  "created_at": "...",
+  "builder_version": "v1-prototype"
+}
+
+chunks.json - array of chunk records
+
+[
+  {
+    "chunk_id": "...",
+    "source_id": "...",
+    "source_type": "pdf",
+    "source_title": "...",
+    "text": "...",
+    "chunk_index": 0,
+    "page": 1,
+    "section": null,
+    "topic": null,
+    "char_count": 900
+  }
+]
+
+
+vectors.npy - numpy matrix of embedding vectors
+
+vectors[0] belongs to chunks[0]
+vectors[1] belongs to chunks[1]
+...
+
+
+So the pack format is:
+
+pack metadata
++ chunk text/metadata
++ chunk embeddings
+

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from backend.teacher.rag.docling_worker import ExtractedDocument
+from .docling_worker import ExtractedDocument
 
 DEFAULT_CHUNK_SIZE = 1200
 DEFAULT_CHUNK_OVERLAP = 150

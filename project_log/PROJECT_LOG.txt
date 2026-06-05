@@ -126,9 +126,9 @@ Architecture Decisions Discussed
 - pack should contain only AI-ready derived data, not raw source materials
 - runtime SQLite entities reduced to:
   - `InstalledPack`
-  - `ChatSession`
+  - `Thread`
   - `ChatMessage`
-- runtime `ChatMessage.role` means chat turn type:
+- runtime `ChatMessage.role` means message author type:
   - `user`
   - `assistant`
 - no separate persisted citation/source table for v1
@@ -193,44 +193,16 @@ Architecture Decisions Discussed
 
 Environment / Setup Progress
 ----------------------------
-1. Created `/home/d/sp2`
-2. Initialized git repository
-3. Renamed default branch to `main`
-4. Added starter project files:
-   - `.gitignore`
-   - `README.md`
-   - `requirements.txt`
-   - `requirements-docs.txt`
-   - `backend/__init__.py`
-   - `backend/app.py`
-5. Added `.python-version`
-6. Initially tested environment with Python 3.14 from system
-7. Decided that latest Arch Python was too risky for compatibility
-8. Changed project target to Python 3.12.2
-9. Rebuilt `.venv` using Python 3.12.2
-10. Reinstalled core runtime dependencies into the fresh venv
+- OBSOLETE: Initial root-level environment and starter-backend setup was replaced by the later `teacher/` and `student/` application split.
 
 
 Current Python Target
 ---------------------
-- Python 3.12.2
-
-Current active environment:
-- `.venv` created from Python 3.12.2
+- OBSOLETE: Root `.venv` and project-log `.python-version` notes were superseded by per-app environment planning.
 
 
 Current Installed Runtime State
 -------------------------------
-Core runtime packages are installed in `.venv`, including:
-- fastapi
-- uvicorn
-- python-dotenv
-- pydantic
-- lancedb
-- pyarrow
-- faster-whisper
-- httpx
-
 Ollama status:
 - not managed through `requirements.txt`
 - installed separately on the local machine
@@ -242,48 +214,25 @@ Ollama status:
   - `all-minilm`
 
 Docling status:
-- Docling was previously installed in an older environment during exploration
-- current clean 3.12.2 runtime venv does NOT include Docling
-- Docling can be added later by installing `requirements-docs.txt`
-- no venv rebuild is needed to add it later
+- Docling is intended for teacher-side document parsing / OCR.
+- Docling pulls a heavy dependency tree, so keeping teacher/build dependencies separate from student/runtime dependencies remains the right direction.
 
 
 Important Notes Learned
 -----------------------
 - `requirements.txt` cannot lock the Python interpreter version by itself
-- Python version is effectively locked by:
-  - `.python-version`
-  - creating the venv from the intended interpreter
 - venv rebuild is needed when changing Python version
 - venv rebuild is NOT needed when only adding more packages later
-
-- On this Linux environment, Docling pulls a very heavy dependency tree through torch
-- because of that, splitting runtime and heavy document requirements is the right move
 
 
 Repository Files Present
 ------------------------
-- `.gitignore`
-- `.python-version`
-- `README.md`
-- `requirements.txt`
-- `requirements-docs.txt`
-- `backend/__init__.py`
-- `backend/app.py`
-- `PROJECT_LOG.txt`
-- `DATA_MODEL_LOG.txt`
+- OBSOLETE: Root-level file inventory no longer reflects the current repository layout.
 
 
 Open Items / Likely Next Steps
 ------------------------------
-1. Scaffold frontend in `sp2/frontend`
-2. Add initial local dev workflow for frontend + backend
-3. Add first SQLite metadata layer
-4. Add first LanceDB vector layer
-5. Define normalized internal document schema
-6. Define course-pack schema / manifest structure in more detail
-7. Add Ollama integration layer
-8. Later, decide whether Docling stays in shared venv or moves to separate authoring environment
+- OBSOLETE: Early root-app next-step list was replaced by the teacher/student split and DB-first student rebuild direction.
 
 
 Prototype App Plan
@@ -458,77 +407,27 @@ Date: 2026-04-24
 
 Current Working Backend State
 -----------------------------
-- backend storage foundation is now implemented
-- teacher-side v1 pack build path is implemented for a single PDF source
-- student-side import path is implemented
-- first student-side retrieval + chat backend path is implemented
-- frontend is still not started yet
+- OBSOLETE: This section described the old root `backend/` prototype, which was later removed during the teacher/student split.
 
 
 Current Runtime/Data Layout
 ---------------------------
-- local runtime/app data is currently stored under:
-  - `backend/data/sqlite/`
-  - `backend/data/lancedb/`
-  - `backend/data/packs/`
-  - `backend/data/tmp/`
-- SQLite file path:
-  - `backend/data/sqlite/app.db`
-- LanceDB root path:
-  - `backend/data/lancedb/`
+- OBSOLETE: Old root `backend/data/` paths no longer represent current storage layout.
 
 
 SQLite Status
 -------------
-Implemented in:
-- `backend/storage/sqlite.py`
-
-Current v1 tables:
-- `installed_packs`
-- `chat_sessions`
-- `chat_messages`
-
-Current status:
-- bootstrap works
-- CRUD helpers exist for all three tables
-- import seeds `installed_packs`
-- chat persistence is NOT wired yet
-
-Important note:
-- student chat currently answers questions successfully but does not yet persist:
-  - chat session creation
-  - user messages
-  - assistant messages
+- OBSOLETE: Old root `backend/storage/sqlite.py` status was replaced by the current schema-first student storage rebuild.
 
 
 LanceDB Status
 --------------
-Implemented in:
-- `backend/storage/lancedb.py`
-
-Current status:
-- local chunk table bootstrap works
-- insert/list/delete/search helpers exist
-- imported packs seed chunk rows into LanceDB successfully
-- retrieval works against imported pack data
-
-Important environment note:
-- LanceDB works on the actual machine/runtime
-- LanceDB local connect hangs inside the Codex sandbox
-- this is a tool/sandbox limitation, not a project-runtime failure
-- when needed, LanceDB runtime verification may require escalated execution in this environment
+- OBSOLETE: Old root `backend/storage/lancedb.py` status was replaced by the current schema-first student storage rebuild.
+- Retained environment note: LanceDB local operations can hang inside the Codex sandbox and may require escalated execution for verification.
 
 
 Teacher-Side RAG Pipeline Status
 --------------------------------
-Implemented files:
-- `backend/teacher/rag/docling_worker.py`
-- `backend/teacher/rag/chunker.py`
-- `backend/teacher/rag/embedder.py`
-- `backend/teacher/rag/pack_writer.py`
-- `backend/teacher/rag/zip_exporter.py`
-- `backend/teacher/rag/pipeline.py`
-
 Current behavior:
 - input:
   - one PDF path
@@ -550,10 +449,7 @@ Current teacher-side generation/runtime dependency:
 Real tested teacher-side artifact:
 - source PDF:
   - `/home/d/Downloads/OS-Lecture-07.pdf`
-- produced pack directory:
-  - `backend/data/tmp/os_lecture_07_pack/`
-- produced zip:
-  - `backend/data/tmp/os_lecture_07_pack.zip`
+- OBSOLETE: Old root `backend/data/tmp/` pack output paths were removed with the root backend layout.
 
 Observed output from real test:
 - page count:
@@ -566,25 +462,11 @@ Observed output from real test:
 
 Student Import Status
 ---------------------
-Implemented files:
-- `backend/student/importer.py`
-- `backend/student/routes.py`
-
-Current behavior:
-- import pack zip
-- validate required files:
-  - `pack.json`
-  - `chunks.json`
-  - `vectors.npy`
-- install unpacked pack under `backend/data/packs/`
-- seed SQLite `installed_packs`
-- seed LanceDB `course_chunks`
+- OBSOLETE: This section described the old root `backend/student/` prototype, which was removed during the student rebuild.
+- Retained behavior requirement: student import must validate `pack.json`, `chunks.json`, and `vectors.npy`, then seed SQLite installed-pack metadata and LanceDB pack chunks.
 
 Real tested student-side installed pack:
-- imported zip:
-  - `backend/data/tmp/os_lecture_07_pack.zip`
-- installed pack directory:
-  - `backend/data/packs/os-lecture-07-v1`
+- OBSOLETE: Old root `backend/data/` import paths no longer represent current storage layout.
 
 Observed import result:
 - `pack_id`:
@@ -599,20 +481,10 @@ Observed import result:
 
 Student Retrieval + Chat Status
 -------------------------------
-Implemented files:
-- `backend/student/retrieval.py`
-- `backend/student/chat.py`
-- `backend/student/schemas.py`
-- `backend/student/routes.py`
-
-Current FastAPI routes:
-- `/health`
-- `/student/import-pack`
-- `/student/chat`
-
-Current chat behavior:
+- OBSOLETE: This section described old root `backend/student/` files and routes, which were removed during the student rebuild.
+- Retained chat behavior requirement:
 - embed question with `all-minilm:latest`
-- retrieve top chunks from LanceDB scoped by `pack_id`
+- retrieve top chunks from LanceDB scoped to the installed pack
 - if retrieval is too weak, return debug fallback:
   - `This is not in the database.`
 - otherwise call local generation model and answer from retrieved context
@@ -621,7 +493,7 @@ Current generation model:
 - `qwen2.5:3b`
 
 Real tested chat result:
-- direct terminal POST to `/student/chat` with:
+- direct terminal POST in the old prototype with:
   - `pack_id = os-lecture-07`
   - question:
     - `What is deadlock?`
@@ -645,27 +517,65 @@ Verified:
 
 Important Repo/Layout Note
 --------------------------
-- repo content currently has an unusual split:
-  - backend code lives under repo root `backend/`
-  - documentation / requirements files currently live under `project_log/`
-- examples:
-  - `project_log/PROJECT_LOG.txt`
-  - `project_log/README.md`
-  - `project_log/requirements.txt`
-- this was discovered during implementation and should be remembered in future threads
+- OBSOLETE: Root `backend/` layout note was superseded by the later `teacher/` and `student/` split.
 
 
 Immediate Next Step
 -------------------
-The next backend task we stopped at is:
-- add chat persistence to SQLite
+- OBSOLETE: Old root-backend chat-persistence next step was superseded by the current student DB-first rebuild.
 
-Recommended exact behavior for next session:
-- if `session_id` is provided to chat:
-  - append user + assistant messages to that session
-- if `session_id` is not provided:
-  - create a new `chat_session`
-  - save the user question
-  - save the assistant answer
 
-This is the main missing backend capability after the first end-to-end prototype chat success.
+Repository Split Update
+=======================
+
+Date: 2026-05-31
+
+Decision
+--------
+- Split the code into two isolated application directories inside the existing `sp2` git repo:
+  - `teacher/`
+  - `student/`
+- Keep root-level notes and `project_log/` in place for now.
+- Do not create nested git repositories yet.
+
+
+New Layout
+----------
+- `teacher/`
+  - owns the teacher-side pack builder backend
+  - contains the Docling PDF extraction, chunking, embedding, pack writing, and zip export pipeline
+  - has its own `teacher/requirements.txt`
+
+- `student/`
+  - owns the student-side local runtime backend
+  - contains pack import, SQLite runtime state, LanceDB retrieval, query embedding, and Qwen chat
+  - has its own environment and requirements under `student/environment/`
+
+
+Isolation Notes
+---------------
+- Teacher and student code should not import each other.
+- The exported pack remains the contract between the two apps:
+  - `pack.json`
+  - `chunks.json`
+  - `vectors.npy`
+- Student runtime query embedding now has its own local embedding client so it no longer imports the teacher embedder.
+- Package-relative imports are used inside each app so each app can run from its own directory.
+
+
+Run Targets
+-----------
+- Teacher API shell:
+  - from `teacher/`: `uvicorn backend.app:app --reload`
+- Student API:
+  - OBSOLETE: student API run target will be redefined after the student runtime is rebuilt.
+
+
+Current Next Backend Task
+-------------------------
+- Build the student runtime from the current schema-first storage foundation.
+
+
+Student Runtime Route Split
+---------------------------
+- OBSOLETE: Route split notes described the old student prototype and will be redefined after the DB-first rebuild.

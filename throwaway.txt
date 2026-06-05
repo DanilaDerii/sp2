@@ -1,0 +1,47 @@
+DATE: 05.06.26 TIME: 20:05
+
+
+SQLite can store that chunk_id, yes.
+But important: SQLite cannot enforce a real foreign key into LanceDB.
+So it is a logical pointer, not a database-enforced relationship.
+Meaning the app code later does:
+read chunk_id from SQLite
+search/get matching chunk in LanceDB
+
+-----------------------------------------------------------------------------------------
+
+
+Pack metadata fields are not all stored in SQLite
+pack.json has:
+
+description
+embedding_model
+embedding_dim
+tutor_mode
+default_top_k
+created_at
+builder_version
+Current SQLite installed_packs stores only:
+
+pack_id
+title
+version
+install_path
+installed_at
+is_active
+This matches the old runtime model, but we may want to add:
+
+embedding_model
+embedding_dim
+default_top_k
+
+
+
+-------_______----------------------------------------------------------
+
+The one real mismatch:
+pack.json.tutor_mode
+Current installed_packs does not store it.
+So we have two choices:
+Option A: ignore tutor_mode for now
+Option B: add tutor_mode to installed_packs

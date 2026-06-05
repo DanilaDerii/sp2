@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from backend.teacher.rag.chunker import ChunkedText
+from .chunker import ChunkedText
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_EMBEDDING_MODEL = "all-minilm:latest"

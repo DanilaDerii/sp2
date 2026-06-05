@@ -171,8 +171,8 @@ Field notes:
 - `is_active`: whether currently enabled/visible
 
 
-Entity: ChatSession
--------------------
+Entity: Thread
+--------------
 Purpose:
 - one conversation thread for a given pack
 
@@ -191,7 +191,7 @@ Purpose:
 
 Fields:
 - `id`
-- `session_id`
+- `thread_id`
 - `pack_id`
 - `role`
 - `content`
@@ -199,7 +199,7 @@ Fields:
 
 Field notes:
 - `role` does NOT mean professor/student
-- `role` means chat turn type:
+- `role` means message author type:
   - `user`
   - `assistant`
 
@@ -254,7 +254,7 @@ Pack-side entities
 
 Runtime SQLite entities
 - InstalledPack
-- ChatSession
+- Thread
 - ChatMessage
 
 Runtime LanceDB entity
@@ -265,6 +265,6 @@ Runtime LanceDB entity
 --------------------
 - keep pack format simple and inspectable
 - keep runtime persistence minimal
-- keep retrieval data separate from app session state
+- keep retrieval data separate from app runtime state
 - avoid over-modeling platform/professor concepts in v1
 - postpone analytics/citation persistence until a real need appears

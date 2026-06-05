@@ -1,0 +1,114 @@
+Plan proposal presentation
+
+Title
+
+SP2: Local-First Course AI Assistant
+Core idea: teachers build course-specific AI packs; students import them and ask questions locally against verified course material.
+Main Idea
+
+One reusable app, many downloadable course packs.
+Teacher prepares a pack from course PDFs, slides, textbooks, and later audio/video.
+Student imports the pack and chats with a local AI assistant.
+The assistant answers from the installed course pack, not from the open internet or generic model memory.
+Core priority: reliable course-grounded help, privacy, offline/local use, and simple teacher-student distribution.
+Student Pain Points
+
+Course knowledge is scattered across PDFs, slides, Teams/LMS folders, recordings, notes, and announcements.
+Students often do not know where in the course material an answer comes from.
+Generic ChatGPT can be helpful but may answer from general knowledge instead of the actual course.
+Students need explanations, but also need page/source references they can verify.
+Students may worry about uploading class materials, personal notes, or assignments to cloud AI tools.
+Some students have inconsistent access to paid tools, internet, or high usage limits.
+When AI is wrong, it often sounds confident, which makes studying riskier.
+Teacher Pain Points
+
+Teachers repeatedly answer the same conceptual or logistical questions.
+They want students to get help, but not random answers that conflict with the course.
+They need control over what material the AI can use.
+They do not want to rebuild the course platform or replace Teams/LMS.
+They worry about privacy, copyright, academic integrity, and student overdependence.
+Existing AI tools often put the setup burden on each student instead of letting the teacher prepare one shared course knowledge pack.
+Teachers need a practical workflow: prepare once, share through existing channels.
+Existing Solution: Basic ChatGPT Pain Points
+
+Strong general assistant, but not naturally course-scoped.
+Students must upload or paste materials themselves, which creates inconsistency.
+File uploads and storage have limits and quotas; OpenAI documents per-file and project/upload caps.
+Consumer data handling differs from Edu/Business/Enterprise plans, so privacy depends on account type and settings.
+It can hallucinate or produce unsupported answers, especially when not grounded in supplied course material.
+Teacher has little control over what students ask, what sources are used, or whether answers match the class.
+Existing Solution: NotebookLM Pain Points
+
+Better grounded than basic ChatGPT because it works from uploaded sources.
+But it is still a cloud/account-based notebook product, not a local course-pack runtime.
+Official NotebookLM limits include source count, word/file size, and daily query/generation limits.
+Each notebook is separate; it is organized around user notebooks, not teacher-exported course modules.
+Source import can fail if files exceed limits or are copy-protected.
+Google’s own help says NotebookLM can make mistakes, so verification is still needed.
+It helps individuals study documents, but SP2 is designed around the teacher-to-student course-pack lifecycle.
+What Separates SP2
+
+Local-first: core retrieval and chat run on the student’s machine.
+Course-pack model: teacher builds once, students import the same verified pack.
+No raw course materials in exported pack: only derived AI-ready data such as chunks, metadata, and embeddings.
+Scoped retrieval: answers are isolated per course pack.
+Explicit fallback: if the answer is not in the database, the assistant should say so.
+Complements Teams/LMS instead of replacing them.
+Teacher-side heavy processing; student-side lightweight runtime.
+Uses open local components: FastAPI, SQLite, LanceDB, Ollama, Docling, local embedding/generation models.
+How SP2 Solves the Pain Points
+
+Teacher uploads course material into the builder.
+SP2 extracts text, chunks it, adds metadata, creates embeddings, and exports a .zip pack.
+Teacher shares the pack through Teams, Drive, LMS, or another normal channel.
+Student imports the pack into the SP2 app.
+The app creates local SQLite metadata and a local LanceDB search index.
+Student asks questions.
+SP2 embeds the question, retrieves relevant chunks from the selected course pack, and sends only that context to the local model.
+Answer includes retrieved references where possible.
+If retrieval is weak, SP2 returns: “This is not in the database.”
+Current Prototype State From Repo
+
+Backend exists with FastAPI.
+Teacher-side PDF pipeline exists:
+Docling extraction
+chunking
+Ollama embeddings
+pack.json, chunks.json, vectors.npy
+zip export
+Student-side import exists:
+validates zip pack
+installs pack locally
+seeds SQLite
+seeds LanceDB
+Student chat exists:
+embeds question
+retrieves course chunks
+calls local Ollama model
+has debug fallback for weak retrieval
+Tested with an OS lecture PDF:
+59 pages
+59 chunks
+384-dimensional embeddings
+question “What is deadlock?” answered successfully.
+Short Presentation Flow
+
+Slide 1: “Students need course-specific AI, not generic AI.”
+Slide 2: Student and teacher pain points.
+Slide 3: Why ChatGPT and NotebookLM are not enough.
+Slide 4: SP2 core idea: one app plus course packs.
+Slide 5: Teacher workflow: build pack.
+Slide 6: Student workflow: import pack and chat locally.
+Slide 7: What makes SP2 different: local-first, teacher-curated, pack-based, course-scoped.
+Slide 8: Prototype progress and next steps.
+Sources Used For Existing-Solution Research
+
+OpenAI file upload limits: https://help.openai.com/en/articles/8555545-memory-faq
+OpenAI data/privacy distinction: https://openai.com/business-data
+NotebookLM limits: https://support.google.com/notebooklm/answer/16269187
+NotebookLM source limits/import behavior: https://support.google.com/notebooklm/answer/16215270
+NotebookLM privacy and mistakes notice: https://support.google.com/notebooklm/answer/16164461
+EDUCAUSE AI risks in higher education: https://www.educause.edu/research/2026/the-impact-of-ai-on-work-in-higher-education
+ChatGPT in education concerns review: https://link.springer.com/article/10.1007/s44217-024-00138-2
+
+
