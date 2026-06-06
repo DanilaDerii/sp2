@@ -64,7 +64,6 @@ pack.json - pack metadata
   "description": "...",
   "embedding_model": "all-minilm:latest",
   "embedding_dim": 384,
-  "tutor_mode": "debug",
   "default_top_k": 5,
   "created_at": "...",
   "builder_version": "v1-prototype"
@@ -100,4 +99,3 @@ So the pack format is:
 pack metadata
 + chunk text/metadata
 + chunk embeddings
-

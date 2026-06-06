@@ -1,5 +1,5 @@
 DATE: 05.06.26 TIME: 20:05
-
+___________________________
 
 SQLite can store that chunk_id, yes.
 But important: SQLite cannot enforce a real foreign key into LanceDB.
@@ -11,13 +11,12 @@ search/get matching chunk in LanceDB
 -----------------------------------------------------------------------------------------
 
 
-Pack metadata fields are not all stored in SQLite
-pack.json has:
+Pack metadata fields stored in SQLite should match the useful runtime fields
+from pack.json:
 
 description
 embedding_model
 embedding_dim
-tutor_mode
 default_top_k
 created_at
 builder_version
@@ -37,11 +36,6 @@ default_top_k
 
 
 
--------_______----------------------------------------------------------
+--------------------------------------------------------------------------------
 
-The one real mismatch:
-pack.json.tutor_mode
-Current installed_packs does not store it.
-So we have two choices:
-Option A: ignore tutor_mode for now
-Option B: add tutor_mode to installed_packs
+Pack response style settings are deferred for now.

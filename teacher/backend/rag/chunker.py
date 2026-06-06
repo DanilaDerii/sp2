@@ -6,6 +6,7 @@ from .docling_worker import ExtractedDocument
 
 DEFAULT_CHUNK_SIZE = 1200
 DEFAULT_CHUNK_OVERLAP = 150
+MAX_SECTION_LENGTH = 160
 
 
 @dataclass(slots=True)
@@ -59,6 +60,15 @@ def _split_text(text: str, chunk_size: int, overlap: int) -> list[str]:
     return chunks
 
 
+def _infer_section_from_page_text(page_text: str) -> str | None:
+    """Use the first meaningful page line as a simple section label."""
+    for line in page_text.splitlines():
+        section = " ".join(line.split()).strip()
+        if section:
+            return section[:MAX_SECTION_LENGTH]
+    return None
+
+
 def chunk_extracted_document(
     document: ExtractedDocument,
     *,
@@ -80,6 +90,7 @@ def chunk_extracted_document(
     chunk_index = 0
 
     for page in document.pages:
+        section = _infer_section_from_page_text(page.text)
         for chunk_text in _split_text(page.text, chunk_size, overlap):
             chunks.append(
                 ChunkedText(
@@ -90,7 +101,7 @@ def chunk_extracted_document(
                     text=chunk_text,
                     chunk_index=chunk_index,
                     page=page.page_number,
-                    section=None,
+                    section=section,
                     topic=None,
                     char_count=len(chunk_text),
                 )

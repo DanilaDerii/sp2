@@ -51,7 +51,7 @@ Stored in: `pack.json`
 Purpose:
 - identify the pack
 - describe compatibility requirements
-- define default assistant behavior
+- define default retrieval settings
 
 Fields:
 - `pack_id`
@@ -60,7 +60,6 @@ Fields:
 - `description`
 - `embedding_model`
 - `embedding_dim`
-- `tutor_mode`
 - `default_top_k`
 - `created_at`
 - `builder_version`
@@ -72,7 +71,6 @@ Field notes:
 - `description`: optional human-readable summary
 - `embedding_model`: must match query embedding model at runtime
 - `embedding_dim`: vector dimension used in `vectors.npy`
-- `tutor_mode`: assistant behavior mode for v1
 - `default_top_k`: default retrieval count
 - `created_at`: build/export timestamp
 - `builder_version`: SP2 builder version that created the pack

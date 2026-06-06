@@ -10,7 +10,6 @@ import numpy as np
 
 from .embedder import EmbeddedChunk
 
-DEFAULT_TUTOR_MODE = "debug"
 DEFAULT_TOP_K = 5
 DEFAULT_BUILDER_VERSION = "v1-prototype"
 
@@ -25,7 +24,6 @@ class PackMetadata:
     description: str
     embedding_model: str
     embedding_dim: int
-    tutor_mode: str
     default_top_k: int
     created_at: str
     builder_version: str
@@ -68,7 +66,6 @@ def build_pack_metadata(
     description: str,
     embedding_model: str,
     embedding_dim: int,
-    tutor_mode: str = DEFAULT_TUTOR_MODE,
     default_top_k: int = DEFAULT_TOP_K,
     builder_version: str = DEFAULT_BUILDER_VERSION,
 ) -> PackMetadata:
@@ -80,7 +77,6 @@ def build_pack_metadata(
         description=description,
         embedding_model=embedding_model,
         embedding_dim=embedding_dim,
-        tutor_mode=tutor_mode,
         default_top_k=default_top_k,
         created_at=_utc_now_iso(),
         builder_version=builder_version,

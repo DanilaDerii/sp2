@@ -579,3 +579,49 @@ Current Next Backend Task
 Student Runtime Route Split
 ---------------------------
 - OBSOLETE: Route split notes described the old student prototype and will be redefined after the DB-first rebuild.
+
+
+Teacher Pack Metadata Simplification
+====================================
+
+Date: 2026-06-06
+
+Decision
+--------
+- Removed the v1 pack metadata field `tutor_mode` from the teacher-side export contract.
+- Keep pack metadata focused on retrieval/runtime compatibility fields for now:
+  - `pack_id`
+  - `title`
+  - `version`
+  - `description`
+  - `embedding_model`
+  - `embedding_dim`
+  - `default_top_k`
+  - `created_at`
+  - `builder_version`
+
+
+Rationale
+---------
+- Response style per pack is still a valid future idea, but it is not implemented in the current student runtime.
+- Keeping it in `pack.json` now would make the export contract imply behavior the app does not actually support.
+- Future work can reintroduce a tutor/style mode once the response-generation layer is ready to honor it.
+
+
+Teacher Chunk Section Heuristic
+===============================
+
+Date: 2026-06-06
+
+Decision
+--------
+- Added a v1 `section` heuristic for teacher-generated chunks.
+- Each page's first meaningful extracted text line is stored as the chunk `section` for chunks from that page.
+- `topic` remains unset for now.
+
+
+Rationale
+---------
+- Slide-style PDFs usually expose the slide title as the first meaningful page line, which is useful for student-side source context.
+- This deterministic heuristic avoids adding another model/classification step before the retrieval pipeline is stable.
+- A better future implementation should use Docling structure where possible and may use an LLM or classifier to assign richer `section` and `topic` metadata for improved student responses.

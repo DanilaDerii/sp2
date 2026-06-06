@@ -1,7 +1,1 @@
-fastapi
-uvicorn[standard]
-python-dotenv
-pydantic
-httpx
-numpy
-docling
+-r environment/requirements.txt
