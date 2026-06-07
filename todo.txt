@@ -22,3 +22,5 @@ only needs to specify path for ingest pdf file
 "cd /home/d/sp2/teacher
 (environment/.venv/bin/python -m backend.pipeline_runner 
 "/home/d/Downloads/Week02 - Unit Testing.pdf")
+
+4. compose project vision document with extensive details
