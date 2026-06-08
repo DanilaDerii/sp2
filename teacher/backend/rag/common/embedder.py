@@ -1,32 +1,14 @@
 """Embedding worker for teacher-side chunk vectors."""
 
-from dataclasses import dataclass
 from typing import Any
 
 import httpx
 
-from .chunker import ChunkedText
+from .models import ChunkedText, EmbeddedChunk
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_EMBEDDING_MODEL = "all-minilm:latest"
 DEFAULT_HTTP_TIMEOUT = 120.0
-
-
-@dataclass(slots=True)
-class EmbeddedChunk:
-    """Chunk data paired with its embedding vector."""
-
-    chunk_id: str
-    source_id: str
-    source_type: str
-    source_title: str
-    text: str
-    vector: list[float]
-    chunk_index: int
-    page: int | None
-    section: str | None
-    topic: str | None
-    char_count: int
 
 
 def _extract_vectors(payload: dict[str, Any]) -> list[list[float]]:
@@ -117,3 +99,4 @@ def embed_chunks(
         )
 
     return embedded_chunks
+

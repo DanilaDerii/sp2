@@ -1,15 +1,4 @@
 
-3. add readme's for student subdir
-
-4. reorganise project developement guidelines for better context sharing
-
-5. jsut put some work in project_log directory
-
-
-
-
-
-
 date: 06.06.26
 
 1. done - add cleanup for teacher artifacts (pipeline output clean up)
@@ -23,4 +12,13 @@ only needs to specify path for ingest pdf file
 (environment/.venv/bin/python -m backend.pipeline_runner 
 "/home/d/Downloads/Week02 - Unit Testing.pdf")
 
-4. compose project vision document with extensive details
+4. done - compose project vision document with extensive details
+
+5. done - organise teacher side code base best on modular logic 
+5.1 verify that this implementation works
+
+
+6. organise 3 mongth developemnt plan 
+
+7. work on draw.io diagrams
+

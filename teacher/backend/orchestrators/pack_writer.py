@@ -1,32 +1,17 @@
 """Pack file writer for pack.json, chunks.json, and vectors.npy."""
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from .embedder import EmbeddedChunk
+from ..rag.common.models import EmbeddedChunk, PackMetadata
 
 DEFAULT_TOP_K = 5
 DEFAULT_BUILDER_VERSION = "v1-prototype"
-
-
-@dataclass(slots=True)
-class PackMetadata:
-    """Metadata written into pack.json for an exported pack."""
-
-    pack_id: str
-    title: str
-    version: str
-    description: str
-    embedding_model: str
-    embedding_dim: int
-    default_top_k: int
-    created_at: str
-    builder_version: str
 
 
 def _utc_now_iso() -> str:

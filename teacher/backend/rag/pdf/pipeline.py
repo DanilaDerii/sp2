@@ -1,35 +1,19 @@
-"""Teacher-side RAG pipeline orchestrator."""
+"""PDF-specific teacher-side RAG pipeline orchestrator."""
 
-from dataclasses import dataclass
 from pathlib import Path
 
-from .artifact_manager import ARTIFACTS_DIR, prepare_teacher_artifacts
-from .chunker import ChunkedText, chunk_extracted_document
-from .docling_worker import ExtractedDocument, extract_pdf_text
-from .embedder import EmbeddedChunk, embed_chunks
-from .pack_writer import (
+from ..common.chunker import chunk_extracted_document
+from ..common.embedder import embed_chunks
+from ..common.models import TeacherPipelineResult
+from ...orchestrators.artifact_manager import ARTIFACTS_DIR, prepare_teacher_artifacts
+from ...orchestrators.pack_writer import (
     DEFAULT_BUILDER_VERSION,
     DEFAULT_TOP_K,
-    PackMetadata,
     build_pack_metadata,
     write_pack_directory,
 )
-from .zip_exporter import export_pack_zip
-
-
-@dataclass(slots=True)
-class TeacherPipelineResult:
-    """Outputs produced by the teacher-side v1 build pipeline."""
-
-    extracted_document: ExtractedDocument
-    chunks: list[ChunkedText]
-    embedded_chunks: list[EmbeddedChunk]
-    metadata: PackMetadata
-    pack_directory: str
-    pack_json_path: str
-    chunks_json_path: str
-    vectors_npy_path: str
-    zip_path: str
+from ...orchestrators.zip_exporter import export_pack_zip
+from .extractor import extract_pdf_text
 
 
 def _default_pack_id(source_path: Path) -> str:

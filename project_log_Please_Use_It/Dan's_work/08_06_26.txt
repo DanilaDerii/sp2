@@ -1,0 +1,5 @@
+1. organise teacher side code base best on modular logic 
+
+2. compose project vision document ( may need more details)
+
+3. put some work on project log structure/organisation

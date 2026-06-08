@@ -1,28 +1,10 @@
-"""Chunk generation worker for extracted source text."""
+"""Chunk generation worker for normalized extracted source text."""
 
-from dataclasses import dataclass
-
-from .docling_worker import ExtractedDocument
+from .models import ChunkedText, ExtractedDocument
 
 DEFAULT_CHUNK_SIZE = 1200
 DEFAULT_CHUNK_OVERLAP = 150
 MAX_SECTION_LENGTH = 160
-
-
-@dataclass(slots=True)
-class ChunkedText:
-    """One retrieval-ready text chunk with basic source metadata."""
-
-    chunk_id: str
-    source_id: str
-    source_type: str
-    source_title: str
-    text: str
-    chunk_index: int
-    page: int | None
-    section: str | None
-    topic: str | None
-    char_count: int
 
 
 def _split_text(text: str, chunk_size: int, overlap: int) -> list[str]:
@@ -77,7 +59,7 @@ def chunk_extracted_document(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[ChunkedText]:
-    """Convert extracted page text into retrieval-ready chunks."""
+    """Convert extracted page-like text into retrieval-ready chunks."""
     if chunk_size <= 0:
         raise ValueError("chunk_size must be greater than 0")
     if overlap < 0:
@@ -109,3 +91,4 @@ def chunk_extracted_document(
             chunk_index += 1
 
     return chunks
+

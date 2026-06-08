@@ -1,30 +1,11 @@
-"""Docling-based source text extraction worker."""
+"""Docling-based PDF text extraction worker."""
 
-from dataclasses import dataclass
 from pathlib import Path
 
 from docling.datamodel.base_models import ConversionStatus
 from docling.document_converter import DocumentConverter
 
-
-@dataclass(slots=True)
-class ExtractedPage:
-    """Extracted text for one page of a source document."""
-
-    page_number: int
-    text: str
-
-
-@dataclass(slots=True)
-class ExtractedDocument:
-    """Normalized extraction result returned by the Docling worker."""
-
-    source_path: str
-    source_name: str
-    page_count: int
-    text: str
-    markdown: str
-    pages: list[ExtractedPage]
+from ..common.models import ExtractedDocument, ExtractedPage
 
 
 def extract_pdf_text(pdf_path: str | Path) -> ExtractedDocument:
@@ -80,3 +61,4 @@ def extract_pdf_text(pdf_path: str | Path) -> ExtractedDocument:
         markdown=markdown,
         pages=pages,
     )
+

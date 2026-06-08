@@ -1,21 +1,13 @@
 """Helpers for teacher-side generated pack artifacts."""
 
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
+
+from ..rag.common.models import TeacherArtifactPaths
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
-
-
-@dataclass(frozen=True, slots=True)
-class TeacherArtifactPaths:
-    """Resolved output paths for one generated teacher pack."""
-
-    pack_id: str
-    pack_dir: Path
-    zip_path: Path
 
 
 def _safe_artifact_name(pack_id: str) -> str:
