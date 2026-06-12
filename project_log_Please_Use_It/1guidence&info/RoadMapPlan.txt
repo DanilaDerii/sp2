@@ -1,0 +1,14 @@
+1. Finish student storage setup
+2. Create student pack importer/injecter
+3. Set up student FastAPI layer
+    do a research can LMStudio download customised model (save frontend dev time + more visibilitu)
+
+4. Add student chat functionality (lmstudio??)
+5. Improve retrieval metadata/quality
+6. Build student UI (lmstudio??)
+7.  Expand teacher ingestion types
+
+8. Make full end-to-end demo flow
+9. Add tests and verification
+10. Improve setup/install process
+ 
