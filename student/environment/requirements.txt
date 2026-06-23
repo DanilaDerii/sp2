@@ -1,3 +1,5 @@
 lancedb
 pyarrow
 numpy
+fastapi
+uvicorn[standard]

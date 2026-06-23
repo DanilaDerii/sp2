@@ -15,5 +15,7 @@ artifacts/*
 *.db
 student/storage/sqlite_storage/
 student/storage/lance_storage/
+student/storage/installed_packs/*
+!student/storage/installed_packs/.gitkeep
 .agents/
 .codex

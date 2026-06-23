@@ -18,9 +18,32 @@ only needs to specify path for ingest pdf file
 5.1 verify that this implementation works
 
 
-6. organise 3 mongth developemnt plan 
+6. done - organise 3 mongth developemnt plan 
 
 7. work on draw.io diagrams
 
 8. revisit db ideas
 
+9. done - create retrieval/search logic file for LanceDB vector search
+   keep it separate from low-level lancedb_cruds for now
+
+10. done - reset db cuz added char count in lancedb 
+
+11. done - fix the embeding model some where , make sure its modular for future developemnt
+
+12. Pack management behavior: duplicate import, delete/uninstall, active pack selection.
+
+13. done - build question embedder for student retrieval
+    hard-code v1 to the same model used by teacher packs (`all-minilm:latest`)
+    fail clearly if imported pack embedding model does not match query embedder
+
+14. done - build retrieval/context packet logic
+    separate from low-level lancedb_cruds
+    return `course_context` with chunks/sources/scores or `no_course_context`
+
+15. done - build student API/tool layer
+    expose list packs, import pack from path, get course context, and later delete/uninstall
+
+16. build LM Studio MCP/custom tool script
+    LM Studio UI owns chat and final answer generation
+    SP2 returns retrieval context only, not a separate custom chat answer by default

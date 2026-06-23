@@ -9,6 +9,13 @@ PACK_CHUNKS_TABLE_NAME = "pack_chunks"
 DEFAULT_VECTOR_DIM = 384
 
 
+def _table_names(db) -> set[str]:
+    tables = db.list_tables()
+    if hasattr(tables, "tables"):
+        return set(tables.tables)
+    return set(tables)
+
+
 def pack_chunks_schema(vector_dim: int = DEFAULT_VECTOR_DIM):
     try:
         import pyarrow as pa
@@ -32,11 +39,12 @@ def pack_chunks_schema(vector_dim: int = DEFAULT_VECTOR_DIM):
             pa.field("page", pa.int32()),
             pa.field("section", pa.string()),
             pa.field("topic", pa.string()),
+            pa.field("char_count", pa.int32()),
         ]
     )
 
 
-def create_lancedb_db(vector_dim: int = DEFAULT_VECTOR_DIM) -> None:
+def create_lancedb_db(vector_dim: int = DEFAULT_VECTOR_DIM, *, verbose: bool = True) -> None:
     try:
         import lancedb
     except ModuleNotFoundError as exc:
@@ -48,14 +56,15 @@ def create_lancedb_db(vector_dim: int = DEFAULT_VECTOR_DIM) -> None:
     LANCE_DIR.mkdir(parents=True, exist_ok=True)
     db = lancedb.connect(LANCE_DIR)
 
-    if PACK_CHUNKS_TABLE_NAME not in db.list_tables():
+    if PACK_CHUNKS_TABLE_NAME not in _table_names(db):
         db.create_table(
             PACK_CHUNKS_TABLE_NAME,
             schema=pack_chunks_schema(vector_dim),
         )
 
-    print(f"LanceDB database created at: {LANCE_DIR}")
-    print(f"LanceDB table ready: {PACK_CHUNKS_TABLE_NAME}")
+    if verbose:
+        print(f"LanceDB database created at: {LANCE_DIR}")
+        print(f"LanceDB table ready: {PACK_CHUNKS_TABLE_NAME}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+Since we locked “LM Studio UI owns chat,” the right next piece is an MCP tool server, not SP2 calling LM Studio’s chat API.
+LM Studio docs say LM Studio acts as an MCP host and can connect local/remote MCP servers through mcp.json starting from LM Studio 0.3.17. That matches our architecture exactly:
+LM Studio chat UI
+-> model calls SP2 MCP tool
+-> SP2 returns course_context or no_course_context
+-> LM Studio model writes final answer
+Our FastAPI API is still useful. It gives the MCP server a stable local boundary:
+LM Studio MCP tool
+-> calls http://127.0.0.1:8001/retrieval/context
+-> returns context packet to LM Studio
+So the next build should probably be:
+student/integrations/lm_studio_mcp/
+  __init__.py
+  server.py
+  README.md maybe later
+Tools exposed:
+sp2_list_packs()
+sp2_get_course_context(installed_pack_id, question, top_k=None)
+sp2_import_pack_from_path(pack_zip_path)
+For v1, the most important one is:
+sp2_get_course_context
+The MCP server should not generate answers. It just returns our context packet. LM Studio then decides the wording.
+There is another possible route using LM Studio’s OpenAI-compatible local API, because LM Studio supports /v1/chat/completions, /v1/responses, and /v1/embeddings. But that path is for external apps calling LM Studio. That is not our main project direction anymore.
