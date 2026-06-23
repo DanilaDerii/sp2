@@ -22,3 +22,5 @@ only needs to specify path for ingest pdf file
 
 7. work on draw.io diagrams
 
+8. revisit db ideas
+

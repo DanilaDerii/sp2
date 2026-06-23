@@ -5,10 +5,12 @@ SP2 is a local-first course AI assistant built around a teacher-to-student
 course pack workflow.
 
 The core idea is simple: teachers prepare course-specific AI packs from course
-materials, and students import those packs into a local app that can answer
-questions from the installed course material. The goal is not to replace an LMS,
-Teams, Drive, or normal course folders. SP2 is meant to sit beside those tools as
-a focused AI study layer that is grounded in the actual course content.
+materials, and students import those packs through the SP2 student app or an LM
+Studio extension/plugin. The import seeds the local SP2 database, then students
+ask questions through LM Studio's model manager and chat UI. The goal is not to
+replace an LMS, Teams, Drive, normal course folders, or LM Studio. SP2 is meant
+to sit beside those tools as a focused retrieval layer that grounds LM Studio
+answers in the actual course content.
 
 
 Problem
@@ -46,17 +48,22 @@ them through a RAG build pipeline. The pipeline extracts text, normalizes it,
 splits it into searchable chunks, attaches useful metadata, creates embeddings,
 and exports a portable pack zip.
 
-On the student side, the application imports that pack, seeds local storage, and
-provides an AI assistant that answers from the installed course pack. The
-student should be able to ask natural questions, continue a conversation across
-messages, and navigate back to the course material through references such as
-source title, page, section, topic, or timestamp when available.
+On the student side, the application or LM Studio extension/plugin imports that
+pack and seeds local storage. Students then use LM Studio as the main interface
+for model selection, chat, and answer generation. SP2 provides the custom
+retrieval script/tool behind that interface: it embeds the question, searches the
+seeded local database first, returns matching course chunks when available, and
+lets the LM Studio language model compose the final answer from that context.
+The student should be able to ask natural questions, continue a conversation
+across messages, and navigate back to the course material through references
+such as source title, page, section, topic, or timestamp when available.
 
 The assistant should feel course-aware rather than generic. It should preserve
 the context of student and AI communication, retrieve from the selected course
-pack, and produce answers grounded in the local course database. If the answer
-is not supported by the installed material, the system should say that clearly
-instead of guessing.
+pack first, and produce answers grounded in the local course database when
+matching material exists. If no relevant course material is found in the
+database, the question may fall back to the LM Studio model's pretrained
+knowledge instead of pretending the answer came from the pack.
 
 
 Teacher Workflow
@@ -91,31 +98,39 @@ embedding matrix, with vector order matching chunk order.
 
 Student Workflow
 ----------------
-The student workflow is responsible for local installation, retrieval, and chat.
+The student workflow is responsible for local pack installation, retrieval, and
+LM Studio integration.
 
 Expected flow:
 
 1. The student receives a course pack zip from the teacher.
-2. The student imports the pack into the SP2 app.
+2. The student imports the pack into the SP2 app or LM Studio extension/plugin.
 3. SP2 validates the pack files and metadata.
 4. SP2 stores installed-pack metadata in SQLite.
 5. SP2 reads `chunks.json` and `vectors.npy`.
 6. SP2 creates or updates the local LanceDB retrieval index.
-7. The student chooses an installed pack and opens a chat thread.
-8. The student asks questions against that pack.
+7. The student uses LM Studio as the main chat and local model interface.
+8. The student asks questions while the SP2 tool checks the selected pack first.
 9. SP2 embeds the question, retrieves relevant chunks, and sends the retrieved
-   context to a local generation model.
-10. SP2 stores the conversation messages locally so the chat has continuity.
+   context to the LM Studio language model for answer composition.
+10. If no relevant chunks are found, the question can be answered from the LM
+   Studio model's pretrained knowledge.
+11. SP2 may store conversation messages locally when the student-side runtime
+   needs continuity outside LM Studio's own chat history.
 
-The student app should be privacy-first. Course-pack import, retrieval, and chat
-history should stay on the student device for the core workflow. The system
-should not require uploading student questions, chat history, or installed
-course material to a hosted AI service.
+The student app or LM Studio integration should be privacy-first. Course-pack
+import, retrieval, and local database state should stay on the student device
+for the core workflow. The system should not require uploading student
+questions, chat history, or installed course material to a hosted AI service.
 
 
-Local AI Runtime
-----------------
-SP2 is designed around local AI models through Ollama.
+LM Studio Runtime
+-----------------
+SP2 is now designed to use LM Studio as the main student-facing local model
+service/server. LM Studio should provide the student's model manager, model
+selection, chat UI, and language model generation. SP2 should provide the course
+pack builder, pack importer, local database seeding, vector retrieval, and the
+custom script/tool that LM Studio calls before answering.
 
 The embedding model must match between teacher-side pack creation and
 student-side question embedding. If the teacher embeds chunks with one embedding
@@ -123,15 +138,19 @@ model and the student embeds questions with a different incompatible model,
 retrieval quality will degrade or fail. For v1, the embedding model should stay
 fixed to keep the system predictable.
 
-The generation model should be swappable based on the student's hardware. A
-student with a weaker laptop should be able to use a smaller model, while a
-student with stronger hardware can choose a larger or better model. This model
-choice should affect answer generation, not the pack compatibility contract.
+The generation model should be swappable through LM Studio based on the
+student's hardware. A student with a weaker laptop should be able to use a
+smaller model, while a student with stronger hardware can choose a larger or
+better model. This model choice should affect answer generation, not the pack
+compatibility contract.
 
 The current direction is:
 
 - local embedding model for retrieval compatibility
-- local generation model for answering
+- LM Studio as the main local generation service and chat UI
+- SP2 retrieval tool/script called before answers are generated
+- database-first answering when relevant chunks exist
+- pretrained-model fallback when the seeded database has no relevant material
 - support future model selection based on available hardware
 - avoid hosted APIs for the core prototype workflow
 
@@ -162,11 +181,13 @@ Important differences:
 - Students import the same course-grounded pack.
 - Retrieval is isolated to the selected installed course pack.
 - The exported pack contains derived AI-ready data, not raw source files.
-- Student questions and chat history stay local.
+- Student questions, pack data, and retrieval state stay local.
 - Answers should be grounded in course material and should expose references
-  when possible.
+  when relevant pack chunks are found.
+- If the seeded database has no relevant material, LM Studio can answer from the
+  selected model's pretrained knowledge.
 - The app complements existing course platforms instead of replacing them.
-- Local model selection can adapt to different student hardware.
+- LM Studio model selection can adapt to different student hardware.
 
 
 Current Development Direction
@@ -178,10 +199,11 @@ The teacher side is currently ahead. It has a PDF-first pipeline that can
 extract course content with Docling, chunk the extracted text, embed chunks
 through Ollama, write pack files, and export a zip.
 
-The student side is being rebuilt around the pack contract. Its core storage
-shape is SQLite for installed packs, threads, and messages, plus LanceDB for
-pack chunks and vectors. The next major milestone is to implement pack import,
-database seeding, retrieval, and local chat over installed packs.
+The student side is being rebuilt around the pack contract and LM Studio
+integration. Its core storage shape is SQLite for installed packs, threads, and
+messages, plus LanceDB for pack chunks and vectors. The next major milestone is
+to implement pack import, database seeding, retrieval, and an LM Studio
+tool/plugin path that searches the seeded database before the model answers.
 
 Future teacher-side expansion should add more source types:
 
@@ -198,7 +220,8 @@ student runtime can actually honor them.
 Short Summary
 -------------
 SP2 lets teachers convert course materials into portable local AI packs.
-Students import those packs into a privacy-first local app and ask questions
-against the actual course content. The system is designed to preserve chat
-context, support source-aware course navigation, and run with local AI models
-that can be chosen according to the student's hardware.
+Students import those packs into a privacy-first local app or LM Studio
+extension/plugin, seed a local database, and ask questions through LM Studio.
+The system is designed to retrieve source-aware course context first, let LM
+Studio compose answers from that context, and fall back to the selected model's
+pretrained knowledge only when the database has no relevant material.

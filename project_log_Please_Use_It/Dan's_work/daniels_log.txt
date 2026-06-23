@@ -1,5 +1,12 @@
-1. organise teacher side code base best on modular logic 
 
-2. compose project vision document ( may need more details)
+23.06.26 - changed student LanceDB pack_chunks page field from string to int32
 
-3. put some work on project log structure/organisation
+23.06.26 - added student database reset helper for SQLite and LanceDB dev schema changes
+
+23.06.26 - simplified student database reset helper to use project default LanceDB vector dimension
+
+23.06.26 - added empty student storage skeleton for sqlite_cruds, lancedb_cruds, and importer
+
+23.06.26 - removed student-owned threads/messages from SQLite plan because LM Studio owns chat context
+
+23.06.26 - implemented SQLite CRUD helpers for installed_packs student storage

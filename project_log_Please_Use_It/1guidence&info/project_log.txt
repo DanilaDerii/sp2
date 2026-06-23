@@ -8,10 +8,12 @@ Purpose
 SP2 is being designed as a local-first course AI assistant platform.
 The product direction is:
 
-- one reusable local app
+- one reusable teacher/student pack workflow
 - downloadable course-specific packs/modules
 - teacher-side preprocessing for heavy document ingestion
-- student-side lightweight local runtime for asking questions against installed course packs
+- student-side lightweight local runtime or LM Studio extension/plugin for
+  importing packs and searching installed course databases
+- LM Studio as the main student-facing model server, model manager, and chat UI
 
 
 High-Level Product Direction
@@ -20,7 +22,8 @@ High-Level Product Direction
 - Each course should be represented as a modular downloadable course pack.
 - Course packs should contain preprocessed course knowledge so students do not need to parse raw PDFs locally.
 - Retrieval should be isolated per course by default.
-- The app should support local LLM usage and local retrieval without hosted APIs.
+- The app should support local retrieval and LM Studio-based local LLM usage
+  without hosted APIs.
 - The v1 product direction is functionality-first, not platform-first.
 - SP2 should complement systems like MS Teams rather than replace them.
 
@@ -49,8 +52,11 @@ Document parsing / OCR:
 - intended mainly for authoring / teacher-side preprocessing
 
 Local model runtime:
-- Ollama
-- Ollama is treated as an external machine-level runtime, not a pip dependency
+- LM Studio is now the target main service/server for the student runtime.
+- LM Studio should own local model management, chat UI, and answer generation.
+- SP2 should own pack creation, pack import, database seeding, and retrieval.
+- Ollama remains part of the existing teacher-side prototype implementation
+  until that code path is replaced or bridged.
 
 Embedding direction:
 - one shared embedding model should be used for both:
@@ -65,7 +71,7 @@ Architecture Decisions Discussed
 - preferred approach is one app plus many downloadable course packs
 - not one separate app per course
 - professor exports AI-ready pack
-- student imports AI-ready pack into local app
+- student imports AI-ready pack into the SP2 app or LM Studio extension/plugin
 
 2. Separation of responsibilities
 - teacher/build pipeline can use heavy tooling like Docling
@@ -75,7 +81,8 @@ Architecture Decisions Discussed
 3. Parsing distinction
 - Docling is for course material parsing
 - student questions do not need heavy parsing
-- student questions only need lightweight preprocessing, embedding, retrieval, and answer generation
+- student questions only need lightweight preprocessing, embedding, retrieval,
+  and context handoff to LM Studio for answer generation
 
 4. Retrieval constraint
 - chunk embeddings and student-question embeddings must come from the same embedding model family/version
@@ -90,14 +97,15 @@ Architecture Decisions Discussed
 - professor should be able to use the app as a local pack builder
 - professor will likely gather source materials from an existing platform such as MS Teams
 - professor shares the built pack back through normal channels such as Teams / Drive / similar
-- student app consumes the supplementary AI pack in parallel with the existing LMS/course directory
+- student app or LM Studio extension/plugin consumes the supplementary AI pack
+  in parallel with the existing LMS/course directory
 
 7. Feedback loops
 - feedback / analytics loop for professor is intentionally deferred for now
 - current focus is:
   - professor builds pack
   - student imports pack
-  - student asks questions locally
+  - student asks questions through LM Studio with SP2 retrieval first
 
 8. Pack content decision
 - course pack should NOT contain raw source materials such as textbooks, PDFs, or lecture recordings
@@ -154,7 +162,8 @@ Architecture Decisions Discussed
 - exported format for v1 should be plain `.zip`
 - exported zip is supplementary course data only and must NOT include original PDFs, textbooks, slides, or videos
 - professor shares the zip through normal course channels such as Teams
-- student app imports the zip, validates pack compatibility, and creates the local runtime state from it
+- student app or LM Studio extension/plugin imports the zip, validates pack
+  compatibility, and creates the local runtime state from it
 
 12. V1 retrieval/runtime decision
 - embedding model should be fixed for v1 across both build side and student runtime side
@@ -167,14 +176,22 @@ Architecture Decisions Discussed
   - section / topic / subtopic when parsing can recover it
   - timestamp or timestamp range for video-derived transcript chunks
 - LanceDB should NOT be exported as part of the pack
-- instead, the student app should read `chunks.json` + `vectors.npy` on import and populate the local LanceDB index then
+- instead, the student app or LM Studio extension/plugin should read
+  `chunks.json` + `vectors.npy` on import and populate the local LanceDB index
+  then
 - SQLite remains responsible for installed pack metadata and chat history
+- LM Studio is the preferred student-facing chat/model layer; SP2 should expose
+  a retrieval tool/script that LM Studio can call before composing an answer
 
 13. V1 assistant behavior direction
 - assistant behavior should stay minimal in v1 so we can focus on making the retrieval pipeline work first
 - tutor style, direct-answer style, and assignment-specific behavior can be refined later once the system is working end to end
-- for early debugging, the assistant should explicitly say when the answer is not in the installed pack / retrieval database
-- this makes retrieval failures and pack-coverage gaps easier to spot during development
+- default behavior should be database-first: retrieve relevant pack chunks and
+  use them as context for the LM Studio model's answer
+- if no relevant pack chunks are found, the question may fall back to the LM
+  Studio model's pretrained knowledge
+- during debugging, the system should still expose whether an answer used pack
+  retrieval or pretrained-model fallback
 
 14. V1 source granularity / referencing direction
 - source granularity should primarily support clean referencing rather than an overly complex source model in v1
@@ -213,6 +230,16 @@ Ollama status:
 - verified local embedding model:
   - `all-minilm`
 
+LM Studio direction:
+- LM Studio is now the intended main student-facing local model service/server.
+- Student chat should happen in LM Studio where possible, using LM Studio's
+  model manager, chat UI, and selected local language model.
+- SP2 should integrate as a local retrieval tool/script or extension/plugin:
+  import pack, seed SQLite/LanceDB, search vectors first, return source chunks,
+  and let LM Studio compose the final answer.
+- If no relevant database chunks are found, the question can be directed to the
+  selected model's pretrained knowledge.
+
 Docling status:
 - Docling is intended for teacher-side document parsing / OCR.
 - Docling pulls a heavy dependency tree, so keeping teacher/build dependencies separate from student/runtime dependencies remains the right direction.
@@ -242,14 +269,18 @@ Date: 2026-04-24
 
 Goal
 ----
-Build one local-first web app that contains both the teacher workflow and the student workflow.
+Build a local-first prototype that contains the teacher pack builder and the
+student pack import/retrieval workflow, with LM Studio as the preferred
+student-facing chat and model layer.
 
 The app should act as:
 - a teacher-side pack builder
-- a student-side pack importer/runtime
-- a local AI chat interface over imported course-pack data
+- a student-side pack importer/runtime or LM Studio extension/plugin
+- a local retrieval layer that feeds LM Studio before answer generation
 
-This is currently the preferred prototype direction because it lets us prove the full product loop inside one app without prematurely splitting the system into multiple applications.
+This direction still proves the full product loop, but the student-facing UI
+should preferably be LM Studio instead of a custom chat screen when the plugin
+or tool integration path is available.
 
 
 High-Level UX Direction
@@ -259,6 +290,7 @@ High-Level UX Direction
   - student POV
 - both modes live inside the same web application
 - all RAG, AI, and database components remain local to the machine
+- LM Studio provides the main student chat UI and local LLM manager
 - app should not rely on hosted APIs for the core prototype workflow
 
 
@@ -304,16 +336,18 @@ Important teacher-side constraints:
 Student POV
 -----------
 Purpose:
-- let a student import an exported pack and use it locally for retrieval and chat
+- let a student import an exported pack, seed the local SP2 database, and use LM
+  Studio for chat over retrieved course context
 
 Expected user flow:
 1. Student opens the student page from the landing page
-2. Student clicks import and selects a course-pack `.zip`
-3. The app imports the pack into local runtime storage
+2. Student clicks import in the SP2 app or LM Studio extension/plugin and
+   selects a course-pack `.zip`
+3. SP2 imports the pack into local runtime storage
 4. The app validates the pack metadata and compatibility
 5. The app creates the required local databases / indexes from the imported files
-6. The imported pack becomes available in the student-side UI
-7. Student selects the pack and navigates to chat
+6. The imported pack becomes available to the student-side runtime/tool
+7. Student asks questions in LM Studio, with SP2 retrieval running first
 
 Student-side import responsibilities:
 - unpack the zip into local installed-pack storage
@@ -332,21 +366,26 @@ Important student-side constraints:
 Chat / Retrieval Flow
 ---------------------
 Purpose:
-- allow the student to ask questions against the imported course-pack data
+- allow the student to ask questions in LM Studio while SP2 checks the imported
+  course-pack data first
 
 Expected runtime flow:
-1. Student chooses an installed pack
-2. Student opens the AI chat page for that pack
-3. Student submits a question
-4. The app embeds the question using the same fixed v1 embedding model
+1. Student chooses or configures an installed pack for the LM Studio session
+2. Student asks a question in LM Studio
+3. The SP2 tool/script receives the question before answer generation
+4. SP2 embeds the question using the same fixed v1 embedding model
 5. LanceDB retrieves the closest chunks for that question
-6. Retrieved chunks are passed into the answer-generation step as context
-7. The assistant responds using that retrieved context
+6. If relevant chunks are found, SP2 passes them into LM Studio as answer context
+7. LM Studio's selected language model composes the answer from that context
+8. If no relevant chunks are found, LM Studio can answer from the selected
+   model's pretrained knowledge
 
 Debug-first behavior for v1:
 - assistant behavior should remain simple for now
-- if the answer is not present in the installed pack / retrieval database, the assistant should explicitly say so
-- this is primarily for debugging retrieval quality and pack coverage during early development
+- the system should clearly track whether an answer used retrieved pack chunks
+  or pretrained-model fallback
+- this is primarily for debugging retrieval quality and pack coverage during
+  early development
 
 
 Information Architecture
@@ -369,16 +408,19 @@ Preferred early page structure:
 - select pack
 - navigate to chat
 
-4. Chat page
-- ask questions against selected installed pack
+4. LM Studio chat/session
+- ask questions through LM Studio with a selected installed pack configured
 - show retrieved references where possible
-- show explicit debug message when answer is not in the database
+- show whether the answer used retrieved pack chunks or pretrained-model
+  fallback
 
 
 Why This Prototype Shape Is Preferred
 -------------------------------------
-- one app is simpler to build and demo than multiple separate apps
-- teacher and student workflows remain clearly separated in UI while sharing one local runtime
+- one app plus LM Studio integration is simpler to demo than building a full
+  custom student chat platform
+- teacher and student workflows remain clearly separated while the student chat
+  surface can be handled by LM Studio
 - it validates the whole course-pack lifecycle end to end:
   - build
   - export
@@ -390,11 +432,11 @@ Why This Prototype Shape Is Preferred
 
 Recommended Build Order
 -----------------------
-1. Scaffold the frontend shell for landing page, teacher page, student page, and chat page
+1. Scaffold only the SP2 UI needed for teacher pack build and student pack import
 2. Add the teacher-side source selection and build UI
-3. Add the student-side zip import UI
+3. Add the student-side zip import UI or LM Studio extension/plugin import path
 4. Implement import-time creation/population of SQLite + LanceDB
-5. Implement the chat/retrieval path over imported pack data
+5. Implement the LM Studio retrieval tool/script over imported pack data
 6. Replace temporary/stubbed internals with the full parsing/chunking/embedding pipeline as needed
 
 This order is meant to get a working prototype shell visible early while still converging toward the intended architecture.
@@ -443,7 +485,7 @@ Current behavior:
 Current locked embedding model:
 - `all-minilm:latest`
 
-Current teacher-side generation/runtime dependency:
+Current teacher-side embedding/runtime dependency:
 - local Ollama API at `http://127.0.0.1:11434`
 
 Real tested teacher-side artifact:
@@ -485,11 +527,12 @@ Student Retrieval + Chat Status
 - Retained chat behavior requirement:
 - embed question with `all-minilm:latest`
 - retrieve top chunks from LanceDB scoped to the installed pack
-- if retrieval is too weak, return debug fallback:
-  - `This is not in the database.`
-- otherwise call local generation model and answer from retrieved context
+- if relevant chunks are found, pass them to LM Studio as answer context
+- if no relevant chunks are found, allow LM Studio to answer from the selected
+  model's pretrained knowledge
+- record/debug whether the answer used retrieval context or pretrained fallback
 
-Current generation model:
+Previous prototype generation model:
 - `qwen2.5:3b`
 
 Real tested chat result:
@@ -513,6 +556,49 @@ Verified:
 - `ollama` installed
 - local Ollama API reachable
 - embeddings and generation runtime available for backend work
+
+
+LM Studio Student Runtime Direction Update
+==========================================
+
+Date: 2026-06-23
+
+Decision
+--------
+- Keep the teacher-side pack builder concept mostly the same.
+- Use LM Studio as the main student-facing local model service/server.
+- Student chat should happen through LM Studio's platform where possible,
+  including its local LLM manager, model selection, and chat UI.
+- SP2 should provide the student-side import/retrieval layer as an app,
+  extension, plugin, or local tool script callable by LM Studio.
+- Importing a teacher pack should seed the local SP2 runtime database:
+  - SQLite for installed pack metadata and app/runtime state
+  - LanceDB for vector-searchable course chunks
+- Student questions should search the seeded SP2 database before using the
+  language model's general pretrained knowledge.
+
+Runtime Flow
+------------
+1. Teacher creates a course pack in the SP2 teacher app.
+2. Student installs the SP2 student app or LM Studio extension/plugin.
+3. Student imports the pack.
+4. SP2 validates the pack and seeds SQLite/LanceDB.
+5. Student asks a question in LM Studio.
+6. The SP2 tool/script embeds the question and searches LanceDB first.
+7. If relevant chunks are found, SP2 returns those chunks and source metadata to
+   LM Studio.
+8. LM Studio's selected local language model composes the answer using that
+   retrieved course context.
+9. If no relevant chunks are found, the question can be answered from the
+   selected model's pretrained knowledge.
+
+Implication
+-----------
+- The old custom student chat UI is no longer the default target.
+- Build only the student UI that LM Studio cannot provide, mainly pack import,
+  pack management, debug/status, and retrieval configuration.
+- Debug output should distinguish retrieval-grounded answers from pretrained
+  fallback answers.
 
 
 Important Repo/Layout Note

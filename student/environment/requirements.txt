@@ -1,2 +1,3 @@
 lancedb
 pyarrow
+numpy

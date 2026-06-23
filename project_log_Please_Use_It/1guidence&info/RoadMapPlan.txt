@@ -1,11 +1,13 @@
 1. Finish student storage setup
 2. Create student pack importer/injecter
 3. Set up student FastAPI layer
-    do a research can LMStudio download customised model (save frontend dev time + more visibilitu)
+    make it usable by an LM Studio tool/script or extension/plugin
 
-4. Add student chat functionality (lmstudio??)
+4. Add LM Studio integration for student questions
+    search seeded SP2 database first, pass relevant chunks to LM Studio, and
+    fall back to pretrained model knowledge when no relevant chunks are found
 5. Improve retrieval metadata/quality
-6. Build student UI (lmstudio??)
+6. Build only the student UI pieces LM Studio does not already provide
 7.  Expand teacher ingestion types
 
 8. Make full end-to-end demo flow

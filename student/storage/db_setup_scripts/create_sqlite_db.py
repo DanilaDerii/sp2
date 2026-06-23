@@ -34,31 +34,6 @@ def create_sqlite_db() -> None:
                 is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
             );
 
-            CREATE TABLE IF NOT EXISTS threads (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                installed_pack_id INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-
-                FOREIGN KEY (installed_pack_id)
-                    REFERENCES installed_packs (id)
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE
-            );
-
-            CREATE TABLE IF NOT EXISTS messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                thread_id INTEGER NOT NULL,
-                role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
-                content TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-
-                FOREIGN KEY (thread_id)
-                    REFERENCES threads (id)
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE
-            );
             """
         )
 
