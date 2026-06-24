@@ -3,3 +3,5 @@ pyarrow
 numpy
 fastapi
 uvicorn[standard]
+mcp
+requests
