@@ -9,13 +9,66 @@
 
 23.06.26 - removed student-owned threads/messages from SQLite plan because LM Studio owns chat context
 
-24.06.26 - locked student answer architecture for v1: LM Studio owns the student chat UI and final answer generation, while SP2 owns pack import, question embedding, LanceDB retrieval, and returning a structured context packet. SP2 should not default to being a separate custom chat app or the main answer generator. The core tool behavior should be `sp2_get_course_context`: if relevant course chunks are found, return `mode = course_context` with chunk text and source metadata; if no useful chunks are found, return `mode = no_course_context` with an explicit no-course-context message. LM Studio then decides the final wording in its own chat, including any generic fallback answer, while clearly separating course-grounded answers from model-general answers.
+24.06.26 - locked student answer architecture for v1:
+LM Studio owns the student chat UI and final answer generation, while SP2 owns
+pack import, question embedding, LanceDB retrieval, and returning a structured
+context packet.
 
-24.06.26 - future-proofing note: v1 still uses a fixed retrieval embedding model (`all-minilm:latest`) so teacher-built chunk vectors and student question vectors stay compatible. Added a separate student retrieval embedding-model policy module so this rule is not hard-coded throughout the retrieval pipeline. Later, SP2 should support fully dynamic embedding model selection on both teacher and student sides: the teacher pack builder should record the selected embedding model and dimension in `pack.json`, and the student runtime should load/select the matching local query embedder before retrieval. Until that is implemented, mismatched embedding models should fail clearly instead of silently returning bad search results.
+SP2 should not default to being a separate custom chat app or the main answer
+generator. The core tool behavior should be `sp2_get_course_context`: if
+relevant course chunks are found, return `mode = course_context` with chunk text
+and source metadata; if no useful chunks are found, return
+`mode = no_course_context` with an explicit no-course-context message.
 
-24.06.26 - future retrieval quality note: current v1 retrieval is already semantic in the basic embedding sense because teacher chunks and student questions are converted into vectors and searched by vector similarity instead of simple keyword matching. Later, improve semantic quality across both teacher and student sides by testing stronger local embedding models, improving teacher-side chunking so chunks hold cleaner concepts, adding hybrid vector + keyword search for exact terms, adding reranking after initial LanceDB retrieval, and optionally rewriting student questions into cleaner search queries before embedding. Keep the v1 path simple first: compatible embeddings, LanceDB top-k vector search, then context packet decision.
+LM Studio then decides the final wording in its own chat, including any generic
+fallback answer, while clearly separating course-grounded answers from
+model-general answers.
 
-24.06.26 - checkpoint: implemented the first student FastAPI layer for pack management and retrieval context. Added `student/backend/app.py`, `api/routes/packs.py`, and `api/routes/retrieval.py`. Pack routes expose installed-pack listing, single-pack lookup, and local `.zip` import by path while delegating actual unpacking/seeding to the existing importer. Retrieval route exposes `POST /retrieval/context`, which accepts `installed_pack_id`, `question`, optional `top_k`, and optional `max_distance`, then returns either `course_context` with retrieved chunk text/source metadata/distance/score or `no_course_context` with an explicit no-context message. Verified the API on `127.0.0.1:8001`: `/health`, `/packs`, `/packs/5`, and `/retrieval/context` all returned expected data for the installed Week02 pack. This is now the local HTTP boundary that a later LM Studio tool/script can call.
+24.06.26 - future-proofing note:
+v1 still uses a fixed retrieval embedding model (`all-minilm:latest`) so
+teacher-built chunk vectors and student question vectors stay compatible. Added
+a separate student retrieval embedding-model policy module so this rule is not
+hard-coded throughout the retrieval pipeline.
+
+Later, SP2 should support fully dynamic embedding model selection on both
+teacher and student sides: the teacher pack builder should record the selected
+embedding model and dimension in `pack.json`, and the student runtime should
+load/select the matching local query embedder before retrieval.
+
+Until that is implemented, mismatched embedding models should fail clearly
+instead of silently returning bad search results.
+
+24.06.26 - future retrieval quality note:
+current v1 retrieval is already semantic in the basic embedding sense because
+teacher chunks and student questions are converted into vectors and searched by
+vector similarity instead of simple keyword matching.
+
+Later, improve semantic quality across both teacher and student sides by testing
+stronger local embedding models, improving teacher-side chunking so chunks hold
+cleaner concepts, adding hybrid vector + keyword search for exact terms, adding
+reranking after initial LanceDB retrieval, and optionally rewriting student
+questions into cleaner search queries before embedding.
+
+Keep the v1 path simple first: compatible embeddings, LanceDB top-k vector
+search, then context packet decision.
+
+24.06.26 - checkpoint: implemented the first student FastAPI layer for pack
+management and retrieval context.
+
+Added `student/backend/app.py`, `api/routes/packs.py`, and
+`api/routes/retrieval.py`. Pack routes expose installed-pack listing,
+single-pack lookup, and local `.zip` import by path while delegating actual
+unpacking/seeding to the existing importer.
+
+Retrieval route exposes `POST /retrieval/context`, which accepts
+`installed_pack_id`, `question`, optional `top_k`, and optional `max_distance`,
+then returns either `course_context` with retrieved chunk text/source
+metadata/distance/score or `no_course_context` with an explicit no-context
+message.
+
+Verified the API on `127.0.0.1:8001`: `/health`, `/packs`, `/packs/5`, and
+`/retrieval/context` all returned expected data for the installed Week02 pack.
+This is now the local HTTP boundary that a later LM Studio tool/script can call.
 
 23.06.26 - implemented SQLite CRUD helpers for installed_packs student storage
 
@@ -48,3 +101,56 @@ models.py: dataclasses / response shapes for retrieved chunks and context packet
 Inside api/:
 packs.py: list installed packs, import pack from zip path
 retrieval.py: get course context for a question
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! BIG ONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+24.06.26 - roadmap checkpoint: proved the first real LM Studio MCP integration
+works end to end, back and forth, from the LM Studio chat UI into SP2 and back
+into the model response.
+
+Added the student integration scaffold under
+`student/integrations/lm_studio_mcp/`, implemented `server.py` as a thin MCP
+adapter over the existing student FastAPI API, and exposed these tools:
+`sp2_list_packs`, `sp2_get_pack`, `sp2_get_course_context`, and
+`sp2_import_pack_from_path`.
+
+The working runtime chain is now:
+LM Studio chat UI -> `mcp/sp2-course-context` -> SP2 MCP stdio server ->
+`http://127.0.0.1:8001` student FastAPI backend -> SQLite/LanceDB retrieval ->
+structured result returned to LM Studio for final wording.
+
+The LM Studio config must launch the MCP server with the absolute script path:
+`/home/d/sp2/student/integrations/lm_studio_mcp/server.py`
+
+This matters because `python -m student...` fails when LM Studio starts outside
+the repo working directory.
+
+On this laptop, LM Studio's Intel Vulkan path was unstable and crashed Hyprland
+during model inference. The known-good local test used CPU-only/safe model
+settings:
+GPU Offload `0`, Offload KV Cache to GPU Memory off, Flash Attention off,
+Max Concurrent Predictions `1`, reduced batch sizes, and a small model
+(`qwen2.5-coder-1.5b-instruct`).
+
+Verified live in LM Studio:
+calling `sp2_list_packs` produced
+`GET /packs?active_only=false HTTP/1.1" 200 OK`
+and returned installed pack id `5` (`Week02 - Unit Testing`).
+
+Calling `sp2_get_course_context` produced
+`POST /retrieval/context HTTP/1.1" 200 OK`
+and returned course chunks to the chat.
+
+This is an important milestone because the integration architecture is no
+longer theoretical: LM Studio can call SP2 tools in the intended direction.
+
+However, this checkpoint also exposed the next quality problems clearly:
+retrieval ranking is weak, teacher-side chunks are sometimes too outline-like
+or sparse, prompts need better wording, the small local model is not optimized
+for grounded answering, and response quality is not yet presentation-ready.
+
+Next roadmap focus should shift from connection plumbing to answer quality:
+improve chunking, add adjacent/context-window chunk expansion, test better
+embedding models, consider hybrid keyword + vector search and reranking, tune
+prompts/tool instructions, and evaluate stronger CPU-safe or remote models.

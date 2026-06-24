@@ -44,6 +44,13 @@ only needs to specify path for ingest pdf file
 15. done - build student API/tool layer
     expose list packs, import pack from path, get course context, and later delete/uninstall
 
-16. build LM Studio MCP/custom tool script
+16. done - build LM Studio MCP/custom tool script
     LM Studio UI owns chat and final answer generation
     SP2 returns retrieval context only, not a separate custom chat answer by default
+    verified end-to-end in LM Studio through `sp2_list_packs` and `sp2_get_course_context`
+    known-good local LM Studio setup used CPU-only model settings because Intel Vulkan crashed Hyprland
+
+17. improve retrieval answer quality after working MCP checkpoint
+    retrieval ranking is currently weak for some broad questions
+    add adjacent chunk expansion, improve teacher chunking, test stronger embeddings, consider hybrid search/reranking
+    improve prompts/tool instructions so LM Studio uses returned context more reliably
