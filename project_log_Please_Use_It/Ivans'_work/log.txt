@@ -1,0 +1,28 @@
+Ivan's Work Log
+===============
+
+16.06.26 - added PPTX ingestion to the teacher pipeline
+           tested full pack build pipeline end to end with a real PDF
+           output: pack.json, chunks.json, vectors.npy exported as zip
+
+22.06.26 - built LM Studio MCP server at student/integrations/lm_studio_mcp/server.py
+           exposes three tools to LM Studio via stdio:
+             sp2_list_packs: lists all installed student course packs
+             sp2_get_course_context: retrieves course context chunks for a question
+             sp2_import_pack_from_path: imports a teacher-exported zip into the student runtime
+           MCP server calls the SP2 student FastAPI at http://127.0.0.1:8001 internally
+           LM Studio owns chat and final answer generation, SP2 owns retrieval
+
+22.06.26 - added mcp and requests to student/environment/requirements.txt
+
+22.06.26 - wired ~/.lmstudio/mcp.json to point to the MCP server using the student venv Python
+           tested in LM Studio: sp2_list_packs returned empty list confirming full chain works
+           chain: LM Studio -> MCP server -> SP2 API -> SQLite/LanceDB
+
+22.06.26 - fixed teacher PDF pipeline OCR crash caused by rapidocr version conflict with Python 3.14
+           disabled OCR in teacher/backend/rag/pdf/extractor.py via PdfPipelineOptions do_ocr=False
+           OCR not needed for standard text-based PDFs
+
+22.06.26 - ran full end-to-end test: processed test.pdf through teacher pipeline
+           output: 88 pages, 84 chunks, embedding_model all-minilm:latest, embedding_dim 384
+           zip exported to artifacts/test.zip, ready to import into student runtime

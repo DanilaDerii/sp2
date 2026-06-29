@@ -3,7 +3,8 @@
 from pathlib import Path
 
 from docling.datamodel.base_models import ConversionStatus
-from docling.document_converter import DocumentConverter
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 
 from ..common.models import ExtractedDocument, ExtractedPage
 
@@ -18,7 +19,13 @@ def extract_pdf_text(pdf_path: str | Path) -> ExtractedDocument:
     if source_path.suffix.lower() != ".pdf":
         raise ValueError(f"Expected a PDF file, got: {source_path.name}")
 
-    converter = DocumentConverter()
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_ocr = False
+    converter = DocumentConverter(
+        format_options={
+            "pdf": PdfFormatOption(pipeline_options=pipeline_options),
+        }
+    )
     result = converter.convert(source_path)
 
     if result.status is not ConversionStatus.SUCCESS:
