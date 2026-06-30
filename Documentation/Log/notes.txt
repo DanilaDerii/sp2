@@ -1,0 +1,12 @@
+SP2 Notes
+=========
+
+Last audited: 2026-06-30
+
+- SQLite cannot enforce a real foreign key into LanceDB.
+- The relationship between SQLite `installed_packs.id` and LanceDB
+  `pack_chunks.installed_pack_id` is enforced by application code.
+- Use `installed_pack_id` as the local retrieval scope.
+- Keep retrieval/search logic out of low-level CRUD modules.
+- Keep this notes file short. Durable behavior belongs in `progress.txt` and
+  schema details belong in `data_schema.txt`.

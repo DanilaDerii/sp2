@@ -1,0 +1,59 @@
+Daniel Todo - Current
+=====================
+
+Last audited: 2026-06-30
+
+
+Done
+----
+1. Teacher PDF pack pipeline.
+2. Teacher zip export.
+3. Student SQLite installed-pack storage.
+4. Student LanceDB chunk/vector storage.
+5. Student direct zip importer.
+6. Student question embedder.
+7. Student retrieval/context packet builder.
+8. Student FastAPI pack and retrieval routes.
+9. LM Studio MCP server and tools.
+10. End-to-end LM Studio MCP retrieval checkpoint.
+11. Simplified project logs around current code behavior.
+
+
+Next
+----
+1. Switch embedding provider direction:
+   - replace Ollama embedding calls with LM Studio local embeddings API
+   - share one embedding provider/model config across teacher and student
+   - verify vector dimension compatibility between pack build and retrieval
+
+2. Unify setup direction:
+   - document one SP2 install/setup path
+   - keep teacher and student as internal modes/modules
+   - keep heavier parser dependencies attached to teacher workflows
+
+3. Improve retrieval quality:
+   - adjacent chunks/context windows
+   - better teacher chunking
+   - better LM Studio-served embedding model tests
+   - hybrid keyword + vector search
+   - reranking
+
+4. Improve LM Studio behavior:
+   - clearer tool descriptions
+   - better returned context packet guidance
+   - clearer course-context vs no-course-context wording
+
+5. Add pack management:
+   - duplicate import handling
+   - delete/uninstall
+   - active pack selection
+   - version update/replacement semantics
+
+6. Add focused tests:
+   - pack validator
+   - importer rollback
+   - SQLite CRUD
+   - LanceDB CRUD/search
+   - retrieval context builder
+   - FastAPI routes
+   - MCP adapter

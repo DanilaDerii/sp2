@@ -1,0 +1,19 @@
+SP2 Requirements Note
+=====================
+
+Last audited: 2026-06-30
+
+Current implementation still keeps dependency files per internal module:
+
+- `teacher/environment/requirements.txt`
+- `student/environment/requirements.txt`
+
+Direction:
+- Explain installation as one SP2 setup, not two separate apps.
+- Keep teacher parsing dependencies heavier and tied to teacher workflows.
+- Keep student runtime dependencies lighter where possible.
+- Move long-term embedding setup away from Ollama and toward LM Studio's local
+  OpenAI-compatible embeddings API.
+
+The old root/project-log requirements list is intentionally retired because it
+blurred module ownership and became stale.

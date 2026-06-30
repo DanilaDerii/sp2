@@ -2,11 +2,19 @@
 
 Local teacher-side backend for building portable course packs from source PDFs.
 
+Direction note: this README describes the current teacher implementation, which
+uses Ollama for embeddings. The project direction is to move embeddings to LM
+Studio's local OpenAI-compatible API and explain setup as one SP2 install with
+teacher and student modes.
+
 ## Installation Guide
 
 Run these commands first to prepare the teacher-side tooling.
 
 ### 1. Install Ollama
+
+Current implementation requirement. This should be replaced by LM Studio
+embedding setup once the embedding provider migration is implemented.
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -143,5 +151,4 @@ curl http://127.0.0.1:8000/health
 The first Docling run may download OCR/model files and can take longer. CPU-only
 machines are supported, but PDF extraction can be slow.
 
-The pack contract is documented in the root `project_log/` files and the root
-`data_schema.txt`.
+The pack contract is documented in `Documentation/Log/data_schema.txt`.

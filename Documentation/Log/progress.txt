@@ -1,0 +1,277 @@
+SP2 Current Progress
+====================
+
+Last audited: 2026-06-30
+
+This file is the current source of truth for project behavior. Old root-backend,
+old custom-chat, and speculative planning entries were removed because they were
+making future agents reason from stale context.
+
+
+Major Checkpoint - Agent Handoff
+--------------------------------
+This checkpoint records the current working runtime direction:
+
+```text
+Teacher pack builder
+-> teacher zip with pack.json, chunks.json, vectors.npy
+-> student direct zip import
+-> SQLite installed_packs + LanceDB pack_chunks
+-> student FastAPI API on 127.0.0.1:8001
+-> LM Studio MCP tools
+-> context packet back to LM Studio
+-> LM Studio writes final answer
+```
+
+For new agents: start from this file, then use `data_schema.txt` for exact
+tables/fields and `RoadMapPlan.txt` for the current next work.
+
+
+Project Shape
+-------------
+SP2 is a local-first course AI assistant built around a teacher-to-student pack
+workflow.
+
+The product direction is one SP2 app/install with two internal workflow modules:
+
+- `teacher/`: builds portable course packs from source PDFs.
+- `student/`: imports packs, seeds local storage, retrieves course context, and
+  exposes that retrieval to LM Studio.
+
+Keep the internal module split because it is clean, but do not treat teacher and
+student as two separate future apps.
+
+The shared contract between teacher and student is a zip containing:
+
+- `pack.json`
+- `chunks.json`
+- `vectors.npy`
+
+The exported pack contains derived AI-ready data only. It should not contain raw
+PDFs, textbooks, slides, videos, or recordings.
+
+
+Locked Architecture
+-------------------
+- LM Studio owns student chat UI, local model selection, and final answer
+  generation.
+- Future setup direction is one SP2 install with teacher and student modes.
+- SP2 owns pack creation, pack import, storage seeding, query embedding,
+  retrieval, and structured context packets.
+- SP2 does not currently own a custom student chat UI.
+- SP2 does not currently generate the final answer text.
+- Current code uses Ollama for embeddings. Target direction is to move teacher
+  and student embedding calls to LM Studio's local OpenAI-compatible embeddings
+  API, so LM Studio becomes the local provider for chat models and embedding
+  models.
+- If retrieval finds useful chunks, SP2 returns `mode = course_context`.
+- If retrieval finds no useful chunks, SP2 returns `mode = no_course_context`.
+- LM Studio decides how to answer from returned course context or from the
+  selected model's general knowledge.
+
+
+Teacher Module - Current Behavior
+---------------------------------
+Entrypoint:
+- `teacher/backend/pipeline_runner.py`
+
+Current supported source:
+- One PDF path.
+
+Pipeline:
+1. Validate PDF path.
+2. Extract text/page text/markdown with Docling.
+3. Chunk page text with overlapping character windows.
+4. Infer a simple section label from the first meaningful page line.
+5. Embed chunks through local Ollama in the current implementation.
+6. Write `pack.json`, `chunks.json`, and `vectors.npy`.
+7. Export the pack directory as a `.zip`.
+
+Current teacher embedding model:
+- `all-minilm:latest`
+
+Current teacher embedding endpoint:
+- Ollama at `http://127.0.0.1:11434`
+
+Target teacher embedding endpoint:
+- LM Studio local OpenAI-compatible embeddings API, normally
+  `http://127.0.0.1:1234/v1/embeddings`.
+
+Important files:
+- `teacher/backend/rag/pdf/extractor.py`
+- `teacher/backend/rag/pdf/pipeline.py`
+- `teacher/backend/rag/common/chunker.py`
+- `teacher/backend/rag/common/embedder.py`
+- `teacher/backend/orchestrators/pack_writer.py`
+- `teacher/backend/orchestrators/artifact_manager.py`
+- `teacher/backend/orchestrators/zip_exporter.py`
+
+
+Student Module - Current Behavior
+---------------------------------
+Entrypoint:
+- `student/backend/app.py`
+
+Run target:
+- `student/environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001`
+
+FastAPI routes:
+- `GET /health`
+- `GET /packs`
+- `GET /packs/{installed_pack_id}`
+- `POST /packs/import-path`
+- `POST /retrieval/context`
+
+Pack import:
+- Direct `.zip` import is implemented.
+- Students should not need to manually unpack packs.
+- Import validates exact v1 pack files.
+- Import writes installed pack files under `student/storage/installed_packs/`.
+- Import creates one SQLite `installed_packs` row.
+- Import seeds LanceDB `pack_chunks` rows.
+- Import rolls back local files, SQLite row, and LanceDB rows on failure.
+
+Retrieval:
+- Question text is normalized and embedded.
+- Query embedding must match the installed pack embedding model and dimension.
+- Fixed v1 embedding model is `all-minilm:latest`.
+- Current local embedding API default is `http://127.0.0.1:11434`.
+- Query embedding supports Ollama `/api/embed` and falls back to
+  `/api/embeddings` on 404.
+- Target direction is to use LM Studio's local embeddings API for query
+  embeddings, with the same model/dimension used during teacher pack creation.
+- LanceDB search is scoped to one `installed_pack_id`.
+- Retrieved chunks include source metadata, distance, and score.
+- Context builder returns `course_context` or `no_course_context`.
+
+Important files:
+- `student/storage/importer/pack_importer.py`
+- `student/storage/importer/pack_validator.py`
+- `student/storage/sqlite_cruds/pack_repository.py`
+- `student/storage/lancedb_cruds/chunk_repository.py`
+- `student/backend/retrieval/query_embedder.py`
+- `student/backend/retrieval/chunk_search.py`
+- `student/backend/retrieval/context_builder.py`
+- `student/backend/api/routes/packs.py`
+- `student/backend/api/routes/retrieval.py`
+
+
+LM Studio MCP Integration
+-------------------------
+Entrypoint:
+- `student/integrations/lm_studio_mcp/server.py`
+
+Current tools:
+- `sp2_list_packs(pack_id=None, active_only=False)`
+- `sp2_get_pack(installed_pack_id)`
+- `sp2_get_course_context(installed_pack_id, question, top_k=None, max_distance=None)`
+- `sp2_import_pack_from_path(pack_zip_path)`
+
+Runtime chain:
+
+```text
+LM Studio chat UI
+-> SP2 MCP stdio server
+-> student FastAPI API at 127.0.0.1:8001
+-> SQLite/LanceDB
+-> structured result back to LM Studio
+```
+
+The MCP server is intentionally thin. It should not duplicate importer,
+retrieval, or storage behavior.
+
+Important LM Studio config note:
+- Use the absolute MCP server script path because LM Studio may launch outside
+  the repo working directory:
+  `student/integrations/lm_studio_mcp/server.py`
+
+
+Storage Model
+-------------
+SQLite currently stores only installed pack registry state:
+
+- `installed_packs`
+
+LanceDB currently stores searchable course chunks:
+
+- `pack_chunks`
+
+Earlier plans for SP2-owned `threads` and `messages` are not part of the
+current implementation because LM Studio owns chat context in v1.
+
+
+Current Milestones Completed
+----------------------------
+- Teacher PDF pack pipeline.
+- Pack writer for `pack.json`, `chunks.json`, `vectors.npy`.
+- Zip export.
+- Student SQLite setup and installed-pack CRUD.
+- Student LanceDB setup and pack chunk CRUD.
+- Student direct zip importer.
+- Student retrieval modules.
+- Student FastAPI API.
+- LM Studio MCP server.
+- End-to-end LM Studio direction proved through MCP tool calls.
+- Known local tested pack from prior work: Week02 Unit Testing, 28 chunks,
+  384-dimensional embeddings, `all-minilm:latest`.
+
+
+Current Open Work
+-----------------
+1. Switch embedding provider direction:
+   - move teacher pack embedding from Ollama to LM Studio local embeddings API
+   - move student query embedding from Ollama to LM Studio local embeddings API
+   - keep one configured embedding model shared by pack build and retrieval
+   - verify model name and vector dimension during pack import/retrieval
+
+2. Unify setup:
+   - one SP2 install/setup path
+   - teacher and student remain internal modules/modes
+   - LM Studio is the local model provider for chat and embeddings
+   - file parser dependencies can stay heavier/optional for teacher workflows
+
+3. Improve retrieval quality:
+   - adjacent chunk expansion
+   - better chunking
+   - better embedding model tests
+   - hybrid keyword + vector search
+   - reranking
+
+4. Improve LM Studio answer behavior:
+   - tune MCP tool descriptions
+   - tune returned packet shape or prompt guidance
+   - make course-grounded vs general fallback clearer
+
+5. Complete pack management:
+   - duplicate import handling
+   - uninstall/delete
+   - active pack selection
+   - update/replacement semantics
+
+6. Add focused tests:
+   - pack validation
+   - importer rollback
+   - SQLite CRUD
+   - LanceDB CRUD/search
+   - retrieval context packet behavior
+   - MCP adapter request/response behavior
+
+7. Improve setup details:
+   - clearer install commands
+   - environment verification
+   - safer first-run database setup
+
+
+Engineering Boundaries
+----------------------
+- Keep route handlers thin.
+- Keep importer logic in `student/storage/importer/`.
+- Keep retrieval logic in `student/backend/retrieval/`.
+- Keep CRUD modules table-scoped.
+- Keep teacher and student code modular, but treat them as modes/modules of one
+  SP2 app direction.
+- Keep the pack zip as the only teacher-to-student code contract.
+- Do not add fields to `pack.json` unless the current student runtime can honor
+  them.
+- Do not replace the LM Studio-first architecture without updating all project
+  logs.

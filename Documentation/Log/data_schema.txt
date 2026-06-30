@@ -1,0 +1,178 @@
+SP2 Data Schema
+===============
+
+Last audited: 2026-06-30
+
+Purpose: technical contract and storage truth for the current implemented v1.
+Product idea and app reasoning belong in `proposal.txt`.
+
+
+Teacher Pack Zip
+----------------
+Teacher exports one `.zip`. Student imports that `.zip` directly.
+
+Required files:
+- `pack.json`
+- `chunks.json`
+- `vectors.npy`
+
+Import rejects:
+- missing required files
+- files outside the v1 contract
+- invalid JSON
+- invalid or pickled NumPy vectors
+- empty chunk list
+- vector count mismatch
+- embedding dimension mismatch
+
+
+pack.json
+---------
+Pack metadata and retrieval compatibility.
+
+Fields:
+- `pack_id`: non-empty string
+- `title`: non-empty string
+- `version`: non-empty string
+- `description`: string or null
+- `embedding_model`: non-empty string
+- `embedding_dim`: positive integer
+- `default_top_k`: positive integer
+- `created_at`: non-empty string
+- `builder_version`: string or null
+
+
+chunks.json
+-----------
+Ordered searchable chunk records.
+
+Fields per chunk:
+- `chunk_id`: non-empty string, unique inside the pack
+- `source_id`: non-empty string
+- `source_type`: non-empty string
+- `source_title`: non-empty string
+- `text`: non-empty string
+- `chunk_index`: integer
+- `page`: integer or null
+- `section`: string or null
+- `topic`: string or null
+- `char_count`: integer; if missing/null, importer uses `len(text)`
+
+
+vectors.npy
+-----------
+Embedding matrix for the chunk records.
+
+Rules:
+- non-pickled NumPy array
+- 2D matrix
+- row count equals `len(chunks.json)`
+- column count equals `pack.json.embedding_dim`
+- row order matches chunk order: `vectors[i]` belongs to `chunks[i]`
+
+
+Student SQLite
+--------------
+Database:
+- `student/storage/sqlite_storage/student_app.db`
+
+Implemented table:
+- `installed_packs`
+
+Fields:
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `pack_id`: TEXT NOT NULL
+- `title`: TEXT NOT NULL
+- `version`: TEXT NOT NULL
+- `description`: TEXT
+- `embedding_model`: TEXT NOT NULL
+- `embedding_dim`: INTEGER NOT NULL
+- `default_top_k`: INTEGER NOT NULL
+- `builder_version`: TEXT
+- `pack_created_at`: TEXT NOT NULL
+- `install_path`: TEXT NOT NULL UNIQUE
+- `installed_at`: TEXT NOT NULL
+- `is_active`: INTEGER NOT NULL DEFAULT 1 CHECK (`is_active` IN (0, 1))
+
+Key notes:
+- `id` is the local installed-pack id used by API and retrieval calls.
+- `pack_id` comes from the teacher pack and is logical metadata.
+- `install_path` uniqueness blocks duplicate `{pack_id}-{version}` installs.
+
+
+Student LanceDB
+---------------
+Database directory:
+- `student/storage/lance_storage/`
+
+Implemented table:
+- `pack_chunks`
+
+Fields:
+- `chunk_id`: string
+- `installed_pack_id`: int64
+- `pack_id`: string
+- `source_id`: string
+- `source_type`: string
+- `source_title`: string
+- `text`: string
+- `vector`: fixed-size float32 list, default dimension 384
+- `chunk_index`: int32
+- `page`: int32
+- `section`: string
+- `topic`: string
+- `char_count`: int32
+
+Key notes:
+- Retrieval is scoped by `installed_pack_id`.
+- SQLite cannot enforce a foreign key into LanceDB; app code maintains the
+  relationship.
+
+
+Import Mapping
+--------------
+Student import maps pack files into local storage:
+
+- `pack.json` -> one SQLite `installed_packs` row
+- `chunks.json[i]` + `vectors.npy[i]` -> one LanceDB `pack_chunks` row
+- `installed_packs.id` -> `pack_chunks.installed_pack_id`
+
+Install location:
+- `student/storage/installed_packs/{pack_id}-{version}/`
+
+Failure handling:
+- Import rolls back installed files, SQLite row, and LanceDB rows when seeding
+  fails.
+
+
+Retrieval Packet
+----------------
+Returned by student retrieval and LM Studio tooling.
+
+Packet fields:
+- `mode`: `course_context` or `no_course_context`
+- `installed_pack_id`
+- `pack_id`
+- `question`
+- `embedding_model`
+- `chunks`
+- `message`
+
+Retrieved chunk fields:
+- `chunk_id`
+- `installed_pack_id`
+- `pack_id`
+- `source_id`
+- `source_type`
+- `source_title`
+- `text`
+- `chunk_index`
+- `page`
+- `section`
+- `topic`
+- `char_count`
+- `distance`
+- `score`
+
+Score rule:
+- `score = 1 / (1 + distance)` when distance is present and non-negative.

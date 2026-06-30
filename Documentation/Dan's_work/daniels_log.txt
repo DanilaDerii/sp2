@@ -1,0 +1,97 @@
+Daniel's SP2 Log
+================
+
+Last audited: 2026-06-30
+
+
+Current Architecture
+--------------------
+- LM Studio owns student chat UI, model selection, and final answer wording.
+- SP2 owns pack import, local storage, retrieval, and context packet return.
+- SP2 direction is one local app/install with teacher and student modes.
+- The code can keep `teacher/` and `student/` separated internally for clean
+  ownership, but the product should not be treated as two future apps.
+- The current student runtime should not become a separate custom chat app unless
+  we intentionally change direction.
+- Retrieval returns `course_context` or `no_course_context`; it does not write
+  final prose answers.
+
+
+Direction Update - 2026-06-30
+-----------------------------
+- Current code still uses Ollama for teacher and student embeddings.
+- Direction is to switch embeddings to LM Studio's local OpenAI-compatible API.
+- LM Studio should host SP2 MCP tools and also serve the local embedding model.
+- Teacher pack creation and student query retrieval must use the same embedding
+  model and vector dimension.
+
+
+Completed Student Runtime Milestones
+------------------------------------
+- Built SQLite `installed_packs` storage and CRUD helpers.
+- Built LanceDB `pack_chunks` storage and CRUD helpers.
+- Added student DB setup/reset helpers.
+- Built direct teacher-pack `.zip` importer.
+- Import validates `pack.json`, `chunks.json`, and `vectors.npy`.
+- Import seeds SQLite and LanceDB.
+- Import cleans up local files and rows on failure.
+- Built retrieval modules:
+  - fixed v1 embedding model policy
+  - question embedding
+  - LanceDB vector search
+  - context packet builder
+- Built FastAPI routes:
+  - `/health`
+  - `/packs`
+  - `/packs/{installed_pack_id}`
+  - `/packs/import-path`
+  - `/retrieval/context`
+- Built LM Studio MCP tools:
+  - `sp2_list_packs`
+  - `sp2_get_pack`
+  - `sp2_get_course_context`
+  - `sp2_import_pack_from_path`
+- Proved the intended LM Studio integration direction end to end.
+
+
+Completed Teacher Runtime Milestones
+------------------------------------
+- Built PDF-first teacher pipeline.
+- Extracts PDFs with Docling.
+- Chunks extracted page text.
+- Embeds chunks with local Ollama using `all-minilm:latest` in the current
+  implementation.
+- Writes `pack.json`, `chunks.json`, and `vectors.npy`.
+- Exports a portable `.zip` pack.
+
+
+Current Known Working Behavior
+------------------------------
+- Teacher can build a v1 pack from one PDF.
+- Student can import a v1 pack zip directly.
+- Student API can list packs and retrieve context for a question.
+- LM Studio can call SP2 through the MCP server.
+- SP2 returns structured context back to LM Studio for answer generation.
+
+
+Current Problems To Work On
+---------------------------
+- Retrieval ranking is weak for some broad questions.
+- Teacher chunks can be too sparse or outline-like.
+- Adjacent chunk expansion is not implemented.
+- Hybrid keyword + vector search is not implemented.
+- Reranking is not implemented.
+- Prompt/tool wording needs tuning so LM Studio uses context reliably.
+- Pack management needs delete/uninstall, duplicate handling, and active pack
+  selection.
+
+
+Agent Rules
+-----------
+- Keep API routes thin.
+- Keep storage CRUD modules table-scoped.
+- Keep retrieval out of CRUD modules.
+- Keep direct zip import as the default student import path.
+- Keep teacher and student code modular, with the pack contract as the internal
+  bridge.
+- Update this log when project direction or completed milestones change.

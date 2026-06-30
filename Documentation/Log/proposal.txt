@@ -1,0 +1,197 @@
+SP2 Product Proposal And Direction
+==================================
+
+Last audited: 2026-06-30
+
+This is the product-facing project idea and direction reference. Keep low-level
+data and storage details in `data_schema.txt`.
+
+
+Title
+-----
+SP2: Local-First Course AI Packs for LM Studio
+
+
+One-Sentence Idea
+-----------------
+SP2 lets teachers prepare course-specific AI packs so students can ask questions
+through LM Studio with answers grounded in their actual course material.
+
+
+Core Idea
+---------
+SP2 is a local-first course AI assistant built around teacher-made course packs
+and an LM Studio-centered local model/runtime experience.
+
+Teachers prepare course-specific AI packs from course materials. Students import
+those packs locally. When students ask questions in LM Studio, SP2 retrieves
+relevant course chunks from the selected installed pack and returns them as
+structured context. LM Studio writes the final answer.
+
+SP2 does not replace Teams, Drive, an LMS, or LM Studio. It sits beside those
+tools as the course-pack and retrieval layer.
+
+
+Problem
+-------
+Students receive course knowledge through scattered PDFs, slides, recordings,
+announcements, LMS/Teams posts, and notes. Generic AI assistants can explain
+concepts, but they are not naturally scoped to the actual class material. A
+useful course assistant needs to answer from teacher-provided course content
+when possible and make it clear when the course pack does not contain the
+answer.
+
+Teachers need a practical workflow too. They should be able to prepare course
+knowledge once, distribute it through normal course channels, and avoid asking
+every student to build a separate inconsistent AI setup.
+
+
+Student Pain Points
+-------------------
+- Course knowledge is scattered across many files and channels.
+- Students may not know which source, page, lecture, or topic contains the
+  answer.
+- Generic AI can answer from general knowledge instead of assigned course
+  material.
+- Students need explanations and source references they can verify.
+- Uploading class material or student questions to cloud tools may create
+  privacy, copyright, access, or consistency concerns.
+
+
+Teacher Pain Points
+-------------------
+- Teachers answer repeated conceptual questions.
+- Teachers want students to get help without random answers that conflict with
+  the course.
+- Teachers need control over what material the assistant uses.
+- Teachers do not want to replace existing LMS/Teams workflows.
+- Teachers need a practical "prepare once, share normally" workflow.
+
+
+Current App Logic
+-----------------
+Teacher mode:
+- Build a pack from a PDF.
+- Extract text with Docling.
+- Chunk the material.
+- Embed chunks with the fixed v1 embedding model.
+- Export a portable course pack zip for students.
+
+Student mode:
+- Import the teacher zip directly.
+- Validate the pack contract.
+- Store imported pack information and searchable course context locally.
+- Expose retrieval to the student workflow and LM Studio tool flow.
+
+LM Studio role:
+- Owns chat UI.
+- Owns generation model selection.
+- Target direction: owns local embedding model serving through its API.
+- Owns final answer wording.
+- Calls SP2 tools when course context is needed.
+
+
+Runtime Boundary
+----------------
+SP2 owns:
+- teacher pack building
+- student pack import
+- local course-pack storage
+- question-to-course retrieval
+- structured context handoff
+- LM Studio tool integration
+
+LM Studio owns:
+- student chat UI
+- selected local language model
+- target local embedding API/model serving
+- final answer generation
+- general-model fallback when no useful course chunks are found
+
+SP2 should be installed and explained as one local app with teacher and student
+modes. The code can keep separate internal `teacher/` and `student/` modules
+because their responsibilities are different, but the product direction is not
+two separate apps.
+
+
+Course Pack Direction
+---------------------
+The course pack is the bridge between teacher and student. It should contain
+derived AI-ready course data, not the original raw source materials. Teachers can
+share the pack through normal course channels such as Teams, Drive, LMS, or
+email. Students import the pack locally and use it as the course-specific
+knowledge base for LM Studio.
+
+
+What Separates SP2
+------------------
+- Teacher prepares one shared course pack.
+- Students import the same course-grounded pack.
+- Retrieval is scoped to the selected installed pack.
+- Pack data and retrieval state stay local.
+- Exported packs contain derived AI-ready data, not raw course files.
+- SP2 stores imported pack information and searchable course context locally.
+- LM Studio handles chat and model choice instead of SP2 rebuilding that UI.
+- Answers can be grounded in course material when chunks exist.
+- The system can explicitly distinguish course-grounded answers from general
+  model fallback when course context is not found.
+
+
+Current Prototype State
+-----------------------
+Implemented teacher mode:
+- PDF ingestion with Docling.
+- Chunking.
+- Local embedding generation.
+- Zip export.
+
+Implemented student mode:
+- Direct zip import.
+- Pack validation.
+- Local storage seeding.
+- Query embedding.
+- Course-context retrieval scoped by installed pack.
+- Clear course-context or no-course-context result states.
+- Local retrieval access for app/tool integration.
+
+Implemented LM Studio role:
+- Tool integration for listing packs, reading one pack, importing a pack by
+  path, and retrieving course context.
+- End-to-end direction proved: LM Studio -> SP2 tool integration -> local SP2
+  runtime -> context back to LM Studio.
+
+
+Near-Term Direction
+-------------------
+The business logic for the v1 loop is now in place. The next work should improve
+quality instead of adding another architecture path:
+
+- one SP2 install/setup path with teacher and student modes
+- switch local embedding provider direction from Ollama to LM Studio API
+- better chunking
+- adjacent chunk expansion
+- stronger embedding model testing
+- hybrid vector + keyword retrieval
+- reranking
+- clearer LM Studio tool instructions
+- pack management operations such as delete/uninstall and duplicate handling
+
+
+Short Presentation Flow
+-----------------------
+1. Students need course-specific AI, not generic AI.
+2. Teachers need one practical way to prepare course knowledge.
+3. SP2 creates portable course packs.
+4. Students import packs locally.
+5. LM Studio provides chat, model selection, and target local embedding serving.
+6. SP2 provides course retrieval before answer generation.
+7. Current prototype already proves the build/import/retrieve/MCP loop.
+8. Next work is answer quality and pack management.
+
+
+Short Summary
+-------------
+SP2 lets teachers convert course material into portable local AI packs. Students
+import those packs and ask questions through LM Studio. SP2 retrieves course
+context from local course-pack storage and sends that context to LM Studio, which
+writes the final answer.
