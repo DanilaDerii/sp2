@@ -30,10 +30,11 @@ http://127.0.0.1:1234/v1
 
 ## 4. Run The SP2 Installer
 
-From a terminal, run:
+From a terminal, go to the folder where you cloned or copied SP2, then run:
 
 ```bash
-cd /home/d/sp2 && python3 installation/script.py
+cd /path/to/sp2
+python3 installation/script.py
 ```
 
 The installer creates the Python virtual environment, installs requirements,
@@ -58,11 +59,12 @@ If it already has `"mcpServers": { ... }`, paste only the
 
 ## 6. Start The SP2 Backend
 
-Use the backend command printed by the installer. It will look like:
+Use the backend command printed by the installer. It will use the real path on
+your machine and will look like:
 
 ```bash
-cd /home/d/sp2
-/home/d/sp2/environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001
+cd /path/to/sp2
+/path/to/sp2/environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001
 ```
 
 Leave that terminal running while using SP2 from LM Studio.
