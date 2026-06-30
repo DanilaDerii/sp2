@@ -116,7 +116,7 @@ Fields:
 - `source_type`: string
 - `source_title`: string
 - `text`: string
-- `vector`: fixed-size float32 list, default dimension 384
+- `vector`: fixed-size float32 list, default dimension 768
 - `chunk_index`: int32
 - `page`: int32
 - `section`: string
@@ -125,6 +125,7 @@ Fields:
 
 Key notes:
 - Retrieval is scoped by `installed_pack_id`.
+- Current v1 embedding model is `text-embedding-nomic-embed-text-v1.5`.
 - SQLite cannot enforce a foreign key into LanceDB; app code maintains the
   relationship.
 

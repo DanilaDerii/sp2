@@ -74,7 +74,7 @@ def _request_json(
     except httpx.ConnectError as exc:
         raise RuntimeError(
             "Could not connect to the SP2 student API. "
-            "Start it with: student/environment/.venv/bin/python -m uvicorn "
+            "Start it with: environment/.venv/bin/python -m uvicorn "
             "student.backend.app:app --host 127.0.0.1 --port 8001"
         ) from exc
     except httpx.TimeoutException as exc:

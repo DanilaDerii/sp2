@@ -60,10 +60,9 @@ Locked Architecture
   retrieval, and structured context packets.
 - SP2 does not currently own a custom student chat UI.
 - SP2 does not currently generate the final answer text.
-- Current code uses Ollama for embeddings. Target direction is to move teacher
-  and student embedding calls to LM Studio's local OpenAI-compatible embeddings
-  API, so LM Studio becomes the local provider for chat models and embedding
-  models.
+- Current code uses LM Studio's local OpenAI-compatible embeddings API for
+  teacher pack vectors and student query vectors. LM Studio is the local provider
+  for chat models and embedding models.
 - If retrieval finds useful chunks, SP2 returns `mode = course_context`.
 - If retrieval finds no useful chunks, SP2 returns `mode = no_course_context`.
 - LM Studio decides how to answer from returned course context or from the
@@ -80,20 +79,18 @@ Current supported source:
 
 Pipeline:
 1. Validate PDF path.
-2. Extract text/page text/markdown with Docling.
+2. Extract text/page text with `pdftotext` when a PDF has an embedded text
+   layer; fall back to Docling for heavier PDF extraction.
 3. Chunk page text with overlapping character windows.
 4. Infer a simple section label from the first meaningful page line.
-5. Embed chunks through local Ollama in the current implementation.
+5. Embed chunks through LM Studio's local embeddings API.
 6. Write `pack.json`, `chunks.json`, and `vectors.npy`.
 7. Export the pack directory as a `.zip`.
 
 Current teacher embedding model:
-- `all-minilm:latest`
+- `text-embedding-nomic-embed-text-v1.5`
 
 Current teacher embedding endpoint:
-- Ollama at `http://127.0.0.1:11434`
-
-Target teacher embedding endpoint:
 - LM Studio local OpenAI-compatible embeddings API, normally
   `http://127.0.0.1:1234/v1/embeddings`.
 
@@ -113,7 +110,7 @@ Entrypoint:
 - `student/backend/app.py`
 
 Run target:
-- `student/environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001`
+- `environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001`
 
 FastAPI routes:
 - `GET /health`
@@ -134,12 +131,12 @@ Pack import:
 Retrieval:
 - Question text is normalized and embedded.
 - Query embedding must match the installed pack embedding model and dimension.
-- Fixed v1 embedding model is `all-minilm:latest`.
-- Current local embedding API default is `http://127.0.0.1:11434`.
-- Query embedding supports Ollama `/api/embed` and falls back to
-  `/api/embeddings` on 404.
-- Target direction is to use LM Studio's local embeddings API for query
-  embeddings, with the same model/dimension used during teacher pack creation.
+- Fixed v1 embedding model is `text-embedding-nomic-embed-text-v1.5`.
+- Current local embedding API default is
+  `http://127.0.0.1:1234/v1/embeddings`.
+- Query embedding uses LM Studio's OpenAI-compatible `/v1/embeddings` endpoint.
+- Teacher pack creation and student query retrieval use the same
+  model/dimension.
 - LanceDB search is scoped to one `installed_pack_id`.
 - Retrieved chunks include source metadata, distance, and score.
 - Context builder returns `course_context` or `no_course_context`.
@@ -212,23 +209,32 @@ Current Milestones Completed
 - Student FastAPI API.
 - LM Studio MCP server.
 - End-to-end LM Studio direction proved through MCP tool calls.
-- Known local tested pack from prior work: Week02 Unit Testing, 28 chunks,
-  384-dimensional embeddings, `all-minilm:latest`.
+- Prior disposable local test pack was removed during the LM Studio embedding
+  migration. New packs should be rebuilt with 768-dimensional
+  `text-embedding-nomic-embed-text-v1.5` vectors.
+- Root SP2 setup path now uses `environment/requirements.txt` and
+  `environment/.venv` for teacher and student modules. Per-module requirements
+  files were retired.
+- Added `installation/script.py` as the guided setup path. It creates or reuses
+  the root venv, installs requirements, initializes SQLite/LanceDB, checks LM
+  Studio embeddings when available, briefly verifies the backend, stops the
+  temporary backend process, and prints MCP/backend commands.
 
 
 Current Open Work
 -----------------
-1. Switch embedding provider direction:
-   - move teacher pack embedding from Ollama to LM Studio local embeddings API
-   - move student query embedding from Ollama to LM Studio local embeddings API
+1. Finish LM Studio embedding migration validation:
+   - rebuild teacher packs with `text-embedding-nomic-embed-text-v1.5`
+   - re-import rebuilt packs into empty student storage
+   - verify retrieval through FastAPI and MCP
    - keep one configured embedding model shared by pack build and retrieval
-   - verify model name and vector dimension during pack import/retrieval
 
 2. Unify setup:
-   - one SP2 install/setup path
    - teacher and student remain internal modules/modes
    - LM Studio is the local model provider for chat and embeddings
-   - file parser dependencies can stay heavier/optional for teacher workflows
+   - keep Docling as an optional fallback dependency, not default setup weight
+   - finish first-run setup polish and cleanup of stale local virtualenvs
+   - decide how much LM Studio CLI/model setup should be automated later
 
 3. Improve retrieval quality:
    - adjacent chunk expansion

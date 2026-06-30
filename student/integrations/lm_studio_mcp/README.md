@@ -20,10 +20,10 @@ LM Studio owns chat, model selection, and final answer generation. SP2 owns pack
 import, query embedding calls/configuration, retrieval, and structured context
 packets.
 
-Direction note: the current code still embeds through Ollama, but the target
-direction is to use LM Studio's local OpenAI-compatible embeddings API as the
-embedding provider for both teacher pack creation and student query retrieval.
-MCP remains the tool boundary for course-context calls.
+Current embedding direction: teacher pack creation and student query retrieval
+use LM Studio's local OpenAI-compatible embeddings API with
+`text-embedding-nomic-embed-text-v1.5`. MCP remains the tool boundary for
+course-context calls.
 
 ## Tools
 
@@ -38,7 +38,7 @@ The student FastAPI server should be running before LM Studio calls the MCP
 server:
 
 ```bash
-student/environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001
+environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001
 ```
 
 The MCP tools call:
@@ -57,7 +57,7 @@ repo working directory.
 {
   "mcpServers": {
     "sp2-course-context": {
-      "command": "/home/d/sp2/student/environment/.venv/bin/python",
+      "command": "/home/d/sp2/environment/.venv/bin/python",
       "args": [
         "/home/d/sp2/student/integrations/lm_studio_mcp/server.py"
       ],

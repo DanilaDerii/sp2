@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from ..common.chunker import chunk_extracted_document
-from ..common.embedder import embed_chunks
+from ..common.embedder import DEFAULT_EMBEDDING_MODEL, embed_chunks
 from ..common.models import TeacherPipelineResult
 from ...orchestrators.artifact_manager import ARTIFACTS_DIR, prepare_teacher_artifacts
 from ...orchestrators.pack_writer import (
@@ -39,7 +39,7 @@ def build_pack_from_pdf(
     source_type: str = "pdf",
     chunk_size: int = 1200,
     overlap: int = 150,
-    embedding_model: str = "all-minilm:latest",
+    embedding_model: str = DEFAULT_EMBEDDING_MODEL,
     default_top_k: int = DEFAULT_TOP_K,
     builder_version: str = DEFAULT_BUILDER_VERSION,
     artifacts_dir: str | Path = ARTIFACTS_DIR,

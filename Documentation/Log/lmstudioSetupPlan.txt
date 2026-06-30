@@ -1,0 +1,170 @@
+SP2 LM Studio Setup Plan
+========================
+
+Last audited: 2026-06-30
+
+
+Purpose
+-------
+This note records the setup direction used to replace Ollama embeddings with LM
+Studio's own local embedding API.
+
+The key idea is that LM Studio already provides the embedding API. SP2 should not
+try to expose or recreate that API through its MCP server. SP2 should provide
+setup scripts and checks that make LM Studio's local embedding server usable by
+the teacher pack builder and student retrieval runtime.
+
+
+Correct Mental Model
+--------------------
+The intended user flow should look like this:
+
+```text
+User installs LM Studio
+-> user installs SP2 / SP2 MCP server
+-> SP2 setup script checks LM Studio CLI/API availability
+-> setup downloads or verifies the chosen embedding model
+-> setup starts or verifies the LM Studio local API server
+-> setup tests /v1/embeddings with a small input
+-> setup saves SP2 embedding config: provider, base URL, model, dimension
+-> user adds or confirms the SP2 MCP server config in LM Studio
+-> LM Studio chat calls SP2 MCP tools
+-> SP2 retrieves by calling LM Studio /v1/embeddings
+-> SP2 returns course chunks/context packet
+-> LM Studio writes the final answer
+```
+
+
+Two Separate Integrations
+-------------------------
+1. MCP connection:
+   - LM Studio hosts or launches the SP2 MCP server.
+   - This lets LM Studio call SP2 tools such as `sp2_get_course_context`.
+   - MCP is the tool boundary for pack listing, pack import, and context
+     retrieval.
+
+2. Embedding API:
+   - SP2 calls LM Studio's local HTTP embedding endpoint.
+   - Normal target endpoint:
+     `POST http://localhost:1234/v1/embeddings`
+   - This endpoint belongs to LM Studio's local server, not to the SP2 MCP
+     server.
+
+
+What "Server/Daemon Available" Means
+------------------------------------
+LM Studio must have its local service/API server available before SP2 can call
+the embedding endpoint.
+
+Practically, setup should verify:
+
+- the `lms` command exists, if we depend on LM Studio CLI
+- the LM Studio local server is running
+- `http://localhost:1234/v1/embeddings` responds correctly
+- the configured embedding model is downloaded
+- the configured embedding model can be loaded/used
+
+The server can normally be started from LM Studio's Developer UI or by CLI with:
+
+```bash
+lms server start
+```
+
+Setup can check status with a command such as:
+
+```bash
+lms server status --json --quiet
+```
+
+
+Embedding Model Installation Direction
+--------------------------------------
+LM Studio supports local embedding models. The SP2 setup should make this feel
+smooth, but it is not completely invisible because first-time setup still needs:
+
+- LM Studio installed
+- internet access for first model download
+- a chosen embedding model
+- the local LM Studio server running
+- a successful test request to `/v1/embeddings`
+
+Expected CLI-style setup actions:
+
+```bash
+lms get text-embedding-nomic-embed-text-v1.5
+lms ls --embedding
+lms load text-embedding-nomic-embed-text-v1.5
+```
+
+Current v1 model:
+
+```text
+text-embedding-nomic-embed-text-v1.5
+```
+
+This model returns 768-dimensional vectors through LM Studio in the current local
+test environment. Teacher pack creation and student retrieval must use the same
+embedding model and vector dimension.
+
+
+Proposed SP2 Setup Command
+--------------------------
+Future SP2 should have one setup command, for example:
+
+```bash
+sp2 lmstudio setup
+```
+
+Expected responsibilities:
+
+1. Check that LM Studio / `lms` is installed.
+2. Start or verify the LM Studio local server.
+3. Verify `http://localhost:1234` is reachable.
+4. Check whether the configured embedding model is downloaded.
+5. Download the embedding model if missing.
+6. Load the embedding model if needed.
+7. Call `/v1/embeddings` with a small test string.
+8. Read the returned vector length.
+9. Save the provider config for SP2:
+   - provider: `lm_studio`
+   - base URL: `http://localhost:1234/v1`
+   - embedding model name
+   - embedding dimension
+10. Generate or print the LM Studio MCP config snippet for the SP2 MCP server.
+
+
+Architecture Rules
+------------------
+- LM Studio owns chat UI, model selection, local embedding serving, and final
+  answer wording.
+- SP2 owns pack building, pack import, local storage, retrieval, and structured
+  context packets.
+- The MCP server should stay thin.
+- The embedding provider logic should live in teacher/student embedding modules,
+  not inside the MCP adapter.
+- `pack.json` must keep `embedding_model` and `embedding_dim`.
+- Student retrieval must validate that the query embedding model/dimension match
+  the installed pack.
+- If the embedding model changes, old packs may need rebuild or compatibility
+  handling.
+
+
+Implementation Status
+---------------------
+Teacher side:
+- `teacher/backend/rag/common/embedder.py` now calls LM Studio
+  `/v1/embeddings`.
+- Write the selected LM Studio embedding model and vector dimension into
+  `pack.json`.
+
+Student side:
+- `student/backend/retrieval/query_embedder.py` now calls LM Studio
+  `/v1/embeddings`.
+- Use the same LM Studio embedding model that was used to build the installed
+  pack.
+- Keep dimension validation before LanceDB search.
+
+Docs/setup:
+- Update installation docs from Ollama-first to LM-Studio-first.
+- Keep a clear note that SP2 still requires LM Studio's local server/API to be
+  running for embedding calls.

@@ -17,19 +17,23 @@ Done
 9. LM Studio MCP server and tools.
 10. End-to-end LM Studio MCP retrieval checkpoint.
 11. Simplified project logs around current code behavior.
+12. Guided installation script for venv, requirements, storage setup, backend
+    health check, and MCP config output.
 
 
 Next
 ----
-1. Switch embedding provider direction:
-   - replace Ollama embedding calls with LM Studio local embeddings API
-   - share one embedding provider/model config across teacher and student
-   - verify vector dimension compatibility between pack build and retrieval
+1. Complete LM Studio embedding migration validation:
+   - rebuild packs with `text-embedding-nomic-embed-text-v1.5`
+   - import rebuilt packs into student storage
+   - verify retrieval through FastAPI and MCP
+   - keep one embedding provider/model config across teacher and student
 
 2. Unify setup direction:
-   - document one SP2 install/setup path
+   - polish one SP2 install/setup path
    - keep teacher and student as internal modes/modules
    - keep heavier parser dependencies attached to teacher workflows
+   - later decide how much LM Studio `lms` setup can be automated safely
 
 3. Improve retrieval quality:
    - adjacent chunks/context windows

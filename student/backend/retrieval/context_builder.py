@@ -8,7 +8,7 @@ from .chunk_search import DEFAULT_TOP_K, search_chunks_for_query
 from .models import CourseContextPacket, RetrievedChunk
 from .query_embedder import (
     DEFAULT_HTTP_TIMEOUT_SECONDS,
-    DEFAULT_OLLAMA_BASE_URL,
+    DEFAULT_LM_STUDIO_BASE_URL,
     embed_question_for_pack,
 )
 
@@ -46,7 +46,7 @@ def build_course_context_packet(
     question: str,
     top_k: int | None = None,
     max_distance: float | None = None,
-    embedding_base_url: str = DEFAULT_OLLAMA_BASE_URL,
+    embedding_base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
     embedding_timeout: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
 ) -> CourseContextPacket:
     """Return course context or a no-context packet for one student question."""

@@ -15,6 +15,9 @@ Done
 7. Student FastAPI routes for packs and retrieval context.
 8. LM Studio MCP server and tools.
 9. End-to-end LM Studio -> SP2 -> LM Studio retrieval path proved.
+10. Teacher and student embedding calls switched to LM Studio
+    `/v1/embeddings` with `text-embedding-nomic-embed-text-v1.5`.
+11. Guided local installer added at `installation/script.py`.
 
 
 Current Priority
@@ -24,14 +27,14 @@ Improve answer quality now that the main business logic is in place.
 Direction guardrails:
 - Treat SP2 as one app/install with teacher and student modes.
 - Keep the internal `teacher/` and `student/` code split for module clarity.
-- Move embedding-provider direction from Ollama to LM Studio local embeddings
-  API for both pack creation and query retrieval.
-- LM Studio should become the local model provider for chat and embeddings.
+- LM Studio is the local model provider for chat and embeddings.
+- Keep `text-embedding-nomic-embed-text-v1.5` as the single v1 embedding model
+  for pack creation and query retrieval.
 
 1. Improve retrieval ranking.
 2. Add adjacent chunk expansion or context windows.
 3. Improve teacher chunking so chunks contain better concepts.
-4. Switch and test stronger LM Studio-served local embedding models.
+4. Rebuild and re-import packs with 768-dimensional LM Studio embeddings.
 5. Consider hybrid keyword + vector retrieval.
 6. Consider reranking after initial LanceDB retrieval.
 7. Tune MCP tool descriptions and returned packet guidance for LM Studio.
@@ -39,7 +42,7 @@ Direction guardrails:
 
 Next Product Work
 -----------------
-1. Unified setup/install documentation for one SP2 app.
+1. Continue setup/install polish for one SP2 app.
 2. Shared embedding provider configuration for teacher pack build and student
    query retrieval.
 3. Pack delete/uninstall.

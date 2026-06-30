@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from student.storage.sqlite_cruds.pack_repository import InstalledPack
 
 
-DEFAULT_QUERY_EMBEDDING_MODEL = "all-minilm:latest"
+DEFAULT_QUERY_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
 
 
 class EmbeddingModelError(RuntimeError):

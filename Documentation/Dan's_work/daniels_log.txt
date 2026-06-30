@@ -19,11 +19,15 @@ Current Architecture
 
 Direction Update - 2026-06-30
 -----------------------------
-- Current code still uses Ollama for teacher and student embeddings.
-- Direction is to switch embeddings to LM Studio's local OpenAI-compatible API.
-- LM Studio should host SP2 MCP tools and also serve the local embedding model.
+- Current code now uses LM Studio's local OpenAI-compatible API for teacher and
+  student embeddings.
+- Current embedding model is `text-embedding-nomic-embed-text-v1.5`.
+- LM Studio hosts SP2 MCP tools and also serves the local embedding model.
 - Teacher pack creation and student query retrieval must use the same embedding
   model and vector dimension.
+- Added a guided installation script at `installation/script.py` for root venv
+  setup, requirements install, storage initialization, LM Studio embedding checks,
+  temporary backend health check, and MCP config printing.
 
 
 Completed Student Runtime Milestones
@@ -40,6 +44,8 @@ Completed Student Runtime Milestones
   - question embedding
   - LanceDB vector search
   - context packet builder
+- Switched student query embedding from Ollama to LM Studio
+  `/v1/embeddings`.
 - Built FastAPI routes:
   - `/health`
   - `/packs`
@@ -57,10 +63,11 @@ Completed Student Runtime Milestones
 Completed Teacher Runtime Milestones
 ------------------------------------
 - Built PDF-first teacher pipeline.
-- Extracts PDFs with Docling.
+- Extracts text-layer PDFs with `pdftotext` and keeps Docling as the heavier
+  fallback path.
 - Chunks extracted page text.
-- Embeds chunks with local Ollama using `all-minilm:latest` in the current
-  implementation.
+- Embeds chunks with LM Studio using
+  `text-embedding-nomic-embed-text-v1.5`.
 - Writes `pack.json`, `chunks.json`, and `vectors.npy`.
 - Exports a portable `.zip` pack.
 
@@ -72,6 +79,8 @@ Current Known Working Behavior
 - Student API can list packs and retrieve context for a question.
 - LM Studio can call SP2 through the MCP server.
 - SP2 returns structured context back to LM Studio for answer generation.
+- Installer can now prepare the local Python/storage runtime and print the clean
+  backend start command plus MCP JSON.
 
 
 Current Problems To Work On

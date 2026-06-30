@@ -6,53 +6,83 @@ import httpx
 
 from .models import ChunkedText, EmbeddedChunk
 
-DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-DEFAULT_EMBEDDING_MODEL = "all-minilm:latest"
+DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
+DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
 DEFAULT_HTTP_TIMEOUT = 120.0
 
 
+class EmbeddingRequestError(RuntimeError):
+    """Raised when the local embedding API cannot return vectors."""
+
+
+def _normalized_base_url(base_url: str) -> str:
+    normalized = base_url.strip().rstrip("/")
+    if not normalized:
+        raise EmbeddingRequestError("LM Studio base URL must not be empty")
+    return normalized
+
+
 def _extract_vectors(payload: dict[str, Any]) -> list[list[float]]:
-    """Normalize Ollama embedding responses across compatible formats."""
-    if isinstance(payload.get("embeddings"), list):
-        return [list(vector) for vector in payload["embeddings"]]
+    """Extract vectors from an OpenAI-compatible embeddings response."""
+    data = payload.get("data")
+    if not isinstance(data, list):
+        raise EmbeddingRequestError("LM Studio embedding response did not contain data")
 
-    if isinstance(payload.get("embedding"), list):
-        return [list(payload["embedding"])]
+    vectors: list[list[float]] = []
+    for index, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise EmbeddingRequestError(f"LM Studio embedding data[{index}] must be an object")
 
-    raise RuntimeError("Ollama response did not contain embeddings")
+        raw_vector = item.get("embedding")
+        if not isinstance(raw_vector, list):
+            raise EmbeddingRequestError(
+                f"LM Studio embedding data[{index}].embedding must be an array"
+            )
+
+        try:
+            vectors.append([float(value) for value in raw_vector])
+        except (TypeError, ValueError) as exc:
+            raise EmbeddingRequestError(
+                f"LM Studio embedding data[{index}].embedding contains a non-numeric value"
+            ) from exc
+
+    return vectors
 
 
 def embed_texts(
     texts: list[str],
     *,
     model: str = DEFAULT_EMBEDDING_MODEL,
-    base_url: str = DEFAULT_OLLAMA_BASE_URL,
+    base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
     timeout: float = DEFAULT_HTTP_TIMEOUT,
 ) -> list[list[float]]:
-    """Embed a batch of texts with the local Ollama embedding model."""
+    """Embed a batch of texts with LM Studio's local embeddings API."""
     if not texts:
         return []
 
-    with httpx.Client(base_url=base_url, timeout=timeout) as client:
-        response = client.post(
-            "/api/embed",
-            json={"model": model, "input": texts},
-        )
+    normalized_base_url = _normalized_base_url(base_url)
+    with httpx.Client(base_url=normalized_base_url, timeout=timeout) as client:
+        try:
+            response = client.post("embeddings", json={"model": model, "input": texts})
+        except httpx.RequestError as exc:
+            raise EmbeddingRequestError(
+                f"Could not reach LM Studio embedding API at {normalized_base_url}: {exc}"
+            ) from exc
 
-        if response.status_code == 404:
-            legacy_vectors: list[list[float]] = []
-            for text in texts:
-                legacy_response = client.post(
-                    "/api/embeddings",
-                    json={"model": model, "prompt": text},
-                )
-                legacy_response.raise_for_status()
-                legacy_payload = legacy_response.json()
-                legacy_vectors.extend(_extract_vectors(legacy_payload))
-            return legacy_vectors
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise EmbeddingRequestError(
+                "LM Studio embedding request failed: "
+                f"HTTP {response.status_code} from {normalized_base_url}/embeddings: {response.text}"
+            ) from exc
 
-        response.raise_for_status()
-        payload = response.json()
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise EmbeddingRequestError(
+                "LM Studio embedding response was not valid JSON"
+            ) from exc
         return _extract_vectors(payload)
 
 
@@ -60,7 +90,7 @@ def embed_chunks(
     chunks: list[ChunkedText],
     *,
     model: str = DEFAULT_EMBEDDING_MODEL,
-    base_url: str = DEFAULT_OLLAMA_BASE_URL,
+    base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
     timeout: float = DEFAULT_HTTP_TIMEOUT,
 ) -> list[EmbeddedChunk]:
     """Embed chunk texts and return chunk records paired with vectors."""
@@ -99,4 +129,3 @@ def embed_chunks(
         )
 
     return embedded_chunks
-

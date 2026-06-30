@@ -167,7 +167,7 @@ The business logic for the v1 loop is now in place. The next work should improve
 quality instead of adding another architecture path:
 
 - one SP2 install/setup path with teacher and student modes
-- switch local embedding provider direction from Ollama to LM Studio API
+- keep LM Studio API as the local embedding provider
 - better chunking
 - adjacent chunk expansion
 - stronger embedding model testing

@@ -1,7 +1,7 @@
-lancedb
-pyarrow
-numpy
 fastapi
 uvicorn[standard]
 httpx
+numpy
+lancedb
+pyarrow
 mcp[cli]
