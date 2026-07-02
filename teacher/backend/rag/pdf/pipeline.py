@@ -18,8 +18,19 @@ from .extractor import extract_pdf_text
 
 def _default_pack_id(source_path: Path) -> str:
     """Derive a simple v1 pack id from the source filename."""
-    stem = source_path.stem.strip().lower().replace(" ", "-")
-    return stem or "sp2-pack"
+    safe_chars: list[str] = []
+    previous_was_separator = False
+
+    for char in source_path.stem.strip().lower():
+        if char.isalnum() or char == "_":
+            safe_chars.append(char)
+            previous_was_separator = False
+        elif not previous_was_separator:
+            safe_chars.append("-")
+            previous_was_separator = True
+
+    safe_id = "".join(safe_chars).strip("-_")
+    return safe_id or "sp2-pack"
 
 
 def _default_pack_title(source_path: Path) -> str:

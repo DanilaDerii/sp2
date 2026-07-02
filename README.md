@@ -75,6 +75,69 @@ To stop the backend later, press:
 Ctrl+C
 ```
 
+## 7. Ingest A Teacher PDF Into A Pack
+
+Keep the LM Studio server running first, because the teacher pipeline uses LM
+Studio embeddings.
+
+From the SP2 folder, run:
+
+```bash
+cd /path/to/sp2
+/path/to/sp2/environment/.venv/bin/python -m teacher.backend.pipeline_runner /path/to/teacher-file.pdf
+```
+
+Example from this repo path:
+
+```bash
+cd /home/d/sp2
+environment/.venv/bin/python -m teacher.backend.pipeline_runner /home/d/Downloads/week01.pdf
+```
+
+The teacher pipeline creates:
+
+```text
+artifacts/<pack-id>_pack/
+artifacts/<pack-id>.zip
+```
+
+Import the generated `.zip` into the student runtime from LM Studio with the
+`sp2_import_pack_from_path` tool, or by calling the student API:
+
+```bash
+curl -X POST http://127.0.0.1:8001/packs/import-path \
+  -H "Content-Type: application/json" \
+  -d '{"pack_zip_path":"/home/d/sp2/artifacts/<pack-id>.zip"}'
+```
+
+## 8. Prompt LM Studio To Use SP2
+
+For consistent demos, ask LM Studio directly to use the SP2 course-context tool
+before answering.
+
+Use this prompt shape:
+
+```text
+Use the SP2 course pack before answering.
+
+1. First call sp2_list_packs and choose the relevant installed pack.
+2. Then call sp2_get_course_context with my question.
+3. Answer using the returned course chunks.
+4. Mention when the course pack does not contain enough information.
+
+Question: <your question here>
+```
+
+If you already know the installed pack id, use the shorter version:
+
+```text
+Use SP2 installed_pack_id=<id>. Call sp2_get_course_context before answering.
+Answer from the returned course chunks. If no chunks are returned, say the
+course pack does not contain enough information.
+
+Question: <your question here>
+```
+
 ## Important
 
 Two local servers are involved:

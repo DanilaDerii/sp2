@@ -1,7 +1,7 @@
 SP2 Roadmap - Current
 =====================
 
-Last audited: 2026-06-30
+Last audited: 2026-07-02
 
 
 Done
@@ -51,3 +51,19 @@ Next Product Work
 6. Update/replacement semantics for new pack versions.
 7. Focused test coverage for importer, retrieval, API, and MCP adapter.
 8. Teacher support for more source types after retrieval quality improves.
+
+
+Later Product Work
+------------------
+1. Consider a unified LM Studio ingest flow where one SP2 MCP tool can take a
+   teacher file path, build the teacher pack zip, import it into student storage,
+   and return the installed pack id for retrieval in the same LM Studio chat.
+   Keep this as later work until retrieval quality, setup polish, and pack
+   management are stronger.
+
+Implementation guardrails for this later work:
+- Keep one SP2 MCP server exposed to LM Studio.
+- Keep MCP thin; put build/import orchestration behind backend/service code.
+- Reuse the existing teacher pack builder, student importer, and retrieval
+  modules instead of merging their responsibilities.
+- Keep LM Studio as the chat UI and final-answer owner.
