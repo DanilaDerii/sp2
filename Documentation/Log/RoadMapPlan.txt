@@ -52,6 +52,33 @@ Next Product Work
 7. Focused test coverage for importer, retrieval, API, and MCP adapter.
 8. Teacher support for more source types after retrieval quality improves.
 
+Pack versioning direction for future implementation:
+- If a teacher imports a file with the same logical pack name but changed
+  content, handle it as a version bump instead of silently replacing the old
+  install.
+- Example:
+  `week01 v1`
+  `week01 v2`
+- Retrieval should continue to use the local `installed_pack_id`; `pack_id` plus
+  `version` identifies the logical course-pack version.
+- Do not overwrite an installed pack in place until explicit replacement
+  semantics are designed.
+
+Pack deletion direction for future implementation:
+- Current code has low-level delete helpers for SQLite installed-pack rows and
+  LanceDB chunk rows, but no complete public uninstall workflow.
+- Add a student-side pack management service before exposing deletion through
+  API or MCP.
+- A complete uninstall should remove:
+  `installed_packs` SQLite row
+  `pack_chunks` LanceDB rows
+  installed pack files under `student/storage/installed_packs/`
+- Expose deletion after the service exists:
+  `DELETE /packs/{installed_pack_id}`
+  `sp2_delete_pack(installed_pack_id)`
+- Retrieval should continue to reject inactive or deleted packs by
+  `installed_pack_id`.
+
 
 Later Product Work
 ------------------

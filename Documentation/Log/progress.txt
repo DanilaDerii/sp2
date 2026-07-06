@@ -72,7 +72,7 @@ Locked Architecture
 Teacher Module - Current Behavior
 ---------------------------------
 Entrypoint:
-- `teacher/backend/pipeline_runner.py`
+- `teacher/backend/cli/pipeline_runner.py`
 
 Current supported source:
 - One PDF path.
@@ -156,31 +156,46 @@ Important files:
 LM Studio MCP Integration
 -------------------------
 Entrypoint:
-- `student/integrations/lm_studio_mcp/server.py`
+- `integrations/lm_studio_mcp/server.py`
 
 Current tools:
 - `sp2_list_packs(pack_id=None, active_only=False)`
 - `sp2_get_pack(installed_pack_id)`
 - `sp2_get_course_context(installed_pack_id, question, top_k=None, max_distance=None)`
 - `sp2_import_pack_from_path(pack_zip_path)`
+- `sp2_ingest_pdf_from_path(pdf_path)`
 
 Runtime chain:
 
 ```text
 LM Studio chat UI
 -> SP2 MCP stdio server
--> student FastAPI API at 127.0.0.1:8001
--> SQLite/LanceDB
+-> teacher FastAPI API at 127.0.0.1:8002 and/or student FastAPI API at 127.0.0.1:8001
+-> teacher pack build and/or SQLite/LanceDB retrieval
 -> structured result back to LM Studio
 ```
 
+Teacher ingest MCP behavior:
+- `sp2_ingest_pdf_from_path` always builds the teacher pack zip and imports it
+  into the student runtime.
+- The response returns compact top-level fields for LM Studio chat:
+  `installed_pack_id`, `pack_id`, `title`, `chunk_count`, `zip_path`, and
+  `message`.
+
 The MCP server is intentionally thin. It should not duplicate importer,
-retrieval, or storage behavior.
+retrieval, pack build, or storage behavior.
 
 Important LM Studio config note:
 - Use the absolute MCP server script path because LM Studio may launch outside
   the repo working directory:
-  `student/integrations/lm_studio_mcp/server.py`
+  `integrations/lm_studio_mcp/server.py`
+
+Current MCP file split:
+- `server.py`: creates `FastMCP`, registers tool groups, and owns `main()`.
+- `student_tools.py`: student pack, import, and retrieval tools.
+- `teacher_tools.py`: teacher ingest tools.
+- `client.py`: student/teacher backend API HTTP helpers.
+- `validators.py`: MCP argument validation helpers.
 
 
 Storage Model

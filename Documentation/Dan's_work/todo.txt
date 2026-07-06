@@ -61,3 +61,16 @@ Next
    - retrieval context builder
    - FastAPI routes
    - MCP adapter
+
+
+
+
+
+
+
+
+
+IMportant for future: work on pack id. 
+such that there wont be duplication or wierd intesection
+and there needs to be clean behavior to remove installed packs 
+or maybe rename pack id's or smth 

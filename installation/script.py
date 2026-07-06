@@ -17,11 +17,12 @@ from urllib.request import Request, urlopen
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VENV_DIR = REPO_ROOT / "environment" / ".venv"
 REQUIREMENTS_PATH = REPO_ROOT / "environment" / "requirements.txt"
-MCP_SERVER_PATH = REPO_ROOT / "student" / "integrations" / "lm_studio_mcp" / "server.py"
+MCP_SERVER_PATH = REPO_ROOT / "integrations" / "lm_studio_mcp" / "server.py"
 DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
 EXPECTED_EMBEDDING_DIM = 768
 STUDENT_API_BASE_URL = "http://127.0.0.1:8001"
+TEACHER_API_BASE_URL = "http://127.0.0.1:8002"
 
 
 class SetupError(RuntimeError):
@@ -210,6 +211,7 @@ def _mcp_config(python_path: Path) -> dict[str, Any]:
                 "args": [str(MCP_SERVER_PATH)],
                 "env": {
                     "SP2_STUDENT_API_BASE_URL": STUDENT_API_BASE_URL,
+                    "SP2_TEACHER_API_BASE_URL": TEACHER_API_BASE_URL,
                 },
             }
         }
@@ -221,15 +223,26 @@ def _print_final_instructions(python_path: Path) -> None:
         f"cd {REPO_ROOT}\n"
         f"{python_path} -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001"
     )
+    teacher_start_command = (
+        f"cd {REPO_ROOT}\n"
+        f"{python_path} -m uvicorn teacher.backend.app:app --host 127.0.0.1 --port 8002"
+    )
 
     _print_step("LM Studio MCP config")
     print("Paste this JSON into LM Studio's MCP/server configuration:")
     print(json.dumps(_mcp_config(python_path), indent=2))
 
-    _print_step("Backend command")
-    print("Copy this command when you want to start the SP2 backend:")
+    _print_step("Student backend command")
+    print("Copy this command when you want to start the SP2 student backend:")
     print()
     print(start_command)
+    print()
+    print("To stop the backend afterward, press Ctrl+C in the terminal running it.")
+
+    _print_step("Teacher backend command")
+    print("Start this in a second terminal when using teacher ingest MCP tools:")
+    print()
+    print(teacher_start_command)
     print()
     print("To stop the backend afterward, press Ctrl+C in the terminal running it.")
 

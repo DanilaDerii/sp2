@@ -60,7 +60,7 @@ If it already has `"mcpServers": { ... }`, paste only the
 ## 6. Start The SP2 Backend
 
 Use the backend command printed by the installer. It will use the real path on
-your machine and will look like:
+your machine and will look like this for the student runtime:
 
 ```bash
 cd /path/to/sp2
@@ -75,6 +75,14 @@ To stop the backend later, press:
 Ctrl+C
 ```
 
+If you want LM Studio to build teacher packs through MCP, also start the teacher
+backend in a second terminal:
+
+```bash
+cd /path/to/sp2
+/path/to/sp2/environment/.venv/bin/python -m uvicorn teacher.backend.app:app --host 127.0.0.1 --port 8002
+```
+
 ## 7. Ingest A Teacher PDF Into A Pack
 
 Keep the LM Studio server running first, because the teacher pipeline uses LM
@@ -84,14 +92,14 @@ From the SP2 folder, run:
 
 ```bash
 cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m teacher.backend.pipeline_runner /path/to/teacher-file.pdf
+/path/to/sp2/environment/.venv/bin/python -m teacher.backend.cli.pipeline_runner /path/to/teacher-file.pdf
 ```
 
 Example from this repo path:
 
 ```bash
 cd /home/d/sp2
-environment/.venv/bin/python -m teacher.backend.pipeline_runner /home/d/Downloads/week01.pdf
+environment/.venv/bin/python -m teacher.backend.cli.pipeline_runner /home/d/Downloads/week01.pdf
 ```
 
 The teacher pipeline creates:
@@ -102,7 +110,10 @@ artifacts/<pack-id>.zip
 ```
 
 Import the generated `.zip` into the student runtime from LM Studio with the
-`sp2_import_pack_from_path` tool, or by calling the student API:
+`sp2_import_pack_from_path` tool, or let LM Studio run the full teacher-to-student
+flow with `sp2_ingest_pdf_from_path`. That MCP tool builds the teacher pack,
+imports the generated zip into student storage, and returns `installed_pack_id`.
+You can also call the student API:
 
 ```bash
 curl -X POST http://127.0.0.1:8001/packs/import-path \
@@ -114,6 +125,14 @@ curl -X POST http://127.0.0.1:8001/packs/import-path \
 
 For consistent demos, ask LM Studio directly to use the SP2 course-context tool
 before answering.
+
+To ingest a teacher PDF through LM Studio, use a short prompt:
+
+```text
+Use mcp/sp2-course-context. Import this PDF: /path/to/teacher-file.pdf
+```
+
+The tool returns the installed pack id. Use that id for retrieval questions.
 
 Use this prompt shape:
 
@@ -144,7 +163,24 @@ Two local servers are involved:
 
 ```text
 LM Studio server: http://127.0.0.1:1234/v1
-SP2 backend:      http://127.0.0.1:8001
+SP2 student API:  http://127.0.0.1:8001
+SP2 teacher API:  http://127.0.0.1:8002
 ```
 
-Both must be running when LM Studio uses SP2 retrieval.
+LM Studio and the student API must be running for retrieval. The teacher API
+must also be running when LM Studio uses teacher ingest tools.
+
+
+
+
+
+
+
+How to clean up storage: 
+cd ~/sp2
+
+environment/.venv/bin/python student/storage/db_setup_scripts/reset_student_databases.py --yes
+
+find student/storage/installed_packs -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
+
+find artifacts -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
