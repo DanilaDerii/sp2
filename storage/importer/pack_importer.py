@@ -9,14 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
-from student.storage.database.setup.create_sqlite_db import create_sqlite_db
-from student.storage.cruds.lancedb.chunk_repository import (
+from storage.database.setup.create_sqlite_db import create_sqlite_db
+from storage.cruds.lancedb.chunk_repository import (
     PackChunk,
     add_pack_chunks,
     count_chunks_for_installed_pack,
     delete_chunks_for_installed_pack,
 )
-from student.storage.cruds.sqlite.pack_repository import (
+from storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     create_installed_pack,
     delete_installed_pack,

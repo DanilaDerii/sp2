@@ -20,8 +20,8 @@ Done
 11. Guided local installer added at `installation/script.py`.
 12. Student runtime structure cleaned up:
     - API route modules moved to `student/routes/`
-    - CRUD modules moved to `student/storage/cruds/`
-    - database setup/runtime paths moved to `student/storage/database/`
+    - CRUD modules moved to root `storage/cruds/`
+    - database setup/runtime paths moved to root `storage/database/`
 13. Live LM Studio test passed with `/home/d/Downloads/day_4.pdf`:
     - `sp2_ingest_pdf_from_path` built and imported `day_4`
     - student storage created installed pack `1`
@@ -29,7 +29,7 @@ Done
     - `sp2_get_course_context(pack=1, question=...)` returned relevant chunks
     - LM Studio wrote the final answer from the returned course context
 14. Pack delete/uninstall workflow added in the current student structure:
-    - `student/storage/cruds/installed_pack_cleaner.py` composes SQLite,
+    - `storage/cruds/installed_pack_cleaner.py` composes SQLite,
       LanceDB, and installed-pack file cleanup
     - `DELETE /packs/{installed_pack_id}` exposes cleanup through the student API
     - `sp2_delete_pack(pack)` exposes cleanup through the LM Studio MCP adapter

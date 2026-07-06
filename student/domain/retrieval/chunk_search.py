@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from student.storage.cruds.lancedb.connection import get_pack_chunks_table
+from storage.cruds.lancedb.connection import get_pack_chunks_table
 
 from .models import QueryEmbedding, RetrievedChunk
 

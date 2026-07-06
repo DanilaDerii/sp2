@@ -7,7 +7,7 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from student.storage.cruds.sqlite.pack_repository import InstalledPack
+from storage.cruds.sqlite.pack_repository import InstalledPack
 
 from .embedding_model import (
     DEFAULT_QUERY_EMBEDDING_MODEL,

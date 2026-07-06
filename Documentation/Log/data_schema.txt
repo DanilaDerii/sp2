@@ -74,7 +74,7 @@ Rules:
 Student SQLite
 --------------
 Database:
-- `student/storage/database/sqlite_storage/student_app.db`
+- `storage/database/sqlite_storage/student_app.db`
 
 Implemented table:
 - `installed_packs`
@@ -103,7 +103,7 @@ Key notes:
 Student LanceDB
 ---------------
 Database directory:
-- `student/storage/database/lance_storage/`
+- `storage/database/lance_storage/`
 
 Implemented table:
 - `pack_chunks`
@@ -139,7 +139,7 @@ Student import maps pack files into local storage:
 - `installed_packs.id` -> `pack_chunks.installed_pack_id`
 
 Install location:
-- `student/storage/installed_packs/{pack_id}-{version}/`
+- `storage/installed_packs/{pack_id}-{version}/`
 
 Failure handling:
 - Import rolls back installed files, SQLite row, and LanceDB rows when seeding

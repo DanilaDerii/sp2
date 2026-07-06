@@ -182,8 +182,8 @@ must also be running when LM Studio uses teacher ingest tools.
 How to clean up storage: 
 cd ~/sp2
 
-environment/.venv/bin/python student/storage/database/setup/reset_student_databases.py --yes
+environment/.venv/bin/python -m storage.database.setup.reset_student_databases --yes
 
-find student/storage/installed_packs -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
+find storage/installed_packs -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
 
 find artifacts -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +

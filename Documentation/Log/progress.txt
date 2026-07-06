@@ -59,6 +59,40 @@ student-retrieval-to-LM-Studio-answer path work after the storage/API structure
 refactor.
 
 
+Root Storage Migration - 2026-07-06
+-----------------------------------
+Storage code was moved from `student/storage/` to the root `storage/` package so
+teacher, student, installer, and integration code can treat persistence as a
+shared SP2 runtime layer instead of a student-owned subtree.
+
+Current root storage paths:
+- `storage/importer/`
+- `storage/cruds/`
+- `storage/database/setup/`
+- `storage/database/sqlite_storage/student_app.db`
+- `storage/database/lance_storage/`
+- `storage/installed_packs/`
+
+Migration checks completed:
+- Python imports were rewritten from `student.storage...` to `storage...`.
+- `installation/script.py` now initializes storage through
+  `storage.database.setup.create_sqlite_db` and
+  `storage.database.setup.create_lancedb_db`.
+- `.gitignore`, README, and current docs now point generated storage data at
+  root `storage/`.
+- `compileall` passed for `student`, `storage`, `integrations`, `teacher`, and
+  `installation`.
+- Root SQLite setup created `storage/database/sqlite_storage/student_app.db`.
+- Root LanceDB setup created `storage/database/lance_storage/pack_chunks.lance`
+  after being run outside the sandbox because LanceDB setup timed out inside the
+  sandbox.
+- Student API smoke test passed outside the sandbox:
+  `/health` returned `{'status': 'ok'}` and `/packs` returned `[]`.
+
+The migration intentionally cleared the old generated local pack/database data.
+New demo packs should be rebuilt/imported into root `storage/`.
+
+
 Project Shape
 -------------
 SP2 is a local-first course AI assistant built around a teacher-to-student pack
@@ -156,15 +190,15 @@ Pack import:
 - Direct `.zip` import is implemented.
 - Students should not need to manually unpack packs.
 - Import validates exact v1 pack files.
-- Import writes installed pack files under `student/storage/installed_packs/`.
+- Import writes installed pack files under `storage/installed_packs/`.
 - Import creates one SQLite `installed_packs` row.
 - Import seeds LanceDB `pack_chunks` rows.
 - Import rolls back local files, SQLite row, and LanceDB rows on failure.
 
 Pack delete:
-- Delete is implemented in `student/storage/cruds/installed_pack_cleaner.py`.
+- Delete is implemented in `storage/cruds/installed_pack_cleaner.py`.
 - It removes LanceDB `pack_chunks` rows for the installed pack.
-- It removes installed pack files under `student/storage/installed_packs/`.
+- It removes installed pack files under `storage/installed_packs/`.
 - It removes the SQLite `installed_packs` row.
 - It is exposed through `DELETE /packs/{installed_pack_id}` and MCP
   `sp2_delete_pack(pack)`.
@@ -183,12 +217,12 @@ Retrieval:
 - Context builder returns `course_context` or `no_course_context`.
 
 Important files:
-- `student/storage/importer/pack_importer.py`
-- `student/storage/importer/pack_validator.py`
-- `student/storage/cruds/sqlite/pack_repository.py`
-- `student/storage/cruds/lancedb/chunk_repository.py`
-- `student/storage/cruds/installed_pack_manager/manager.py`
-- `student/storage/cruds/installed_pack_cleaner.py`
+- `storage/importer/pack_importer.py`
+- `storage/importer/pack_validator.py`
+- `storage/cruds/sqlite/pack_repository.py`
+- `storage/cruds/lancedb/chunk_repository.py`
+- `storage/cruds/installed_pack_manager/manager.py`
+- `storage/cruds/installed_pack_cleaner.py`
 - `student/domain/retrieval/query_embedder.py`
 - `student/domain/retrieval/chunk_search.py`
 - `student/domain/retrieval/context_builder.py`
@@ -252,6 +286,10 @@ LanceDB currently stores searchable course chunks:
 
 - `pack_chunks`
 
+Storage package location:
+
+- root `storage/`
+
 Earlier plans for SP2-owned `threads` and `messages` are not part of the
 current implementation because LM Studio owns chat context in v1.
 
@@ -278,10 +316,13 @@ Current Milestones Completed
   the root venv, installs requirements, initializes SQLite/LanceDB, checks LM
   Studio embeddings when available, briefly verifies the backend, stops the
   temporary backend process, and prints MCP/backend commands.
-- Student storage code was reorganized under `student/storage/cruds/` and
-  `student/storage/database/`; the live LM Studio `day_4.pdf` test confirmed the
-  new paths work for teacher ingest, student import, LanceDB retrieval, and final
-  LM Studio answering.
+- Storage code now lives in the root `storage/` package, with CRUD modules under
+  `storage/cruds/` and database setup/runtime paths under `storage/database/`.
+  The earlier live LM Studio `day_4.pdf` test confirmed the teacher ingest,
+  student import, LanceDB retrieval, and final LM Studio answering path before
+  the storage package move.
+- Root storage migration was verified with compile checks, root SQLite/LanceDB
+  setup, and a student API smoke test for `/health` and empty `/packs`.
 - Pack delete/uninstall was added through a storage cleaner, student API route,
   and LM Studio MCP tool.
 
@@ -330,7 +371,7 @@ Current Open Work
 Engineering Boundaries
 ----------------------
 - Keep route handlers thin.
-- Keep importer logic in `student/storage/importer/`.
+- Keep importer logic in `storage/importer/`.
 - Keep retrieval logic in `student/domain/retrieval/`.
 - Keep CRUD modules table-scoped.
 - Keep teacher and student code modular, but treat them as modes/modules of one

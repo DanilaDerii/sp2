@@ -3,7 +3,7 @@
 import sqlite3
 from pathlib import Path
 
-from student.storage.database.setup.create_sqlite_db import SQLITE_DB_PATH
+from storage.database.setup.create_sqlite_db import SQLITE_DB_PATH
 
 
 def get_sqlite_connection(db_path: str | Path = SQLITE_DB_PATH) -> sqlite3.Connection:

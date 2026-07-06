@@ -5,19 +5,19 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from student.storage.cruds.installed_pack_cleaner import (
+from storage.cruds.installed_pack_cleaner import (
     InstalledPackCleanError,
     InstalledPackCleanResult,
     InstalledPackNotFoundError,
     delete_installed_pack_everywhere,
 )
-from student.storage.cruds.sqlite.pack_repository import (
+from storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     get_installed_pack,
     list_installed_packs,
 )
-from student.storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
-from student.storage.importer.pack_validator import PackValidationError
+from storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
+from storage.importer.pack_validator import PackValidationError
 
 
 router = APIRouter(prefix="/packs", tags=["packs"])

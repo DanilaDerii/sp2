@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from student.storage.cruds.sqlite.pack_repository import InstalledPack
+from storage.cruds.sqlite.pack_repository import InstalledPack
 
 
 DEFAULT_QUERY_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"

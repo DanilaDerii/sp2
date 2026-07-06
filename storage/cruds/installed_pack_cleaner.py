@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from student.storage.cruds.installed_pack_manager.manager import (
+from storage.cruds.installed_pack_manager.manager import (
     InstalledPackFileError,
     delete_installed_pack_files,
 )
-from student.storage.cruds.lancedb.chunk_repository import delete_chunks_for_installed_pack
-from student.storage.cruds.sqlite.pack_repository import (
+from storage.cruds.lancedb.chunk_repository import delete_chunks_for_installed_pack
+from storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     delete_installed_pack,
     get_installed_pack,

@@ -139,7 +139,7 @@ What Separates SP2
 Current Prototype State
 -----------------------
 Implemented teacher mode:
-- PDF ingestion with Docling.
+- PDF ingestion with pdftotext.
 - Chunking.
 - Local embedding generation.
 - Zip export.
