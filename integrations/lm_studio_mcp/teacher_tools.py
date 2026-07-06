@@ -75,8 +75,9 @@ def register_teacher_tools(mcp: Any) -> None:
             "mode": "course_pack_ready",
             "message": (
                 "Course pack is ready. "
-                f"Use installed_pack_id={installed_pack_id} for retrieval."
+                f"Use pack={installed_pack_id} for retrieval."
             ),
+            "pack": installed_pack_id,
             "installed_pack_id": installed_pack_id,
             "pack_id": pack_id,
             "title": title,

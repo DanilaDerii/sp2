@@ -1,0 +1,35 @@
+Add pack delete/uninstall now.
+This is the most practical next step. Testing will get messy unless you can clean bad imports quickly. Implement a student pack management service that deletes:
+pack_chunks LanceDB rows, installed_packs SQLite row, and installed files under student/storage/installed_packs/.
+
+Expose deletion through API and MCP.
+Add:
+DELETE /packs/{installed_pack_id}
+and:
+sp2_delete_pack(pack)
+MCP can keep the simple pack name, but internally it maps to installed_pack_id.
+
+
+
+
+
+
+
+
+
+later 
+
+
+
+Clarify pack pointer naming before adding more features.
+I would keep backend names precise:
+installed_pack_id = local DB pointer.
+pack_id = logical/course-pack id from metadata.
+pack = MCP/user-facing shortcut for the local installed pack pointer.
+The important rule: do not call the SQLite integer “pack_id” anywhere. That is where confusion grows.
+
+Make sp2_list_packs return a cleaner LM Studio-facing shape.
+Instead of dumping everything equally, return compact fields first:
+pack, title, pack_id, version, chunk_count if available, is_active.
+Then LM Studio can naturally choose:
+pack: 3

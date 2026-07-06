@@ -137,10 +137,10 @@ The tool returns the installed pack id. Use that id for retrieval questions.
 Use this prompt shape:
 
 ```text
-Use the SP2 course pack before answering.
+Use the SP2 course context tool before answering.
 
 1. First call sp2_list_packs and choose the relevant installed pack.
-2. Then call sp2_get_course_context with my question.
+2. Then call sp2_get_course_context with pack and question.
 3. Answer using the returned course chunks.
 4. Mention when the course pack does not contain enough information.
 
@@ -150,11 +150,14 @@ Question: <your question here>
 If you already know the installed pack id, use the shorter version:
 
 ```text
-Use SP2 installed_pack_id=<id>. Call sp2_get_course_context before answering.
+Use mcp/sp2-course-context.
+Call sp2_get_course_context before answering.
+
+pack: <installed_pack_id>
+question: <your question here>
+
 Answer from the returned course chunks. If no chunks are returned, say the
 course pack does not contain enough information.
-
-Question: <your question here>
 ```
 
 ## Important
@@ -179,7 +182,7 @@ must also be running when LM Studio uses teacher ingest tools.
 How to clean up storage: 
 cd ~/sp2
 
-environment/.venv/bin/python student/storage/db_setup_scripts/reset_student_databases.py --yes
+environment/.venv/bin/python student/storage/database/setup/reset_student_databases.py --yes
 
 find student/storage/installed_packs -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
 

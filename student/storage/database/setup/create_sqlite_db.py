@@ -4,8 +4,8 @@ import sqlite3
 from pathlib import Path
 
 
-STORAGE_DIR = Path(__file__).resolve().parent.parent
-SQLITE_DIR = STORAGE_DIR / "sqlite_storage"
+DATABASE_DIR = Path(__file__).resolve().parents[1]
+SQLITE_DIR = DATABASE_DIR / "sqlite_storage"
 SQLITE_DB_PATH = SQLITE_DIR / "student_app.db"
 
 

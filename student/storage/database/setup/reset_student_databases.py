@@ -4,8 +4,12 @@ import argparse
 import shutil
 from pathlib import Path
 
-from create_lancedb_db import LANCE_DIR, create_lancedb_db
-from create_sqlite_db import SQLITE_DB_PATH, create_sqlite_db
+try:
+    from student.storage.database.setup.create_lancedb_db import LANCE_DIR, create_lancedb_db
+    from student.storage.database.setup.create_sqlite_db import SQLITE_DB_PATH, create_sqlite_db
+except ModuleNotFoundError:
+    from create_lancedb_db import LANCE_DIR, create_lancedb_db
+    from create_sqlite_db import SQLITE_DB_PATH, create_sqlite_db
 
 
 SQLITE_SIDE_FILES = (

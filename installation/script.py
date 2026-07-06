@@ -77,9 +77,9 @@ def _install_requirements(python_path: Path) -> None:
 
 def _initialize_storage(python_path: Path) -> None:
     _print_step("Initializing student storage")
-    _run([str(python_path), "-m", "student.storage.db_setup_scripts.create_sqlite_db"])
+    _run([str(python_path), "-m", "student.storage.database.setup.create_sqlite_db"])
     _ok("SQLite database is ready")
-    _run([str(python_path), "-m", "student.storage.db_setup_scripts.create_lancedb_db"])
+    _run([str(python_path), "-m", "student.storage.database.setup.create_lancedb_db"])
     _ok("LanceDB table is ready")
 
 

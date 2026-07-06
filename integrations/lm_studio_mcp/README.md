@@ -32,7 +32,7 @@ course-context calls.
 
 - `sp2_list_packs(pack_id=None, active_only=False)`
 - `sp2_get_pack(installed_pack_id)`
-- `sp2_get_course_context(installed_pack_id, question, top_k=None, max_distance=None)`
+- `sp2_get_course_context(pack, question)`
 - `sp2_import_pack_from_path(pack_zip_path)`
 - `sp2_ingest_pdf_from_path(pdf_path)`
 
@@ -68,6 +68,7 @@ zip through the student API:
 Its response is intentionally compact for LM Studio chat:
 
 - `installed_pack_id`
+- `pack`
 - `pack_id`
 - `title`
 - `chunk_count`

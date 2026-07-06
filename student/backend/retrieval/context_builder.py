@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from student.storage.sqlite_cruds.pack_repository import InstalledPack, get_installed_pack
+from student.storage.cruds.sqlite.pack_repository import InstalledPack, get_installed_pack
 
 from .chunk_search import DEFAULT_TOP_K, search_chunks_for_query
 from .models import CourseContextPacket, RetrievedChunk

@@ -74,7 +74,7 @@ Rules:
 Student SQLite
 --------------
 Database:
-- `student/storage/sqlite_storage/student_app.db`
+- `student/storage/database/sqlite_storage/student_app.db`
 
 Implemented table:
 - `installed_packs`
@@ -103,7 +103,7 @@ Key notes:
 Student LanceDB
 ---------------
 Database directory:
-- `student/storage/lance_storage/`
+- `student/storage/database/lance_storage/`
 
 Implemented table:
 - `pack_chunks`

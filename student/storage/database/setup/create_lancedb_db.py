@@ -3,8 +3,8 @@
 from pathlib import Path
 
 
-STORAGE_DIR = Path(__file__).resolve().parent.parent
-LANCE_DIR = STORAGE_DIR / "lance_storage"
+DATABASE_DIR = Path(__file__).resolve().parents[1]
+LANCE_DIR = DATABASE_DIR / "lance_storage"
 PACK_CHUNKS_TABLE_NAME = "pack_chunks"
 # LM Studio text-embedding-nomic-embed-text-v1.5 returns 768-dimensional vectors.
 DEFAULT_VECTOR_DIM = 768

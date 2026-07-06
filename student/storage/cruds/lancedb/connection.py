@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from student.storage.db_setup_scripts.create_lancedb_db import (
+from student.storage.database.setup.create_lancedb_db import (
     LANCE_DIR,
     PACK_CHUNKS_TABLE_NAME,
     create_lancedb_db,

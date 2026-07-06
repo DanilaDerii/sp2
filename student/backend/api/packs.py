@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from student.storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
 from student.storage.importer.pack_validator import PackValidationError
-from student.storage.sqlite_cruds.pack_repository import (
+from student.storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     get_installed_pack,
     list_installed_packs,

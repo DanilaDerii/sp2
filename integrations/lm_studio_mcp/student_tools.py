@@ -61,20 +61,16 @@ def register_student_tools(mcp: Any) -> None:
 
     @mcp.tool()
     def sp2_get_course_context(
-        installed_pack_id: int,
+        pack: int,
         question: str,
-        top_k: int | None = None,
-        max_distance: float | None = None,
     ) -> dict[str, Any]:
         """Return course-pack retrieval context for one student question.
 
         Args:
-            installed_pack_id: Local SQLite installed_packs.id value.
+            pack: Local SP2 installed pack id returned by SP2 pack tools.
             question: Student question to retrieve course context for.
-            top_k: Optional number of chunks to retrieve.
-            max_distance: Optional LanceDB distance cutoff.
         """
-        resolved_installed_pack_id = positive_int(installed_pack_id, "installed_pack_id")
+        resolved_installed_pack_id = positive_int(pack, "pack")
         normalized_question = required_text(
             question,
             "question",
@@ -85,8 +81,6 @@ def register_student_tools(mcp: Any) -> None:
             {
                 "installed_pack_id": resolved_installed_pack_id,
                 "question": normalized_question,
-                "top_k": top_k,
-                "max_distance": max_distance,
             }
         )
         packet = request_student_json("POST", "/retrieval/context", json_body=payload)
