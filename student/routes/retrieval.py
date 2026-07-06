@@ -7,14 +7,14 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from student.backend.retrieval.chunk_search import ChunkSearchError
-from student.backend.retrieval.context_builder import (
+from student.domain.retrieval.chunk_search import ChunkSearchError
+from student.domain.retrieval.context_builder import (
     ContextBuilderError,
     build_course_context_packet,
 )
-from student.backend.retrieval.embedding_model import EmbeddingModelError
-from student.backend.retrieval.models import CourseContextPacket, RetrievedChunk
-from student.backend.retrieval.query_embedder import QueryEmbeddingError
+from student.domain.retrieval.embedding_model import EmbeddingModelError
+from student.domain.retrieval.models import CourseContextPacket, RetrievedChunk
+from student.domain.retrieval.query_embedder import QueryEmbeddingError
 
 
 router = APIRouter(prefix="/retrieval", tags=["retrieval"])

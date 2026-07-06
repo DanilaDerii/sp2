@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from teacher.backend.rag.common.models import TeacherPipelineResult
-from teacher.backend.rag.pdf.pipeline import build_pack_from_pdf
+from teacher.domain.rag.common.models import TeacherPipelineResult
+from teacher.domain.rag.pdf.pipeline import build_pack_from_pdf
 
 
 @dataclass(frozen=True, slots=True)

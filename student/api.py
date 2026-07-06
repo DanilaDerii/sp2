@@ -2,8 +2,8 @@
 
 from fastapi import FastAPI
 
-from .api.packs import router as packs_router
-from .api.retrieval import router as retrieval_router
+from .routes.packs import router as packs_router
+from .routes.retrieval import router as retrieval_router
 
 
 app = FastAPI(title="SP2 Student Backend API")

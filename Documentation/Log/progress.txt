@@ -104,7 +104,7 @@ Locked Architecture
 Teacher Module - Current Behavior
 ---------------------------------
 Entrypoint:
-- `teacher/backend/cli/pipeline_runner.py`
+- `teacher/cli/pipeline_runner.py`
 
 Current supported source:
 - One PDF path.
@@ -127,22 +127,22 @@ Current teacher embedding endpoint:
   `http://127.0.0.1:1234/v1/embeddings`.
 
 Important files:
-- `teacher/backend/rag/pdf/extractor.py`
-- `teacher/backend/rag/pdf/pipeline.py`
-- `teacher/backend/rag/common/chunker.py`
-- `teacher/backend/rag/common/embedder.py`
-- `teacher/backend/orchestrators/pack_writer.py`
-- `teacher/backend/orchestrators/artifact_manager.py`
-- `teacher/backend/orchestrators/zip_exporter.py`
+- `teacher/domain/rag/pdf/extractor.py`
+- `teacher/domain/rag/pdf/pipeline.py`
+- `teacher/domain/rag/common/chunker.py`
+- `teacher/domain/rag/common/embedder.py`
+- `teacher/domain/orchestrators/pack_writer.py`
+- `teacher/domain/orchestrators/artifact_manager.py`
+- `teacher/domain/orchestrators/zip_exporter.py`
 
 
 Student Module - Current Behavior
 ---------------------------------
 Entrypoint:
-- `student/backend/app.py`
+- `student/api.py`
 
 Run target:
-- `environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001`
+- `environment/.venv/bin/python -m uvicorn student.api:app --host 127.0.0.1 --port 8001`
 
 FastAPI routes:
 - `GET /health`
@@ -189,11 +189,11 @@ Important files:
 - `student/storage/cruds/lancedb/chunk_repository.py`
 - `student/storage/cruds/installed_pack_manager/manager.py`
 - `student/storage/cruds/installed_pack_cleaner.py`
-- `student/backend/retrieval/query_embedder.py`
-- `student/backend/retrieval/chunk_search.py`
-- `student/backend/retrieval/context_builder.py`
-- `student/backend/api/packs.py`
-- `student/backend/api/retrieval.py`
+- `student/domain/retrieval/query_embedder.py`
+- `student/domain/retrieval/chunk_search.py`
+- `student/domain/retrieval/context_builder.py`
+- `student/routes/packs.py`
+- `student/routes/retrieval.py`
 
 
 LM Studio MCP Integration
@@ -331,7 +331,7 @@ Engineering Boundaries
 ----------------------
 - Keep route handlers thin.
 - Keep importer logic in `student/storage/importer/`.
-- Keep retrieval logic in `student/backend/retrieval/`.
+- Keep retrieval logic in `student/domain/retrieval/`.
 - Keep CRUD modules table-scoped.
 - Keep teacher and student code modular, but treat them as modes/modules of one
   SP2 app direction.

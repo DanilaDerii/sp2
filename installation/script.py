@@ -171,7 +171,7 @@ def _verify_backend(python_path: Path) -> None:
             str(python_path),
             "-m",
             "uvicorn",
-            "student.backend.app:app",
+            "student.api:app",
             "--host",
             "127.0.0.1",
             "--port",
@@ -221,11 +221,11 @@ def _mcp_config(python_path: Path) -> dict[str, Any]:
 def _print_final_instructions(python_path: Path) -> None:
     start_command = (
         f"cd {REPO_ROOT}\n"
-        f"{python_path} -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001"
+        f"{python_path} -m uvicorn student.api:app --host 127.0.0.1 --port 8001"
     )
     teacher_start_command = (
         f"cd {REPO_ROOT}\n"
-        f"{python_path} -m uvicorn teacher.backend.app:app --host 127.0.0.1 --port 8002"
+        f"{python_path} -m uvicorn teacher.api:app --host 127.0.0.1 --port 8002"
     )
 
     _print_step("LM Studio MCP config")

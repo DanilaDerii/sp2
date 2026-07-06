@@ -1,1 +1,0 @@
-"""Teacher backend API package."""

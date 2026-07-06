@@ -109,7 +109,7 @@ def request_student_json(
         json_body=json_body,
         start_hint=(
             "environment/.venv/bin/python -m uvicorn "
-            "student.backend.app:app --host 127.0.0.1 --port 8001"
+            "student.api:app --host 127.0.0.1 --port 8001"
         ),
     )
 
@@ -131,6 +131,6 @@ def request_teacher_json(
         json_body=json_body,
         start_hint=(
             "environment/.venv/bin/python -m uvicorn "
-            "teacher.backend.app:app --host 127.0.0.1 --port 8002"
+            "teacher.api:app --host 127.0.0.1 --port 8002"
         ),
     )

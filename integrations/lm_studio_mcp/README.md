@@ -42,14 +42,14 @@ The student FastAPI server should be running before LM Studio calls student
 runtime tools:
 
 ```bash
-environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001
+environment/.venv/bin/python -m uvicorn student.api:app --host 127.0.0.1 --port 8001
 ```
 
 The teacher FastAPI server should be running before LM Studio calls teacher
 ingest tools:
 
 ```bash
-environment/.venv/bin/python -m uvicorn teacher.backend.app:app --host 127.0.0.1 --port 8002
+environment/.venv/bin/python -m uvicorn teacher.api:app --host 127.0.0.1 --port 8002
 ```
 
 The MCP student tools call:

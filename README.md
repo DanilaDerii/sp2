@@ -64,7 +64,7 @@ your machine and will look like this for the student runtime:
 
 ```bash
 cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m uvicorn student.backend.app:app --host 127.0.0.1 --port 8001
+/path/to/sp2/environment/.venv/bin/python -m uvicorn student.api:app --host 127.0.0.1 --port 8001
 ```
 
 Leave that terminal running while using SP2 from LM Studio.
@@ -80,7 +80,7 @@ backend in a second terminal:
 
 ```bash
 cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m uvicorn teacher.backend.app:app --host 127.0.0.1 --port 8002
+/path/to/sp2/environment/.venv/bin/python -m uvicorn teacher.api:app --host 127.0.0.1 --port 8002
 ```
 
 ## 7. Ingest A Teacher PDF Into A Pack
@@ -92,14 +92,14 @@ From the SP2 folder, run:
 
 ```bash
 cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m teacher.backend.cli.pipeline_runner /path/to/teacher-file.pdf
+/path/to/sp2/environment/.venv/bin/python -m teacher.cli.pipeline_runner /path/to/teacher-file.pdf
 ```
 
 Example from this repo path:
 
 ```bash
 cd /path/to/sp2
-environment/.venv/bin/python -m teacher.backend.cli.pipeline_runner /home/d/Downloads/week01.pdf
+environment/.venv/bin/python -m teacher.cli.pipeline_runner /home/d/Downloads/week01.pdf
 ```
 
 The teacher pipeline creates:

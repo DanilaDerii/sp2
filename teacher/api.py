@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from .api.routes.ingest import router as ingest_router
+from .routes.ingest import router as ingest_router
 
 
 app = FastAPI(title="SP2 Teacher Builder API")

@@ -5,8 +5,8 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from teacher.backend.rag.common.embedder import EmbeddingRequestError
-from teacher.backend.services import TeacherIngestResult, ingest_pdf_from_path
+from teacher.domain.rag.common.embedder import EmbeddingRequestError
+from teacher.domain.services import TeacherIngestResult, ingest_pdf_from_path
 
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])

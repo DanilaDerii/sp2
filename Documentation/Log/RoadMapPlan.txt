@@ -19,7 +19,7 @@ Done
     `/v1/embeddings` with `text-embedding-nomic-embed-text-v1.5`.
 11. Guided local installer added at `installation/script.py`.
 12. Student runtime structure cleaned up:
-    - API route modules moved to `student/backend/api/`
+    - API route modules moved to `student/routes/`
     - CRUD modules moved to `student/storage/cruds/`
     - database setup/runtime paths moved to `student/storage/database/`
 13. Live LM Studio test passed with `/home/d/Downloads/day_4.pdf`:
@@ -88,3 +88,16 @@ Implementation guardrails for this later work:
 - Reuse the existing teacher pack builder, student importer, and retrieval
   modules instead of merging their responsibilities.
 - Keep LM Studio as the chat UI and final-answer owner.
+
+Clarify pack pointer naming before adding more features.
+I would keep backend names precise:
+installed_pack_id = local DB pointer.
+pack_id = logical/course-pack id from metadata.
+pack = MCP/user-facing shortcut for the local installed pack pointer.
+The important rule: do not call the SQLite integer “pack_id” anywhere. That is where confusion grows.
+
+Make sp2_list_packs return a cleaner LM Studio-facing shape.
+Instead of dumping everything equally, return compact fields first:
+pack, title, pack_id, version, chunk_count if available, is_active.
+Then LM Studio can naturally choose:
+pack: 3

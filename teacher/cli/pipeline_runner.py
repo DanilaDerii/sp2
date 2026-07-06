@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from teacher.backend.rag.pdf.pipeline import build_pack_from_pdf
+from teacher.domain.rag.pdf.pipeline import build_pack_from_pdf
 
 
 def _build_parser() -> argparse.ArgumentParser:
