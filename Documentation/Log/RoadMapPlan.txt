@@ -1,7 +1,7 @@
 SP2 Roadmap - Current
 =====================
 
-Last audited: 2026-07-02
+Last audited: 2026-07-06
 
 
 Done
@@ -18,11 +18,27 @@ Done
 10. Teacher and student embedding calls switched to LM Studio
     `/v1/embeddings` with `text-embedding-nomic-embed-text-v1.5`.
 11. Guided local installer added at `installation/script.py`.
+12. Student runtime structure cleaned up:
+    - API route modules moved to `student/backend/api/`
+    - CRUD modules moved to `student/storage/cruds/`
+    - database setup/runtime paths moved to `student/storage/database/`
+13. Live LM Studio test passed with `/home/d/Downloads/day_4.pdf`:
+    - `sp2_ingest_pdf_from_path` built and imported `day_4`
+    - student storage created installed pack `1`
+    - 42 chunks were available for retrieval
+    - `sp2_get_course_context(pack=1, question=...)` returned relevant chunks
+    - LM Studio wrote the final answer from the returned course context
+14. Pack delete/uninstall workflow added in the current student structure:
+    - `student/storage/cruds/installed_pack_cleaner.py` composes SQLite,
+      LanceDB, and installed-pack file cleanup
+    - `DELETE /packs/{installed_pack_id}` exposes cleanup through the student API
+    - `sp2_delete_pack(pack)` exposes cleanup through the LM Studio MCP adapter
 
 
 Current Priority
 ----------------
-Improve answer quality now that the main business logic is in place.
+Improve retrieval quality and remaining pack lifecycle behavior now that the
+live LM Studio teacher-ingest, student-retrieval, and delete plumbing exists.
 
 Direction guardrails:
 - Treat SP2 as one app/install with teacher and student modes.
@@ -34,10 +50,10 @@ Direction guardrails:
 1. Improve retrieval ranking.
 2. Add adjacent chunk expansion or context windows.
 3. Improve teacher chunking so chunks contain better concepts.
-4. Rebuild and re-import packs with 768-dimensional LM Studio embeddings.
-5. Consider hybrid keyword + vector retrieval.
-6. Consider reranking after initial LanceDB retrieval.
-7. Tune MCP tool descriptions and returned packet guidance for LM Studio.
+4. Consider hybrid keyword + vector retrieval.
+5. Consider reranking after initial LanceDB retrieval.
+6. Tune MCP tool descriptions and returned packet guidance for LM Studio.
+7. Live-test `sp2_delete_pack(pack)` in LM Studio against a disposable pack.
 
 
 Next Product Work
@@ -45,12 +61,11 @@ Next Product Work
 1. Continue setup/install polish for one SP2 app.
 2. Shared embedding provider configuration for teacher pack build and student
    query retrieval.
-3. Pack delete/uninstall.
-4. Duplicate import handling.
-5. Active pack selection behavior.
-6. Update/replacement semantics for new pack versions.
-7. Focused test coverage for importer, retrieval, API, and MCP adapter.
-8. Teacher support for more source types after retrieval quality improves.
+3. Duplicate import handling.
+4. Active pack selection behavior.
+5. Update/replacement semantics for new pack versions.
+6. Focused test coverage for importer, retrieval, API, and MCP adapter.
+7. Teacher support for more source types after retrieval quality improves.
 
 Pack versioning direction for future implementation:
 - If a teacher imports a file with the same logical pack name but changed
@@ -63,22 +78,6 @@ Pack versioning direction for future implementation:
   `version` identifies the logical course-pack version.
 - Do not overwrite an installed pack in place until explicit replacement
   semantics are designed.
-
-Pack deletion direction for future implementation:
-- Current code has low-level delete helpers for SQLite installed-pack rows and
-  LanceDB chunk rows, but no complete public uninstall workflow.
-- Add a student-side pack management service before exposing deletion through
-  API or MCP.
-- A complete uninstall should remove:
-  `installed_packs` SQLite row
-  `pack_chunks` LanceDB rows
-  installed pack files under `student/storage/installed_packs/`
-- Expose deletion after the service exists:
-  `DELETE /packs/{installed_pack_id}`
-  `sp2_delete_pack(installed_pack_id)`
-- Retrieval should continue to reject inactive or deleted packs by
-  `installed_pack_id`.
-
 
 Later Product Work
 ------------------

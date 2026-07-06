@@ -115,3 +115,21 @@ def register_student_tools(mcp: Any) -> None:
             "mode": "pack_imported",
             "imported_pack": imported_pack,
         }
+
+    @mcp.tool()
+    def sp2_delete_pack(pack: int) -> dict[str, Any]:
+        """Delete one installed SP2 course pack by local installed pack id.
+
+        Args:
+            pack: Local SP2 installed pack id returned by SP2 pack tools.
+        """
+        resolved_installed_pack_id = positive_int(pack, "pack")
+
+        deleted_pack = request_student_json("DELETE", f"/packs/{resolved_installed_pack_id}")
+        if not isinstance(deleted_pack, dict):
+            raise RuntimeError("SP2 student API delete-pack response was not an object")
+
+        return {
+            "mode": "pack_deleted",
+            "deleted_pack": deleted_pack,
+        }

@@ -1,7 +1,7 @@
 SP2 Current Progress
 ====================
 
-Last audited: 2026-06-30
+Last audited: 2026-07-06
 
 This file is the current source of truth for project behavior. Old root-backend,
 old custom-chat, and speculative planning entries were removed because they were
@@ -25,6 +25,38 @@ Teacher pack builder
 
 For new agents: start from this file, then use `data_schema.txt` for exact
 tables/fields and `RoadMapPlan.txt` for the current next work.
+
+
+Live LM Studio Validation - 2026-07-06
+--------------------------------------
+The current implementation was tested through the real LM Studio MCP flow with
+`/home/d/Downloads/day_4.pdf`.
+
+Confirmed working chain:
+
+```text
+LM Studio chat
+-> sp2_ingest_pdf_from_path
+-> teacher API at 127.0.0.1:8002
+-> teacher pack zip at artifacts/day_4.zip
+-> student API /packs/import-path at 127.0.0.1:8001
+-> SQLite installed_packs row + LanceDB pack_chunks rows
+-> sp2_get_course_context(pack=1, question=...)
+-> LM Studio writes final answer from returned course chunks
+```
+
+Observed result:
+- `pack_id = day_4`
+- `installed_pack_id = 1`
+- `chunk_count = 42`
+- `embedding_model = text-embedding-nomic-embed-text-v1.5`
+- `embedding_dim = 768`
+- Retrieval returned `mode = course_context` and 5 relevant chunks for:
+  "What is affinity mapping and how is it used?"
+
+This proves the current teacher-ingest-to-student-storage path and the
+student-retrieval-to-LM-Studio-answer path work after the storage/API structure
+refactor.
 
 
 Project Shape
@@ -117,6 +149,7 @@ FastAPI routes:
 - `GET /packs`
 - `GET /packs/{installed_pack_id}`
 - `POST /packs/import-path`
+- `DELETE /packs/{installed_pack_id}`
 - `POST /retrieval/context`
 
 Pack import:
@@ -127,6 +160,14 @@ Pack import:
 - Import creates one SQLite `installed_packs` row.
 - Import seeds LanceDB `pack_chunks` rows.
 - Import rolls back local files, SQLite row, and LanceDB rows on failure.
+
+Pack delete:
+- Delete is implemented in `student/storage/cruds/installed_pack_cleaner.py`.
+- It removes LanceDB `pack_chunks` rows for the installed pack.
+- It removes installed pack files under `student/storage/installed_packs/`.
+- It removes the SQLite `installed_packs` row.
+- It is exposed through `DELETE /packs/{installed_pack_id}` and MCP
+  `sp2_delete_pack(pack)`.
 
 Retrieval:
 - Question text is normalized and embedded.
@@ -146,6 +187,8 @@ Important files:
 - `student/storage/importer/pack_validator.py`
 - `student/storage/cruds/sqlite/pack_repository.py`
 - `student/storage/cruds/lancedb/chunk_repository.py`
+- `student/storage/cruds/installed_pack_manager/manager.py`
+- `student/storage/cruds/installed_pack_cleaner.py`
 - `student/backend/retrieval/query_embedder.py`
 - `student/backend/retrieval/chunk_search.py`
 - `student/backend/retrieval/context_builder.py`
@@ -163,6 +206,7 @@ Current tools:
 - `sp2_get_pack(installed_pack_id)`
 - `sp2_get_course_context(pack, question)`
 - `sp2_import_pack_from_path(pack_zip_path)`
+- `sp2_delete_pack(pack)`
 - `sp2_ingest_pdf_from_path(pdf_path)`
 
 Runtime chain:
@@ -234,42 +278,42 @@ Current Milestones Completed
   the root venv, installs requirements, initializes SQLite/LanceDB, checks LM
   Studio embeddings when available, briefly verifies the backend, stops the
   temporary backend process, and prints MCP/backend commands.
+- Student storage code was reorganized under `student/storage/cruds/` and
+  `student/storage/database/`; the live LM Studio `day_4.pdf` test confirmed the
+  new paths work for teacher ingest, student import, LanceDB retrieval, and final
+  LM Studio answering.
+- Pack delete/uninstall was added through a storage cleaner, student API route,
+  and LM Studio MCP tool.
 
 
 Current Open Work
 -----------------
-1. Finish LM Studio embedding migration validation:
-   - rebuild teacher packs with `text-embedding-nomic-embed-text-v1.5`
-   - re-import rebuilt packs into empty student storage
-   - verify retrieval through FastAPI and MCP
-   - keep one configured embedding model shared by pack build and retrieval
-
-2. Unify setup:
+1. Unify setup:
    - teacher and student remain internal modules/modes
    - LM Studio is the local model provider for chat and embeddings
    - keep Docling as an optional fallback dependency, not default setup weight
    - finish first-run setup polish and cleanup of stale local virtualenvs
    - decide how much LM Studio CLI/model setup should be automated later
 
-3. Improve retrieval quality:
+2. Improve retrieval quality:
    - adjacent chunk expansion
    - better chunking
    - better embedding model tests
    - hybrid keyword + vector search
    - reranking
 
-4. Improve LM Studio answer behavior:
+3. Improve LM Studio answer behavior:
    - tune MCP tool descriptions
    - tune returned packet shape or prompt guidance
    - make course-grounded vs general fallback clearer
 
-5. Complete pack management:
+4. Complete remaining pack management:
+   - live-test `sp2_delete_pack(pack)` in LM Studio against a disposable pack
    - duplicate import handling
-   - uninstall/delete
    - active pack selection
    - update/replacement semantics
 
-6. Add focused tests:
+5. Add focused tests:
    - pack validation
    - importer rollback
    - SQLite CRUD
@@ -277,7 +321,7 @@ Current Open Work
    - retrieval context packet behavior
    - MCP adapter request/response behavior
 
-7. Improve setup details:
+6. Improve setup details:
    - clearer install commands
    - environment verification
    - safer first-run database setup

@@ -1,19 +1,11 @@
-Add pack delete/uninstall now.
-This is the most practical next step. Testing will get messy unless you can clean bad imports quickly. Implement a student pack management service that deletes:
-pack_chunks LanceDB rows, installed_packs SQLite row, and installed files under student/storage/installed_packs/.
+Current checkpoint:
+Delete-pack plumbing is implemented in the current split structure:
+student storage cleaner -> student API DELETE /packs/{installed_pack_id} -> MCP
+sp2_delete_pack(pack).
 
-Expose deletion through API and MCP.
-Add:
-DELETE /packs/{installed_pack_id}
-and:
-sp2_delete_pack(pack)
-MCP can keep the simple pack name, but internally it maps to installed_pack_id.
-
-
-
-
-
-
+Next validation:
+Restart the student backend and LM Studio MCP server, then test
+sp2_delete_pack(pack) against a disposable pack before deleting important data.
 
 
 

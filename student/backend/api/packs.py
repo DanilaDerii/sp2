@@ -5,13 +5,19 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from student.storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
-from student.storage.importer.pack_validator import PackValidationError
+from student.storage.cruds.installed_pack_cleaner import (
+    InstalledPackCleanError,
+    InstalledPackCleanResult,
+    InstalledPackNotFoundError,
+    delete_installed_pack_everywhere,
+)
 from student.storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     get_installed_pack,
     list_installed_packs,
 )
+from student.storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
+from student.storage.importer.pack_validator import PackValidationError
 
 
 router = APIRouter(prefix="/packs", tags=["packs"])
@@ -49,6 +55,15 @@ class ImportedPackResponse(BaseModel):
     install_path: str
 
 
+class DeletedInstalledPackResponse(BaseModel):
+    """Summary returned after deleting one installed pack."""
+
+    installed_pack: InstalledPackResponse
+    deleted_chunk_count: int
+    deleted_files: bool
+    deleted_sqlite_row: bool
+
+
 def _installed_pack_response(installed_pack: InstalledPack) -> InstalledPackResponse:
     return InstalledPackResponse(
         id=installed_pack.id,
@@ -72,6 +87,17 @@ def _imported_pack_response(imported_pack: ImportedPack) -> ImportedPackResponse
         installed_pack=_installed_pack_response(imported_pack.installed_pack),
         chunk_count=imported_pack.chunk_count,
         install_path=imported_pack.install_path,
+    )
+
+
+def _deleted_installed_pack_response(
+    cleaned_pack: InstalledPackCleanResult,
+) -> DeletedInstalledPackResponse:
+    return DeletedInstalledPackResponse(
+        installed_pack=_installed_pack_response(cleaned_pack.installed_pack),
+        deleted_chunk_count=cleaned_pack.deleted_chunk_count,
+        deleted_files=cleaned_pack.deleted_files,
+        deleted_sqlite_row=cleaned_pack.deleted_sqlite_row,
     )
 
 
@@ -123,3 +149,22 @@ def import_pack_from_path(request: ImportPackPathRequest) -> ImportedPackRespons
         ) from exc
 
     return _imported_pack_response(imported_pack)
+
+
+@router.delete("/{installed_pack_id}", response_model=DeletedInstalledPackResponse)
+def delete_pack(installed_pack_id: int) -> DeletedInstalledPackResponse:
+    """Delete one installed pack from student storage."""
+    try:
+        cleaned_pack = delete_installed_pack_everywhere(installed_pack_id)
+    except InstalledPackNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except InstalledPackCleanError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return _deleted_installed_pack_response(cleaned_pack)
