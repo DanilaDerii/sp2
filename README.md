@@ -98,7 +98,7 @@ cd /path/to/sp2
 Example from this repo path:
 
 ```bash
-cd /home/d/sp2
+cd /path/to/sp2
 environment/.venv/bin/python -m teacher.backend.cli.pipeline_runner /home/d/Downloads/week01.pdf
 ```
 
@@ -174,7 +174,7 @@ must also be running when LM Studio uses teacher ingest tools.
 
 
 
-
+# strage maintenence
 
 How to clean up storage: 
 cd ~/sp2

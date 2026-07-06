@@ -72,7 +72,7 @@ Current App Logic
 -----------------
 Teacher mode:
 - Build a pack from a PDF.
-- Extract text with Docling.
+- Extract text with pdftotext.
 - Chunk the material.
 - Embed chunks with the fixed v1 embedding model.
 - Export a portable course pack zip for students.
@@ -86,7 +86,6 @@ Student mode:
 LM Studio role:
 - Owns chat UI.
 - Owns generation model selection.
-- Target direction: owns local embedding model serving through its API.
 - Owns final answer wording.
 - Calls SP2 tools when course context is needed.
 

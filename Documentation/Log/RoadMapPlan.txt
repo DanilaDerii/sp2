@@ -82,11 +82,6 @@ Pack deletion direction for future implementation:
 
 Later Product Work
 ------------------
-1. Consider a unified LM Studio ingest flow where one SP2 MCP tool can take a
-   teacher file path, build the teacher pack zip, import it into student storage,
-   and return the installed pack id for retrieval in the same LM Studio chat.
-   Keep this as later work until retrieval quality, setup polish, and pack
-   management are stronger.
 
 Implementation guardrails for this later work:
 - Keep one SP2 MCP server exposed to LM Studio.
