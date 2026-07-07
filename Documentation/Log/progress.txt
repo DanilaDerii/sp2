@@ -1,7 +1,7 @@
 SP2 Current Progress
 ====================
 
-Last audited: 2026-07-06
+Last audited: 2026-07-07
 
 This file is the current source of truth for project behavior. Old root-backend,
 old custom-chat, and speculative planning entries were removed because they were
@@ -17,7 +17,7 @@ Teacher pack builder
 -> teacher zip with pack.json, chunks.json, vectors.npy
 -> student direct zip import
 -> SQLite installed_packs + LanceDB pack_chunks
--> student FastAPI API on 127.0.0.1:8001
+-> unified FastAPI backend on 127.0.0.1:8001
 -> LM Studio MCP tools
 -> context packet back to LM Studio
 -> LM Studio writes final answer
@@ -27,21 +27,23 @@ For new agents: start from this file, then use `data_schema.txt` for exact
 tables/fields and `RoadMapPlan.txt` for the current next work.
 
 
-Live LM Studio Validation - 2026-07-06
---------------------------------------
-The current implementation was tested through the real LM Studio MCP flow with
-`/home/d/Downloads/day_4.pdf`.
+Unified Backend LM Studio Validation - 2026-07-07
+-------------------------------------------------
+The current implementation was tested through the real LM Studio MCP flow after
+teacher and student HTTP routes were unified under `backend/api/api.py`.
 
 Confirmed working chain:
 
 ```text
 LM Studio chat
 -> sp2_ingest_pdf_from_path
--> teacher API at 127.0.0.1:8002
--> teacher pack zip at artifacts/day_4.zip
--> student API /packs/import-path at 127.0.0.1:8001
+-> unified backend POST /ingest/pdf-path at 127.0.0.1:8001
+-> teacher pack zip
+-> unified backend POST /packs/import-path at 127.0.0.1:8001
 -> SQLite installed_packs row + LanceDB pack_chunks rows
--> sp2_get_course_context(pack=1, question=...)
+-> unified backend POST /retrieval/context
+-> sp2_delete_pack(pack=1)
+-> unified backend DELETE /packs/1
 -> LM Studio writes final answer from returned course chunks
 ```
 
@@ -51,12 +53,11 @@ Observed result:
 - `chunk_count = 42`
 - `embedding_model = text-embedding-nomic-embed-text-v1.5`
 - `embedding_dim = 768`
-- Retrieval returned `mode = course_context` and 5 relevant chunks for:
-  "What is affinity mapping and how is it used?"
+- Retrieval returned `mode = course_context`.
+- Delete removed 42 chunks, installed files, and the SQLite row.
 
-This proves the current teacher-ingest-to-student-storage path and the
-student-retrieval-to-LM-Studio-answer path work after the storage/API structure
-refactor.
+This proves the current teacher-ingest, student-import, retrieval, and delete
+paths work through one backend server.
 
 
 Root Storage Migration - 2026-07-06
@@ -170,16 +171,17 @@ Important files:
 - `teacher/domain/orchestrators/zip_exporter.py`
 
 
-Student Module - Current Behavior
----------------------------------
+Unified Backend API - Current Behavior
+--------------------------------------
 Entrypoint:
-- `student/api.py`
+- `backend/api/api.py`
 
 Run target:
-- `environment/.venv/bin/python -m uvicorn student.api:app --host 127.0.0.1 --port 8001`
+- `environment/.venv/bin/python -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001`
 
 FastAPI routes:
 - `GET /health`
+- `POST /ingest/pdf-path`
 - `GET /packs`
 - `GET /packs/{installed_pack_id}`
 - `POST /packs/import-path`
@@ -217,6 +219,11 @@ Retrieval:
 - Context builder returns `course_context` or `no_course_context`.
 
 Important files:
+- `backend/api/api.py`
+- `backend/routes/health.py`
+- `backend/routes/ingest.py`
+- `backend/routes/packs.py`
+- `backend/routes/retrieval.py`
 - `storage/importer/pack_importer.py`
 - `storage/importer/pack_validator.py`
 - `storage/cruds/sqlite/pack_repository.py`
@@ -226,8 +233,6 @@ Important files:
 - `student/domain/retrieval/query_embedder.py`
 - `student/domain/retrieval/chunk_search.py`
 - `student/domain/retrieval/context_builder.py`
-- `student/routes/packs.py`
-- `student/routes/retrieval.py`
 
 
 LM Studio MCP Integration
@@ -248,7 +253,7 @@ Runtime chain:
 ```text
 LM Studio chat UI
 -> SP2 MCP stdio server
--> teacher FastAPI API at 127.0.0.1:8002 and/or student FastAPI API at 127.0.0.1:8001
+-> unified SP2 FastAPI backend at 127.0.0.1:8001
 -> teacher pack build and/or SQLite/LanceDB retrieval
 -> structured result back to LM Studio
 ```
@@ -272,7 +277,7 @@ Current MCP file split:
 - `server.py`: creates `FastMCP`, registers tool groups, and owns `main()`.
 - `student_tools.py`: student pack, import, and retrieval tools.
 - `teacher_tools.py`: teacher ingest tools.
-- `client.py`: student/teacher backend API HTTP helpers.
+- `client.py`: unified backend API HTTP helper using `SP2_BACKEND_API_BASE_URL`.
 - `validators.py`: MCP argument validation helpers.
 
 
@@ -303,7 +308,7 @@ Current Milestones Completed
 - Student LanceDB setup and pack chunk CRUD.
 - Student direct zip importer.
 - Student retrieval modules.
-- Student FastAPI API.
+- Unified FastAPI backend API under `backend/api/` and `backend/routes/`.
 - LM Studio MCP server.
 - End-to-end LM Studio direction proved through MCP tool calls.
 - Prior disposable local test pack was removed during the LM Studio embedding
@@ -325,15 +330,20 @@ Current Milestones Completed
   setup, and a student API smoke test for `/health` and empty `/packs`.
 - Pack delete/uninstall was added through a storage cleaner, student API route,
   and LM Studio MCP tool.
+- Teacher and student HTTP routes were unified behind one backend server:
+  `backend.api.api:app` on port 8001. The old `student/api.py`,
+  `teacher/api.py`, `student/routes/`, and `teacher/routes/` files were removed.
+- MCP now points at one backend base URL with `SP2_BACKEND_API_BASE_URL`.
 
 
 Current Open Work
 -----------------
 1. Unify setup:
    - teacher and student remain internal modules/modes
+   - current code uses one backend server at `backend.api.api:app`
    - LM Studio is the local model provider for chat and embeddings
    - keep Docling as an optional fallback dependency, not default setup weight
-   - finish first-run setup polish and cleanup of stale local virtualenvs
+   - update installer and user-facing docs for the unified backend command
    - decide how much LM Studio CLI/model setup should be automated later
 
 2. Improve retrieval quality:
@@ -349,7 +359,6 @@ Current Open Work
    - make course-grounded vs general fallback clearer
 
 4. Complete remaining pack management:
-   - live-test `sp2_delete_pack(pack)` in LM Studio against a disposable pack
    - duplicate import handling
    - active pack selection
    - update/replacement semantics

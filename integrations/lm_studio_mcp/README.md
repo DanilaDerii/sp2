@@ -1,9 +1,9 @@
 # SP2 LM Studio MCP Integration
 
-Last audited: 2026-07-06
+Last audited: 2026-07-07
 
-This directory contains the implemented MCP server that exposes SP2 teacher
-ingest and student retrieval as local tools for LM Studio.
+This directory contains the implemented MCP server that exposes SP2 ingest,
+pack management, and retrieval as local tools for LM Studio.
 
 It lives at the project root because the same MCP server is the bridge for both
 student retrieval tools and teacher ingestion tools.
@@ -14,7 +14,7 @@ The runtime boundary is:
 LM Studio chat UI
 -> LM Studio MCP host/client
 -> SP2 MCP stdio server
--> SP2 teacher FastAPI API and/or SP2 student FastAPI API
+-> SP2 unified FastAPI backend
 -> teacher pack build or SQLite/LanceDB retrieval
 -> context packet back to LM Studio
 ```
@@ -36,34 +36,22 @@ course-context calls.
 - `sp2_import_pack_from_path(pack_zip_path)`
 - `sp2_ingest_pdf_from_path(pdf_path)`
 
-## Local API Dependency
+## Local Backend Dependency
 
-The student FastAPI server should be running before LM Studio calls student
-runtime tools:
-
-```bash
-environment/.venv/bin/python -m uvicorn student.api:app --host 127.0.0.1 --port 8001
-```
-
-The teacher FastAPI server should be running before LM Studio calls teacher
-ingest tools:
+The SP2 backend should be running before LM Studio calls SP2 tools:
 
 ```bash
-environment/.venv/bin/python -m uvicorn teacher.api:app --host 127.0.0.1 --port 8002
+environment/.venv/bin/python -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
 ```
 
-The MCP student tools call:
+The MCP tools call:
 
 - `GET http://127.0.0.1:8001/packs`
 - `GET http://127.0.0.1:8001/packs/{installed_pack_id}`
 - `POST http://127.0.0.1:8001/retrieval/context`
 - `POST http://127.0.0.1:8001/packs/import-path`
-
-The MCP teacher ingest tool calls the teacher API, then imports the generated
-zip through the student API:
-
-- `POST http://127.0.0.1:8002/ingest/pdf-path`
-- `POST http://127.0.0.1:8001/packs/import-path`
+- `DELETE http://127.0.0.1:8001/packs/{installed_pack_id}`
+- `POST http://127.0.0.1:8001/ingest/pdf-path`
 
 Its response is intentionally compact for LM Studio chat:
 
@@ -89,8 +77,7 @@ repo working directory.
         "/home/d/sp2/integrations/lm_studio_mcp/server.py"
       ],
       "env": {
-        "SP2_STUDENT_API_BASE_URL": "http://127.0.0.1:8001",
-        "SP2_TEACHER_API_BASE_URL": "http://127.0.0.1:8002"
+        "SP2_BACKEND_API_BASE_URL": "http://127.0.0.1:8001"
       }
     }
   }
@@ -110,5 +97,5 @@ Current file split:
 - `server.py`: creates `FastMCP`, registers tool groups, and runs stdio.
 - `student_tools.py`: student pack, import, and retrieval MCP tools.
 - `teacher_tools.py`: teacher ingest MCP tools.
-- `client.py`: shared HTTP helpers for student and teacher backend APIs.
+- `client.py`: shared HTTP helper for the unified SP2 backend API.
 - `validators.py`: MCP argument validation and small payload helpers.

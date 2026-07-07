@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from integrations.lm_studio_mcp.client import request_student_json, request_teacher_json
+from integrations.lm_studio_mcp.client import request_backend_json
 from integrations.lm_studio_mcp.validators import required_text
 
 
@@ -20,14 +20,14 @@ def register_teacher_tools(mcp: Any) -> None:
         """
         normalized_path = required_text(pdf_path, "pdf_path")
 
-        teacher_ingest = request_teacher_json(
+        teacher_ingest = request_backend_json(
             "POST",
             "/ingest/pdf-path",
             json_body={"pdf_path": normalized_path},
         )
         if not isinstance(teacher_ingest, dict):
             raise RuntimeError(
-                "SP2 teacher API /ingest/pdf-path response was not an object"
+                "SP2 backend API /ingest/pdf-path response was not an object"
             )
 
         zip_path = teacher_ingest.get("zip_path")
@@ -36,14 +36,14 @@ def register_teacher_tools(mcp: Any) -> None:
                 "SP2 teacher ingest response did not include a usable zip_path"
             )
 
-        imported_pack = request_student_json(
+        imported_pack = request_backend_json(
             "POST",
             "/packs/import-path",
             json_body={"pack_zip_path": zip_path},
         )
         if not isinstance(imported_pack, dict):
             raise RuntimeError(
-                "SP2 student API /packs/import-path response was not an object"
+                "SP2 backend API /packs/import-path response was not an object"
             )
 
         installed_pack = imported_pack.get("installed_pack")

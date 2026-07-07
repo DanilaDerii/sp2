@@ -1,7 +1,7 @@
 SP2 Roadmap - Current
 =====================
 
-Last audited: 2026-07-06
+Last audited: 2026-07-07
 
 
 Done
@@ -18,8 +18,9 @@ Done
 10. Teacher and student embedding calls switched to LM Studio
     `/v1/embeddings` with `text-embedding-nomic-embed-text-v1.5`.
 11. Guided local installer added at `installation/script.py`.
-12. Student runtime structure cleaned up:
-    - API route modules moved to `student/routes/`
+12. Runtime structure cleaned up:
+    - HTTP route modules moved to `backend/routes/`
+    - one FastAPI app entrypoint now lives at `backend/api/api.py`
     - CRUD modules moved to root `storage/cruds/`
     - database setup/runtime paths moved to root `storage/database/`
 13. Live LM Studio test passed with `/home/d/Downloads/day_4.pdf`:
@@ -31,34 +32,49 @@ Done
 14. Pack delete/uninstall workflow added in the current student structure:
     - `storage/cruds/installed_pack_cleaner.py` composes SQLite,
       LanceDB, and installed-pack file cleanup
-    - `DELETE /packs/{installed_pack_id}` exposes cleanup through the student API
+    - `DELETE /packs/{installed_pack_id}` exposes cleanup through the backend API
     - `sp2_delete_pack(pack)` exposes cleanup through the LM Studio MCP adapter
+15. Teacher and student HTTP routes unified behind one backend server:
+    - `backend.api.api:app` runs all current HTTP routes on port 8001
+    - old split app files and route directories were removed
+    - MCP uses `SP2_BACKEND_API_BASE_URL` instead of separate teacher/student
+      backend URLs
+16. Live unified-backend LM Studio test passed:
+    - `POST /ingest/pdf-path` built a pack
+    - `POST /packs/import-path` imported it
+    - `POST /retrieval/context` returned course context
+    - `DELETE /packs/1` deleted the disposable pack and its 42 chunks
 
 
 Current Priority
 ----------------
-Improve retrieval quality and remaining pack lifecycle behavior now that the
-live LM Studio teacher-ingest, student-retrieval, and delete plumbing exists.
+Update setup/docs for the unified backend, then improve retrieval quality and
+remaining pack lifecycle behavior.
 
 Direction guardrails:
 - Treat SP2 as one app/install with teacher and student modes.
 - Keep the internal `teacher/` and `student/` code split for module clarity.
+- Keep one HTTP backend entrypoint at `backend.api.api:app`.
 - LM Studio is the local model provider for chat and embeddings.
 - Keep `text-embedding-nomic-embed-text-v1.5` as the single v1 embedding model
   for pack creation and query retrieval.
 
-1. Improve retrieval ranking.
-2. Add adjacent chunk expansion or context windows.
-3. Improve teacher chunking so chunks contain better concepts.
-4. Consider hybrid keyword + vector retrieval.
-5. Consider reranking after initial LanceDB retrieval.
-6. Tune MCP tool descriptions and returned packet guidance for LM Studio.
-7. Live-test `sp2_delete_pack(pack)` in LM Studio against a disposable pack.
+1. Update `installation/script.py` for one backend command and one MCP backend
+   URL.
+2. Update README and MCP docs for `backend.api.api:app` and
+   `SP2_BACKEND_API_BASE_URL`.
+3. Improve retrieval ranking.
+4. Add adjacent chunk expansion or context windows.
+5. Improve teacher chunking so chunks contain better concepts.
+6. Consider hybrid keyword + vector retrieval.
+7. Consider reranking after initial LanceDB retrieval.
+8. Tune MCP tool descriptions and returned packet guidance for LM Studio.
 
 
 Next Product Work
 -----------------
-1. Continue setup/install polish for one SP2 app.
+1. Continue setup/install polish for one SP2 app after the unified-backend docs
+   are updated.
 2. Shared embedding provider configuration for teacher pack build and student
    query retrieval.
 3. Duplicate import handling.

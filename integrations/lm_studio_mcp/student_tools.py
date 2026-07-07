@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from integrations.lm_studio_mcp.client import request_student_json
+from integrations.lm_studio_mcp.client import request_backend_json
 from integrations.lm_studio_mcp.validators import (
     positive_int,
     required_text,
@@ -29,9 +29,9 @@ def register_student_tools(mcp: Any) -> None:
                 "active_only": active_only,
             }
         )
-        packs = request_student_json("GET", "/packs", params=params)
+        packs = request_backend_json("GET", "/packs", params=params)
         if not isinstance(packs, list):
-            raise RuntimeError("SP2 student API /packs response was not a list")
+            raise RuntimeError("SP2 backend API /packs response was not a list")
 
         return {
             "mode": "installed_packs",
@@ -48,10 +48,10 @@ def register_student_tools(mcp: Any) -> None:
         """
         resolved_installed_pack_id = positive_int(installed_pack_id, "installed_pack_id")
 
-        pack = request_student_json("GET", f"/packs/{resolved_installed_pack_id}")
+        pack = request_backend_json("GET", f"/packs/{resolved_installed_pack_id}")
         if not isinstance(pack, dict):
             raise RuntimeError(
-                "SP2 student API /packs/{installed_pack_id} response was not an object"
+                "SP2 backend API /packs/{installed_pack_id} response was not an object"
             )
 
         return {
@@ -83,9 +83,9 @@ def register_student_tools(mcp: Any) -> None:
                 "question": normalized_question,
             }
         )
-        packet = request_student_json("POST", "/retrieval/context", json_body=payload)
+        packet = request_backend_json("POST", "/retrieval/context", json_body=payload)
         if not isinstance(packet, dict):
-            raise RuntimeError("SP2 student API /retrieval/context response was not an object")
+            raise RuntimeError("SP2 backend API /retrieval/context response was not an object")
 
         return {
             "sp2_tool": "sp2_get_course_context",
@@ -103,13 +103,13 @@ def register_student_tools(mcp: Any) -> None:
         """
         normalized_path = required_text(pack_zip_path, "pack_zip_path")
 
-        imported_pack = request_student_json(
+        imported_pack = request_backend_json(
             "POST",
             "/packs/import-path",
             json_body={"pack_zip_path": normalized_path},
         )
         if not isinstance(imported_pack, dict):
-            raise RuntimeError("SP2 student API /packs/import-path response was not an object")
+            raise RuntimeError("SP2 backend API /packs/import-path response was not an object")
 
         return {
             "mode": "pack_imported",
@@ -125,9 +125,9 @@ def register_student_tools(mcp: Any) -> None:
         """
         resolved_installed_pack_id = positive_int(pack, "pack")
 
-        deleted_pack = request_student_json("DELETE", f"/packs/{resolved_installed_pack_id}")
+        deleted_pack = request_backend_json("DELETE", f"/packs/{resolved_installed_pack_id}")
         if not isinstance(deleted_pack, dict):
-            raise RuntimeError("SP2 student API delete-pack response was not an object")
+            raise RuntimeError("SP2 backend API delete-pack response was not an object")
 
         return {
             "mode": "pack_deleted",

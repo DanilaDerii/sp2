@@ -177,3 +177,11 @@ Retrieved chunk fields:
 
 Score rule:
 - `score = 1 / (1 + distance)` when distance is present and non-negative.
+
+
+
+some other things: 
+- SQLite cannot enforce a real foreign key into LanceDB.
+- The relationship between SQLite `installed_packs.id` and LanceDB
+  `pack_chunks.installed_pack_id` is enforced by application code.
+  - Use `installed_pack_id` as the local retrieval scope.

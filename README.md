@@ -4,13 +4,13 @@ SP2 is a local course-pack and retrieval tool for LM Studio. LM Studio owns the
 chat UI and final answer. SP2 owns course-pack storage, retrieval, and the MCP
 tool that returns course context.
 
-## 1. Install LM Studio
+## 1. Install And Open LM Studio
 
-Install and open LM Studio first.
+Install LM Studio and open it at least once before using the `lms` command.
 
-## 2. Download The Embedding Model
+## 2. Download And Load The Embedding Model
 
-In LM Studio, search for and download:
+In LM Studio, download and load:
 
 ```text
 text-embedding-nomic-embed-text-v1.5
@@ -18,17 +18,7 @@ text-embedding-nomic-embed-text-v1.5
 
 SP2 expects this model to return 768-dimensional embedding vectors.
 
-## 3. Start The LM Studio Server
-
-In LM Studio, open the local server/developer area and start the server.
-
-Use the default OpenAI-compatible base URL:
-
-```text
-http://127.0.0.1:1234/v1
-```
-
-## 4. Run The SP2 Installer
+## 3. Run The SP2 Setup Script
 
 From a terminal, go to the folder where you cloned or copied SP2, then run:
 
@@ -37,14 +27,25 @@ cd /path/to/sp2
 python3 installation/script.py
 ```
 
-The installer creates the Python virtual environment, installs requirements,
-initializes SQLite/LanceDB storage, checks LM Studio embeddings when available,
-briefly tests the SP2 backend, stops that temporary backend, then prints the MCP
-JSON and backend start command.
+The setup script creates or reuses `environment/.venv`, installs
+`environment/requirements.txt`, initializes SQLite and LanceDB, then prints the
+MCP JSON and backend start command.
+
+The setup script does not start LM Studio, edit `mcp.json`, download models, or
+start the SP2 backend.
+
+## 4. Start The LM Studio Server
+
+Start LM Studio's local server from the LM Studio UI, or run:
+
+```bash
+lms server start
+```
+
+SP2 will use LM Studio's local embeddings endpoint automatically after the
+server is running.
 
 ## 5. Add The MCP Config In LM Studio
-
-Copy the MCP JSON printed by the installer.
 
 In LM Studio, open:
 
@@ -52,19 +53,38 @@ In LM Studio, open:
 Program tab -> Install -> Edit mcp.json
 ```
 
-If `mcp.json` is empty, paste the full JSON.
+If `mcp.json` is empty, paste this full JSON:
+
+```json
+{
+  "mcpServers": {
+    "sp2-course-context": {
+      "command": "/path/to/sp2/environment/.venv/bin/python",
+      "args": [
+        "/path/to/sp2/integrations/lm_studio_mcp/server.py"
+      ],
+      "env": {
+        "SP2_BACKEND_API_BASE_URL": "http://127.0.0.1:8001"
+      }
+    }
+  }
+}
+```
 
 If it already has `"mcpServers": { ... }`, paste only the
 `"sp2-course-context": { ... }` entry inside that object.
 
+Replace `/path/to/sp2` with your real SP2 folder path. The setup script prints
+the same config with the correct absolute paths for your machine.
+
 ## 6. Start The SP2 Backend
 
-Use the backend command printed by the installer. It will use the real path on
-your machine and will look like this for the student runtime:
+Use the backend command printed by the setup script. It will use the real path on
+your machine and will look like this:
 
 ```bash
 cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m uvicorn student.api:app --host 127.0.0.1 --port 8001
+/path/to/sp2/environment/.venv/bin/python -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
 ```
 
 Leave that terminal running while using SP2 from LM Studio.
@@ -75,58 +95,11 @@ To stop the backend later, press:
 Ctrl+C
 ```
 
-If you want LM Studio to build teacher packs through MCP, also start the teacher
-backend in a second terminal:
+## 7. Ingest Or Import A Teacher PDF
 
-```bash
-cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m uvicorn teacher.api:app --host 127.0.0.1 --port 8002
-```
+Keep the LM Studio server and SP2 backend running first.
 
-## 7. Ingest A Teacher PDF Into A Pack
-
-Keep the LM Studio server running first, because the teacher pipeline uses LM
-Studio embeddings.
-
-From the SP2 folder, run:
-
-```bash
-cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m teacher.cli.pipeline_runner /path/to/teacher-file.pdf
-```
-
-Example from this repo path:
-
-```bash
-cd /path/to/sp2
-environment/.venv/bin/python -m teacher.cli.pipeline_runner /home/d/Downloads/week01.pdf
-```
-
-The teacher pipeline creates:
-
-```text
-artifacts/<pack-id>_pack/
-artifacts/<pack-id>.zip
-```
-
-Import the generated `.zip` into the student runtime from LM Studio with the
-`sp2_import_pack_from_path` tool, or let LM Studio run the full teacher-to-student
-flow with `sp2_ingest_pdf_from_path`. That MCP tool builds the teacher pack,
-imports the generated zip into student storage, and returns `installed_pack_id`.
-You can also call the student API:
-
-```bash
-curl -X POST http://127.0.0.1:8001/packs/import-path \
-  -H "Content-Type: application/json" \
-  -d '{"pack_zip_path":"/home/d/sp2/artifacts/<pack-id>.zip"}'
-```
-
-## 8. Prompt LM Studio To Use SP2
-
-For consistent demos, ask LM Studio directly to use the SP2 course-context tool
-before answering.
-
-To ingest a teacher PDF through LM Studio, use a short prompt:
+To let LM Studio build and import a pack through MCP, use:
 
 ```text
 Use mcp/sp2-course-context. Import this PDF: /path/to/teacher-file.pdf
@@ -134,31 +107,26 @@ Use mcp/sp2-course-context. Import this PDF: /path/to/teacher-file.pdf
 
 The tool returns the installed pack id. Use that id for retrieval questions.
 
+
+## 8. Prompt LM Studio To Use SP2
+
+For consistent demos, ask LM Studio directly to use the SP2 course-context tool
+before answering.
+
 Use this prompt shape:
 
-```text
-Use the SP2 course context tool before answering.
-
-1. First call sp2_list_packs and choose the relevant installed pack.
-2. Then call sp2_get_course_context with pack and question.
-3. Answer using the returned course chunks.
-4. Mention when the course pack does not contain enough information.
-
-Question: <your question here>
 ```
-
-If you already know the installed pack id, use the shorter version:
-
-```text
-Use mcp/sp2-course-context.
-Call sp2_get_course_context before answering.
-
+Use mcp/sp2-course-context tool.
 pack: <installed_pack_id>
 question: <your question here>
-
-Answer from the returned course chunks. If no chunks are returned, say the
-course pack does not contain enough information.
 ```
+
+If you need pack deleted: 
+
+'''
+Use mcp/sp2-course-context.
+delete pack 1
+'''
 
 ## Important
 
@@ -166,24 +134,18 @@ Two local servers are involved:
 
 ```text
 LM Studio server: http://127.0.0.1:1234/v1
-SP2 student API:  http://127.0.0.1:8001
-SP2 teacher API:  http://127.0.0.1:8002
+SP2 backend:      http://127.0.0.1:8001
 ```
 
-LM Studio and the student API must be running for retrieval. The teacher API
-must also be running when LM Studio uses teacher ingest tools.
+LM Studio and the SP2 backend must both be running for SP2 tools to work.
 
+## Storage Maintenance
 
+To reset local SP2 storage during development:
 
-
-
-# strage maintenence
-
-How to clean up storage: 
-cd ~/sp2
-
+```bash
+cd /path/to/sp2
 environment/.venv/bin/python -m storage.database.setup.reset_student_databases --yes
-
 find storage/installed_packs -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
-
 find artifacts -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
+```
