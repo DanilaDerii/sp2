@@ -19,7 +19,6 @@ Qwen2.5 7B Instruct 1M
 ```
 ![alt text](image.png)
 
-SP2 expects this model to return 768-dimensional embedding vectors.
 
 ## 3. Run The SP2 Setup Script
 
@@ -45,8 +44,10 @@ Start LM Studio's local server from the LM Studio UI, or run:
 lms server start
 ```
 
-SP2 will use LM Studio's local embeddings endpoint automatically after the
-server is running.
+load embeding model in developer -> local server -> load model
+select text-embedding-nomic-embed-text-v1.5
+
+![alt text](image-1.png)
 
 ## 5. Add The MCP Config In LM Studio
 
