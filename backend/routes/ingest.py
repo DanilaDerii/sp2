@@ -6,16 +6,16 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from teacher.domain.rag.common.embedder import EmbeddingRequestError
-from teacher.domain.services import TeacherIngestResult, ingest_pdf_from_path
+from teacher.domain.services import TeacherIngestResult, ingest_path_to_file
 
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
 
-class IngestPdfPathRequest(BaseModel):
-    """Request body for building a teacher pack from a local PDF path."""
+class IngestFilePathRequest(BaseModel):
+    """Request body for building a teacher pack from a local source path."""
 
-    pdf_path: str = Field(..., min_length=1)
+    file_path: str = Field(..., min_length=1)
 
 
 class TeacherIngestResponse(BaseModel):
@@ -47,14 +47,14 @@ def _teacher_ingest_response(result: TeacherIngestResult) -> TeacherIngestRespon
 
 
 @router.post(
-    "/pdf-path",
+    "/file-path",
     response_model=TeacherIngestResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def ingest_pdf_path(request: IngestPdfPathRequest) -> TeacherIngestResponse:
-    """Build a teacher pack from a local PDF path."""
+def ingest_file_path(request: IngestFilePathRequest) -> TeacherIngestResponse:
+    """Build a teacher pack from a local supported source path."""
     try:
-        result = ingest_pdf_from_path(request.pdf_path)
+        result = ingest_path_to_file(request.file_path)
     except FileNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

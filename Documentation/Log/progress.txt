@@ -1,7 +1,7 @@
 SP2 Current Progress
 ====================
 
-Last audited: 2026-07-07
+Last audited: 2026-07-08
 
 This file is the current source of truth for project behavior. Old root-backend,
 old custom-chat, and speculative planning entries were removed because they were
@@ -31,6 +31,9 @@ Unified Backend LM Studio Validation - 2026-07-07
 -------------------------------------------------
 The current implementation was tested through the real LM Studio MCP flow after
 teacher and student HTTP routes were unified under `backend/api/api.py`.
+This section records the July 7 live test using the then-current PDF-specific
+tool and endpoint names; the current generic source-file contract is documented
+in the next section.
 
 Confirmed working chain:
 
@@ -58,6 +61,28 @@ Observed result:
 
 This proves the current teacher-ingest, student-import, retrieval, and delete
 paths work through one backend server.
+
+
+Generic Source Ingest Contract - 2026-07-08
+-------------------------------------------
+Teacher ingest is moving from PDF-only naming to one source-file contract.
+
+Current runtime contract:
+- MCP tool: `sp2_ingest_file_from_path(file_path)`
+- Backend route: `POST /ingest/file-path`
+- Request field: `file_path`
+- Teacher service dispatch: `teacher/domain/services/ingest_service.py`
+  `ingest_path_to_file(file_path)`
+
+The service checks the source file suffix and selects the teacher-side pipeline:
+- `.pdf` -> `teacher/domain/rag/pdf/pipeline.py`
+- `.odt` -> `teacher/domain/rag/doc/odt/pipeline.py`
+- `.docx` -> `teacher/domain/rag/doc/docx/pipeline.py`
+
+ODT and DOCX extraction now use `pypandoc_binary`/Pandoc to normalize content
+into the existing `ExtractedDocument` shape. After extraction, PDF, ODT, and
+DOCX share the same `rag/common/` chunking, embedding, pack-writing, and
+zip-export behavior.
 
 
 Root Storage Migration - 2026-07-06
@@ -142,17 +167,20 @@ Entrypoint:
 - `teacher/cli/pipeline_runner.py`
 
 Current supported source:
-- One PDF path.
+- Local `.pdf`, `.odt`, and `.docx` source paths.
 
 Pipeline:
-1. Validate PDF path.
-2. Extract text/page text with `pdftotext` when a PDF has an embedded text
-   layer; fall back to Docling for heavier PDF extraction.
-3. Chunk page text with overlapping character windows.
-4. Infer a simple section label from the first meaningful page line.
-5. Embed chunks through LM Studio's local embeddings API.
-6. Write `pack.json`, `chunks.json`, and `vectors.npy`.
-7. Export the pack directory as a `.zip`.
+1. Validate the source path and supported suffix through the teacher service.
+2. Run file-type-specific extraction:
+   - PDF uses `pdftotext -layout` first, then Docling fallback.
+   - ODT uses `pypandoc_binary`/Pandoc.
+   - DOCX uses `pypandoc_binary`/Pandoc.
+3. Normalize extracted content into `ExtractedDocument`.
+4. Chunk extracted text with overlapping character windows.
+5. Infer a simple section label from the first meaningful source unit.
+6. Embed chunks through LM Studio's local embeddings API.
+7. Write `pack.json`, `chunks.json`, and `vectors.npy`.
+8. Export the pack directory as a `.zip`.
 
 Current teacher embedding model:
 - `text-embedding-nomic-embed-text-v1.5`
@@ -162,8 +190,13 @@ Current teacher embedding endpoint:
   `http://127.0.0.1:1234/v1/embeddings`.
 
 Important files:
+- `teacher/domain/services/ingest_service.py`
 - `teacher/domain/rag/pdf/extractor.py`
 - `teacher/domain/rag/pdf/pipeline.py`
+- `teacher/domain/rag/doc/odt/extractor.py`
+- `teacher/domain/rag/doc/odt/pipeline.py`
+- `teacher/domain/rag/doc/docx/extractor.py`
+- `teacher/domain/rag/doc/docx/pipeline.py`
 - `teacher/domain/rag/common/chunker.py`
 - `teacher/domain/rag/common/embedder.py`
 - `teacher/domain/orchestrators/pack_writer.py`
@@ -181,7 +214,7 @@ Run target:
 
 FastAPI routes:
 - `GET /health`
-- `POST /ingest/pdf-path`
+- `POST /ingest/file-path`
 - `GET /packs`
 - `GET /packs/{installed_pack_id}`
 - `POST /packs/import-path`
@@ -246,7 +279,7 @@ Current tools:
 - `sp2_get_course_context(pack, question)`
 - `sp2_import_pack_from_path(pack_zip_path)`
 - `sp2_delete_pack(pack)`
-- `sp2_ingest_pdf_from_path(pdf_path)`
+- `sp2_ingest_file_from_path(file_path)`
 
 Runtime chain:
 
@@ -259,8 +292,9 @@ LM Studio chat UI
 ```
 
 Teacher ingest MCP behavior:
-- `sp2_ingest_pdf_from_path` always builds the teacher pack zip and imports it
+- `sp2_ingest_file_from_path` builds the teacher pack zip and imports it
   into the student runtime.
+- Supported current source suffixes are `.pdf`, `.odt`, and `.docx`.
 - The response returns compact top-level fields for LM Studio chat:
   `pack`, `installed_pack_id`, `pack_id`, `title`, `chunk_count`, `zip_path`, and
   `message`.
@@ -302,6 +336,8 @@ current implementation because LM Studio owns chat context in v1.
 Current Milestones Completed
 ----------------------------
 - Teacher PDF pack pipeline.
+- Teacher ODT extraction and pack pipeline using `pypandoc_binary`/Pandoc.
+- Teacher DOCX extraction and pack pipeline using `pypandoc_binary`/Pandoc.
 - Pack writer for `pack.json`, `chunks.json`, `vectors.npy`.
 - Zip export.
 - Student SQLite setup and installed-pack CRUD.
@@ -318,9 +354,9 @@ Current Milestones Completed
   `environment/.venv` for teacher and student modules. Per-module requirements
   files were retired.
 - Added `installation/script.py` as the guided setup path. It creates or reuses
-  the root venv, installs requirements, initializes SQLite/LanceDB, checks LM
-  Studio embeddings when available, briefly verifies the backend, stops the
-  temporary backend process, and prints MCP/backend commands.
+  the root venv, installs requirements, initializes SQLite/LanceDB, then prints
+  the manual next steps for starting LM Studio, adding the MCP config, and
+  starting the unified backend.
 - Storage code now lives in the root `storage/` package, with CRUD modules under
   `storage/cruds/` and database setup/runtime paths under `storage/database/`.
   The earlier live LM Studio `day_4.pdf` test confirmed the teacher ingest,
@@ -334,6 +370,9 @@ Current Milestones Completed
   `backend.api.api:app` on port 8001. The old `student/api.py`,
   `teacher/api.py`, `student/routes/`, and `teacher/routes/` files were removed.
 - MCP now points at one backend base URL with `SP2_BACKEND_API_BASE_URL`.
+- Teacher ingest now uses the generic `/ingest/file-path` backend route,
+  `file_path` request field, and `sp2_ingest_file_from_path(file_path)` MCP
+  tool. File-type dispatch lives in the teacher service layer.
 
 
 Current Open Work
@@ -342,7 +381,8 @@ Current Open Work
    - teacher and student remain internal modules/modes
    - current code uses one backend server at `backend.api.api:app`
    - LM Studio is the local model provider for chat and embeddings
-   - keep Docling as an optional fallback dependency, not default setup weight
+   - keep `pypandoc_binary` as the pip-managed Pandoc dependency for current ODT
+     and DOCX ingest
    - update installer and user-facing docs for the unified backend command
    - decide how much LM Studio CLI/model setup should be automated later
 

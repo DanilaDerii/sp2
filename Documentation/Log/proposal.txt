@@ -71,8 +71,11 @@ Teacher Pain Points
 Current App Logic
 -----------------
 Teacher mode:
-- Build a pack from a PDF.
-- Extract text with pdftotext.
+- Build a pack from a supported source file.
+- Dispatch by file suffix in the teacher service.
+- Extract PDF text with pdftotext.
+- Extract ODT text with Pandoc through `pypandoc_binary`.
+- Extract DOCX text with Pandoc through `pypandoc_binary`.
 - Chunk the material.
 - Embed chunks with the fixed v1 embedding model.
 - Export a portable course pack zip for students.
@@ -140,6 +143,8 @@ Current Prototype State
 -----------------------
 Implemented teacher mode:
 - PDF ingestion with pdftotext.
+- ODT ingestion with Pandoc through `pypandoc_binary`.
+- DOCX ingestion with Pandoc through `pypandoc_binary`.
 - Chunking.
 - Local embedding generation.
 - Zip export.

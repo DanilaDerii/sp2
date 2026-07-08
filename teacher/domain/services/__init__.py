@@ -1,5 +1,5 @@
 """Teacher backend service boundaries."""
 
-from .ingest_service import TeacherIngestResult, ingest_pdf_from_path
+from .ingest_service import TeacherIngestResult, ingest_path_to_file
 
-__all__ = ["TeacherIngestResult", "ingest_pdf_from_path"]
+__all__ = ["TeacherIngestResult", "ingest_path_to_file"]

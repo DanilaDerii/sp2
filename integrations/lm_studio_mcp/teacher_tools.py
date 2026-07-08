@@ -12,22 +12,22 @@ def register_teacher_tools(mcp: Any) -> None:
     """Register teacher workflow tools on a FastMCP server."""
 
     @mcp.tool()
-    def sp2_ingest_pdf_from_path(pdf_path: str) -> dict[str, Any]:
-        """Build a teacher pack from a PDF and import it into student storage.
+    def sp2_ingest_file_from_path(file_path: str) -> dict[str, Any]:
+        """Build a teacher pack from a supported file and import it into student storage.
 
         Args:
-            pdf_path: Absolute or user-expanded path to a local teacher PDF file.
+            file_path: Absolute or user-expanded path to a supported teacher source file.
         """
-        normalized_path = required_text(pdf_path, "pdf_path")
+        normalized_path = required_text(file_path, "file_path")
 
         teacher_ingest = request_backend_json(
             "POST",
-            "/ingest/pdf-path",
-            json_body={"pdf_path": normalized_path},
+            "/ingest/file-path",
+            json_body={"file_path": normalized_path},
         )
         if not isinstance(teacher_ingest, dict):
             raise RuntimeError(
-                "SP2 backend API /ingest/pdf-path response was not an object"
+                "SP2 backend API /ingest/file-path response was not an object"
             )
 
         zip_path = teacher_ingest.get("zip_path")
@@ -71,7 +71,7 @@ def register_teacher_tools(mcp: Any) -> None:
             raise RuntimeError("SP2 student import response did not include chunk_count")
 
         return {
-            "sp2_tool": "sp2_ingest_pdf_from_path",
+            "sp2_tool": "sp2_ingest_file_from_path",
             "mode": "course_pack_ready",
             "message": (
                 "Course pack is ready. "

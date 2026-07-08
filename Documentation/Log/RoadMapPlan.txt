@@ -1,7 +1,7 @@
 SP2 Roadmap - Current
 =====================
 
-Last audited: 2026-07-07
+Last audited: 2026-07-08
 
 
 Done
@@ -44,6 +44,13 @@ Done
     - `POST /packs/import-path` imported it
     - `POST /retrieval/context` returned course context
     - `DELETE /packs/1` deleted the disposable pack and its 42 chunks
+17. Generic teacher ingest contract started:
+    - `POST /ingest/file-path` accepts `file_path`
+    - `sp2_ingest_file_from_path(file_path)` replaces PDF-specific MCP naming
+    - teacher service dispatches by suffix
+    - `.pdf` uses the existing PDF pipeline
+    - `.odt` uses the new Pandoc-backed ODT pipeline
+    - `.docx` uses the new Pandoc-backed DOCX pipeline
 
 
 Current Priority
@@ -81,7 +88,7 @@ Next Product Work
 4. Active pack selection behavior.
 5. Update/replacement semantics for new pack versions.
 6. Focused test coverage for importer, retrieval, API, and MCP adapter.
-7. Teacher support for more source types after retrieval quality improves.
+7. Improve source-specific document extraction quality after broader testing.
 
 Pack versioning direction for future implementation:
 - If a teacher imports a file with the same logical pack name but changed
@@ -117,3 +124,10 @@ Instead of dumping everything equally, return compact fields first:
 pack, title, pack_id, version, chunk_count if available, is_active.
 Then LM Studio can naturally choose:
 pack: 3
+
+Continue document ingest work under one uniform backend POST for supported source
+files. PDF stays on the current PDF extractor, while ODT and DOCX use
+`pypandoc_binary`/Pandoc. All supported source types should normalize into the existing
+`ExtractedDocument` shape and reuse current chunking, embedding, pack-writing,
+zip export, import, and retrieval flow. Legacy `.doc` is out of scope for this
+direction.

@@ -50,7 +50,9 @@ server is running.
 In LM Studio, open:
 
 ```text
-Program tab -> Install -> Edit mcp.json
+Developer tab -> Local Server -> mcp.json
+of if you havent enabled developer mode on installation first go:
+Open LM Studio → Settings → Developer → turn on Developer Mode.
 ```
 
 If `mcp.json` is empty, paste this full JSON:
@@ -95,14 +97,22 @@ To stop the backend later, press:
 Ctrl+C
 ```
 
-## 7. Ingest Or Import A Teacher PDF
+## 7. Ingest Or Import A Teacher Source File
 
 Keep the LM Studio server and SP2 backend running first.
+
+Supported teacher source files:
+
+```text
+.pdf
+.odt
+.docx
+```
 
 To let LM Studio build and import a pack through MCP, use:
 
 ```text
-Use mcp/sp2-course-context. Import this PDF: /path/to/teacher-file.pdf
+Use mcp/sp2-course-context. Import this file: /path/to/teacher-file.odt
 ```
 
 The tool returns the installed pack id. Use that id for retrieval questions.
@@ -119,6 +129,10 @@ Use this prompt shape:
 Use mcp/sp2-course-context tool.
 pack: <installed_pack_id>
 question: <your question here>
+
+After the tool returns, answer in normal prose using the returned course chunks.
+If the returned chunks do not contain the answer, say the course pack does not
+contain it.
 ```
 
 If you need pack deleted: 

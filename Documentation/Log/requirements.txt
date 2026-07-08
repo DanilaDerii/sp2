@@ -1,7 +1,7 @@
 SP2 Requirements Note
 =====================
 
-Last audited: 2026-06-30
+Last audited: 2026-07-08
 
 Current implementation uses one root SP2 dependency file:
 
@@ -10,8 +10,8 @@ Current implementation uses one root SP2 dependency file:
 Direction:
 - Explain installation as one SP2 setup, not two separate apps.
 - Keep one root virtualenv at `environment/.venv`.
-- Keep Docling out of the default install; it is an optional heavy fallback for
-  scanned or complex PDFs.
+- Use `pypandoc_binary` as the pip-managed Pandoc dependency for current ODT and
+  DOCX ingest so Windows users do not need a separate Pandoc install step.
 - Embedding setup now uses LM Studio's local OpenAI-compatible embeddings API.
   Keep setup docs clear that LM Studio must be installed and its local server
   must be running.

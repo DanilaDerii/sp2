@@ -34,7 +34,13 @@ course-context calls.
 - `sp2_get_pack(installed_pack_id)`
 - `sp2_get_course_context(pack, question)`
 - `sp2_import_pack_from_path(pack_zip_path)`
-- `sp2_ingest_pdf_from_path(pdf_path)`
+- `sp2_ingest_file_from_path(file_path)`
+
+Current supported teacher source suffixes:
+
+- `.pdf`
+- `.odt`
+- `.docx`
 
 ## Local Backend Dependency
 
@@ -51,7 +57,7 @@ The MCP tools call:
 - `POST http://127.0.0.1:8001/retrieval/context`
 - `POST http://127.0.0.1:8001/packs/import-path`
 - `DELETE http://127.0.0.1:8001/packs/{installed_pack_id}`
-- `POST http://127.0.0.1:8001/ingest/pdf-path`
+- `POST http://127.0.0.1:8001/ingest/file-path`
 
 Its response is intentionally compact for LM Studio chat:
 

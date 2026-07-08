@@ -5,3 +5,4 @@ numpy
 lancedb
 pyarrow
 mcp[cli]
+pypandoc_binary
