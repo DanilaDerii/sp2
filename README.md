@@ -14,7 +14,10 @@ In LM Studio, download and load:
 
 ```text
 text-embedding-nomic-embed-text-v1.5
+and
+Qwen2.5 7B Instruct 1M
 ```
+![alt text](image.png)
 
 SP2 expects this model to return 768-dimensional embedding vectors.
 
