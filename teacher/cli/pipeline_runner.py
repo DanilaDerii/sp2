@@ -3,7 +3,8 @@
 import argparse
 from pathlib import Path
 
-from teacher.domain.rag.pdf.pipeline import build_pack_from_pdf
+from teacher.domain.rag.common.pipeline import build_pack_from_source
+from teacher.domain.rag.pdf.extractor import extract_pdf_text
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -22,7 +23,11 @@ def main() -> None:
     args = _build_parser().parse_args()
     pdf_path = Path(args.pdf_path).expanduser().resolve()
 
-    result = build_pack_from_pdf(pdf_path)
+    result = build_pack_from_source(
+        pdf_path,
+        extract_document=extract_pdf_text,
+        source_type="pdf",
+    )
 
     print("Teacher pipeline completed")
     print(f"source: {pdf_path}")

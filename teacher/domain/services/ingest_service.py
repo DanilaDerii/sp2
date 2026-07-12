@@ -6,9 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from teacher.domain.rag.common.models import TeacherPipelineResult
-from teacher.domain.rag.doc.docx.pipeline import build_pack_from_docx
-from teacher.domain.rag.doc.odt.pipeline import build_pack_from_odt
-from teacher.domain.rag.pdf.pipeline import build_pack_from_pdf
+from teacher.domain.rag.common.pipeline import build_pack_from_source
+from teacher.domain.rag.doc.docx.extractor import extract_docx_text
+from teacher.domain.rag.doc.odt.extractor import extract_odt_text
+from teacher.domain.rag.pdf.extractor import extract_pdf_text
 
 SUPPORTED_SOURCE_SUFFIXES = (".pdf", ".odt", ".docx")
 
@@ -48,11 +49,23 @@ def ingest_path_to_file(file_path: str | Path) -> TeacherIngestResult:
     suffix = source_path.suffix.lower()
 
     if suffix == ".pdf":
-        result = build_pack_from_pdf(source_path)
+        result = build_pack_from_source(
+            source_path,
+            extract_document=extract_pdf_text,
+            source_type="pdf",
+        )
     elif suffix == ".odt":
-        result = build_pack_from_odt(source_path)
+        result = build_pack_from_source(
+            source_path,
+            extract_document=extract_odt_text,
+            source_type="odt",
+        )
     elif suffix == ".docx":
-        result = build_pack_from_docx(source_path)
+        result = build_pack_from_source(
+            source_path,
+            extract_document=extract_docx_text,
+            source_type="docx",
+        )
     else:
         supported = ", ".join(SUPPORTED_SOURCE_SUFFIXES)
         raise ValueError(

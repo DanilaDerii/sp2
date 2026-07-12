@@ -75,14 +75,14 @@ Current runtime contract:
   `ingest_path_to_file(file_path)`
 
 The service checks the source file suffix and selects the teacher-side pipeline:
-- `.pdf` -> `teacher/domain/rag/pdf/pipeline.py`
-- `.odt` -> `teacher/domain/rag/doc/odt/pipeline.py`
-- `.docx` -> `teacher/domain/rag/doc/docx/pipeline.py`
+- `.pdf` -> `teacher/domain/rag/pdf/extractor.py`
+- `.odt` -> `teacher/domain/rag/doc/odt/extractor.py`
+- `.docx` -> `teacher/domain/rag/doc/docx/extractor.py`
 
 ODT and DOCX extraction now use `pypandoc_binary`/Pandoc to normalize content
 into the existing `ExtractedDocument` shape. After extraction, PDF, ODT, and
-DOCX share the same `rag/common/` chunking, embedding, pack-writing, and
-zip-export behavior.
+DOCX share `teacher/domain/rag/common/pipeline.py` for chunking, embedding,
+pack-writing, and zip-export behavior.
 
 
 Root Storage Migration - 2026-07-06
@@ -192,11 +192,9 @@ Current teacher embedding endpoint:
 Important files:
 - `teacher/domain/services/ingest_service.py`
 - `teacher/domain/rag/pdf/extractor.py`
-- `teacher/domain/rag/pdf/pipeline.py`
 - `teacher/domain/rag/doc/odt/extractor.py`
-- `teacher/domain/rag/doc/odt/pipeline.py`
 - `teacher/domain/rag/doc/docx/extractor.py`
-- `teacher/domain/rag/doc/docx/pipeline.py`
+- `teacher/domain/rag/common/pipeline.py`
 - `teacher/domain/rag/common/chunker.py`
 - `teacher/domain/rag/common/embedder.py`
 - `teacher/domain/orchestrators/pack_writer.py`

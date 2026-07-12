@@ -1,22 +1,30 @@
-"""DOCX-specific teacher-side RAG pipeline orchestrator."""
+"""Shared teacher-side pack build pipeline."""
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from pathlib import Path
 
-from ...common.chunker import chunk_extracted_document
-from ...common.embedder import DEFAULT_EMBEDDING_MODEL, embed_chunks
-from ...common.models import TeacherPipelineResult
-from ....orchestrators.artifact_manager import ARTIFACTS_DIR, prepare_teacher_artifacts
-from ....orchestrators.pack_writer import (
+from teacher.domain.orchestrators.artifact_manager import (
+    ARTIFACTS_DIR,
+    prepare_teacher_artifacts,
+)
+from teacher.domain.orchestrators.pack_writer import (
     DEFAULT_BUILDER_VERSION,
     DEFAULT_TOP_K,
     build_pack_metadata,
     write_pack_directory,
 )
-from ....orchestrators.zip_exporter import export_pack_zip
-from .extractor import extract_docx_text
+from teacher.domain.orchestrators.zip_exporter import export_pack_zip
+from teacher.domain.rag.common.chunker import chunk_extracted_document
+from teacher.domain.rag.common.embedder import DEFAULT_EMBEDDING_MODEL, embed_chunks
+from teacher.domain.rag.common.models import ExtractedDocument, TeacherPipelineResult
 
 
-def _default_pack_id(source_path: Path) -> str:
+ExtractDocument = Callable[[str | Path], ExtractedDocument]
+
+
+def default_pack_id(source_path: Path) -> str:
     """Derive a simple v1 pack id from the source filename."""
     safe_chars: list[str] = []
     previous_was_separator = False
@@ -33,21 +41,22 @@ def _default_pack_id(source_path: Path) -> str:
     return safe_id or "sp2-pack"
 
 
-def _default_pack_title(source_path: Path) -> str:
+def default_pack_title(source_path: Path) -> str:
     """Derive a user-facing title from the source filename."""
     return source_path.stem.strip() or source_path.name
 
 
-def build_pack_from_docx(
-    docx_path: str | Path,
+def build_pack_from_source(
+    source_file_path: str | Path,
     *,
+    extract_document: ExtractDocument,
+    source_type: str,
     output_dir: str | Path | None = None,
     zip_path: str | Path | None = None,
     pack_id: str | None = None,
     title: str | None = None,
     version: str = "v1",
     description: str = "",
-    source_type: str = "docx",
     chunk_size: int = 1200,
     overlap: int = 150,
     embedding_model: str = DEFAULT_EMBEDDING_MODEL,
@@ -56,9 +65,9 @@ def build_pack_from_docx(
     artifacts_dir: str | Path = ARTIFACTS_DIR,
     rewrite_existing: bool = True,
 ) -> TeacherPipelineResult:
-    """Run the current v1 teacher pipeline for one DOCX source."""
-    source_path = Path(docx_path).expanduser().resolve()
-    resolved_pack_id = pack_id or _default_pack_id(source_path)
+    """Run the current v1 teacher pipeline for one extracted source type."""
+    source_path = Path(source_file_path).expanduser().resolve()
+    resolved_pack_id = pack_id or default_pack_id(source_path)
 
     if output_dir is None or zip_path is None:
         if output_dir is not None or zip_path is not None:
@@ -71,7 +80,7 @@ def build_pack_from_docx(
         output_dir = artifact_paths.pack_dir
         zip_path = artifact_paths.zip_path
 
-    extracted_document = extract_docx_text(source_path)
+    extracted_document = extract_document(source_path)
     chunks = chunk_extracted_document(
         extracted_document,
         source_id=resolved_pack_id,
@@ -87,7 +96,7 @@ def build_pack_from_docx(
     embedding_dim = len(embedded_chunks[0].vector) if embedded_chunks else 0
     metadata = build_pack_metadata(
         pack_id=resolved_pack_id,
-        title=title or _default_pack_title(source_path),
+        title=title or default_pack_title(source_path),
         version=version,
         description=description,
         embedding_model=embedding_model,
