@@ -1,7 +1,7 @@
 SP2 Data Schema
 ===============
 
-Last audited: 2026-06-30
+Last audited: 2026-08-12
 
 Purpose: technical contract and storage truth for the current implemented v1.
 Product idea and app reasoning belong in `proposal.txt`.
@@ -10,6 +10,8 @@ Product idea and app reasoning belong in `proposal.txt`.
 Teacher Pack Zip
 ----------------
 Teacher exports one `.zip`. Student imports that `.zip` directly.
+The three pack files are staged temporarily during a build; only the final
+`.zip` is retained in `artifacts/`.
 
 Required files:
 - `pack.json`
@@ -55,8 +57,6 @@ Fields per chunk:
 - `chunk_index`: integer
 - `page`: integer or null
 - `section`: string or null
-- `topic`: string or null
-- `char_count`: integer; if missing/null, importer uses `len(text)`
 
 
 vectors.npy
@@ -120,8 +120,6 @@ Fields:
 - `chunk_index`: int32
 - `page`: int32
 - `section`: string
-- `topic`: string
-- `char_count`: int32
 
 Key notes:
 - Retrieval is scoped by `installed_pack_id`.
@@ -170,13 +168,16 @@ Retrieved chunk fields:
 - `chunk_index`
 - `page`
 - `section`
-- `topic`
-- `char_count`
 - `distance`
 - `score`
 
 Score rule:
 - `score = 1 / (1 + distance)` when distance is present and non-negative.
+
+Relevance rule:
+- Retrieval uses a default maximum L2 distance of `1.0`.
+- Chunks beyond that distance are excluded.
+- If no chunks remain, the packet uses `mode = no_course_context`.
 
 
 

@@ -1,13 +1,7 @@
 """Helpers for teacher-side generated pack artifacts."""
 
-import shutil
 from pathlib import Path
-
-from ..rag.common.models import TeacherArtifactPaths
-
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+from config.arguments import ARTIFACTS_DIR
 
 
 def _safe_artifact_name(pack_id: str) -> str:
@@ -34,45 +28,32 @@ def _safe_artifact_name(pack_id: str) -> str:
     return safe_name
 
 
-def teacher_artifact_paths(
+def teacher_artifact_zip_path(
     pack_id: str,
     *,
     artifacts_dir: str | Path = ARTIFACTS_DIR,
-) -> TeacherArtifactPaths:
-    """Build standard root-artifact paths for one teacher pack."""
+) -> Path:
+    """Return the final zip path for one teacher pack."""
     safe_name = _safe_artifact_name(pack_id)
     artifact_root = Path(artifacts_dir).expanduser().resolve()
-
-    return TeacherArtifactPaths(
-        pack_id=pack_id,
-        pack_dir=artifact_root / f"{safe_name}_pack",
-        zip_path=artifact_root / f"{safe_name}.zip",
-    )
+    return artifact_root / f"{safe_name}.zip"
 
 
-def prepare_teacher_artifacts(
-    pack_id: str,
+def prepare_zip_destination(
+    zip_path: str | Path,
     *,
-    artifacts_dir: str | Path = ARTIFACTS_DIR,
     rewrite_existing: bool = True,
-) -> TeacherArtifactPaths:
-    """Create clean output locations for one teacher pipeline run."""
-    paths = teacher_artifact_paths(pack_id, artifacts_dir=artifacts_dir)
-    paths.pack_dir.parent.mkdir(parents=True, exist_ok=True)
+) -> Path:
+    """Validate and return a final zip destination without deleting existing output."""
+    destination = Path(zip_path).expanduser().resolve()
+    if destination.suffix.lower() != ".zip":
+        raise ValueError(f"Teacher pack artifact must use the .zip extension: {destination}")
 
-    if paths.pack_dir.exists():
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        if not destination.is_file():
+            raise ValueError(f"Expected pack artifact zip, got directory: {destination}")
         if not rewrite_existing:
-            raise FileExistsError(f"Pack artifact directory already exists: {paths.pack_dir}")
-        if not paths.pack_dir.is_dir():
-            raise ValueError(f"Expected pack artifact directory, got file: {paths.pack_dir}")
-        shutil.rmtree(paths.pack_dir)
+            raise FileExistsError(f"Pack artifact zip already exists: {destination}")
 
-    if paths.zip_path.exists():
-        if not rewrite_existing:
-            raise FileExistsError(f"Pack artifact zip already exists: {paths.zip_path}")
-        if not paths.zip_path.is_file():
-            raise ValueError(f"Expected pack artifact zip, got directory: {paths.zip_path}")
-        paths.zip_path.unlink()
-
-    paths.pack_dir.mkdir(parents=True, exist_ok=True)
-    return paths
+    return destination

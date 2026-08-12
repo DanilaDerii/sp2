@@ -17,11 +17,13 @@ class ExtractedDocument:
     """Normalized extraction result returned by a source extractor."""
 
     source_path: str
-    source_name: str
     page_count: int
-    text: str
-    markdown: str
     pages: list[ExtractedPage]
+
+    @property
+    def source_name(self) -> str:
+        """Return the source filename derived from the source path."""
+        return Path(self.source_path).name
 
 
 @dataclass(slots=True)
@@ -36,8 +38,6 @@ class ChunkedText:
     chunk_index: int
     page: int | None
     section: str | None
-    topic: str | None
-    char_count: int
 
 
 @dataclass(slots=True)
@@ -53,8 +53,6 @@ class EmbeddedChunk:
     chunk_index: int
     page: int | None
     section: str | None
-    topic: str | None
-    char_count: int
 
 
 @dataclass(slots=True)
@@ -72,26 +70,12 @@ class PackMetadata:
     builder_version: str
 
 
-@dataclass(frozen=True, slots=True)
-class TeacherArtifactPaths:
-    """Resolved output paths for one generated teacher pack."""
-
-    pack_id: str
-    pack_dir: Path
-    zip_path: Path
-
-
 @dataclass(slots=True)
 class TeacherPipelineResult:
     """Outputs produced by the teacher-side v1 build pipeline."""
 
-    extracted_document: ExtractedDocument
-    chunks: list[ChunkedText]
-    embedded_chunks: list[EmbeddedChunk]
+    source_path: str
+    page_count: int
+    chunk_count: int
     metadata: PackMetadata
-    pack_directory: str
-    pack_json_path: str
-    chunks_json_path: str
-    vectors_npy_path: str
     zip_path: str
-

@@ -5,8 +5,8 @@ from pathlib import Path
 from ...common.models import ExtractedDocument, ExtractedPage
 
 
-def _convert_docx_with_pandoc(source_path: Path, output_format: str) -> str:
-    """Convert a DOCX file to text-like content with Pandoc."""
+def _extract_docx_with_pandoc(source_path: Path) -> str:
+    """Extract plain text from a DOCX file with Pandoc."""
     try:
         import pypandoc
     except ImportError as exc:
@@ -17,7 +17,7 @@ def _convert_docx_with_pandoc(source_path: Path, output_format: str) -> str:
     try:
         return pypandoc.convert_file(
             source_path,
-            output_format,
+            "plain",
             format="docx",
             extra_args=["--wrap=none"],
         ).strip()
@@ -35,20 +35,13 @@ def extract_docx_text(docx_path: str | Path) -> ExtractedDocument:
     if source_path.suffix.lower() != ".docx":
         raise ValueError(f"Expected a DOCX file, got: {source_path.name}")
 
-    full_text = _convert_docx_with_pandoc(source_path, "plain")
+    full_text = _extract_docx_with_pandoc(source_path)
     if not full_text:
         raise RuntimeError(f"Pandoc extracted no text from {source_path.name}")
-
-    markdown = _convert_docx_with_pandoc(source_path, "gfm")
-    if not markdown:
-        markdown = full_text
 
     pages = [ExtractedPage(page_number=1, text=full_text)]
     return ExtractedDocument(
         source_path=str(source_path),
-        source_name=source_path.name,
         page_count=len(pages),
-        text=full_text,
-        markdown=markdown,
         pages=pages,
     )

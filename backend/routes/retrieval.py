@@ -42,8 +42,6 @@ class RetrievedChunkResponse(BaseModel):
     chunk_index: int
     page: int | None
     section: str | None
-    topic: str | None
-    char_count: int
     distance: float | None
     score: float | None
 
@@ -72,8 +70,6 @@ def _retrieved_chunk_response(chunk: RetrievedChunk) -> RetrievedChunkResponse:
         chunk_index=chunk.chunk_index,
         page=chunk.page,
         section=chunk.section,
-        topic=chunk.topic,
-        char_count=chunk.char_count,
         distance=chunk.distance,
         score=chunk.score,
     )

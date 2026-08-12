@@ -1,17 +1,22 @@
 SP2 Requirements Note
 =====================
 
-Last audited: 2026-07-08
+Last audited: 2026-08-12
 
 Current implementation uses one root SP2 dependency file:
 
 - `environment/requirements.txt`
+
+System prerequisites checked by `installation/script.py`:
+- Python 3.10 or newer.
 
 Direction:
 - Explain installation as one SP2 setup, not two separate apps.
 - Keep one root virtualenv at `environment/.venv`.
 - Use `pypandoc_binary` as the pip-managed Pandoc dependency for current ODT and
   DOCX ingest so Windows users do not need a separate Pandoc install step.
+- Use `pymupdf` as the pip-managed PDF text extractor so PDF ingest does not
+  require a separate Poppler installation.
 - Embedding setup now uses LM Studio's local OpenAI-compatible embeddings API.
   Keep setup docs clear that LM Studio must be installed and its local server
   must be running.

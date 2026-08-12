@@ -7,18 +7,18 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from config.arguments import (
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_HTTP_TIMEOUT,
+    DEFAULT_LM_STUDIO_BASE_URL,
+)
 from storage.cruds.sqlite.pack_repository import InstalledPack
 
 from .embedding_model import (
-    DEFAULT_QUERY_EMBEDDING_MODEL,
     EmbeddingModelSpec,
     embedding_spec_for_pack,
 )
 from .models import QueryEmbedding
-
-
-DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
-DEFAULT_HTTP_TIMEOUT_SECONDS = 120.0
 
 
 class QueryEmbeddingError(RuntimeError):
@@ -150,10 +150,10 @@ def _validate_question(question: str) -> str:
 def embed_question(
     question: str,
     *,
-    model: str = DEFAULT_QUERY_EMBEDDING_MODEL,
+    model: str = DEFAULT_EMBEDDING_MODEL,
     expected_dim: int | None = None,
     base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
-    timeout: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+    timeout: float = DEFAULT_HTTP_TIMEOUT,
 ) -> QueryEmbedding:
     """Embed one student question with the fixed v1 retrieval embedding model."""
     normalized_question = _validate_question(question)
@@ -188,7 +188,7 @@ def embed_question_with_spec(
     embedding_spec: EmbeddingModelSpec,
     *,
     base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
-    timeout: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+    timeout: float = DEFAULT_HTTP_TIMEOUT,
 ) -> QueryEmbedding:
     """Embed one question using an explicit retrieval embedding model spec."""
     return embed_question(
@@ -205,7 +205,7 @@ def embed_question_for_pack(
     installed_pack: InstalledPack,
     *,
     base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
-    timeout: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+    timeout: float = DEFAULT_HTTP_TIMEOUT,
 ) -> QueryEmbedding:
     """Embed a question with the model policy required by an installed pack."""
     return embed_question_with_spec(

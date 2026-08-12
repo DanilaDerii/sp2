@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from config.arguments import DEFAULT_TOP_K
 from storage.cruds.lancedb.connection import get_pack_chunks_table
 
 from .models import QueryEmbedding, RetrievedChunk
 
 
-DEFAULT_TOP_K = 5
+# LanceDB uses L2 distance for this table. With the normalized vectors produced by
+# the v1 embedding model, 1.0 is a conservative default relevance boundary while
+# still allowing callers to supply a different threshold through the HTTP API.
+DEFAULT_MAX_DISTANCE = 1.0
 
 
 class ChunkSearchError(RuntimeError):
@@ -69,8 +73,6 @@ def _row_to_retrieved_chunk(row: dict[str, Any]) -> RetrievedChunk:
         chunk_index=int(row["chunk_index"]),
         page=row["page"],
         section=row["section"],
-        topic=row["topic"],
-        char_count=int(row["char_count"]),
         distance=distance,
         score=_distance_to_score(distance),
     )

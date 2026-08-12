@@ -5,8 +5,11 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
+from teacher.domain.orchestrators.file_importer import (
+    TeacherIngestResult,
+    ingest_path_to_file,
+)
 from teacher.domain.rag.common.embedder import EmbeddingRequestError
-from teacher.domain.services import TeacherIngestResult, ingest_path_to_file
 
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
@@ -28,7 +31,6 @@ class TeacherIngestResponse(BaseModel):
     chunk_count: int
     embedding_model: str
     embedding_dim: int
-    pack_dir: str
     zip_path: str
 
 
@@ -41,7 +43,6 @@ def _teacher_ingest_response(result: TeacherIngestResult) -> TeacherIngestRespon
         chunk_count=result.chunk_count,
         embedding_model=result.embedding_model,
         embedding_dim=result.embedding_dim,
-        pack_dir=result.pack_dir,
         zip_path=result.zip_path,
     )
 

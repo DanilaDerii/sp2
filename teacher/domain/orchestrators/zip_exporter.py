@@ -3,14 +3,13 @@
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
-
-REQUIRED_PACK_FILES = ("pack.json", "chunks.json", "vectors.npy")
+from config.arguments import REQUIRED_PACK_FILES
 
 
 def export_pack_zip(
     pack_dir: str | Path,
     output_zip_path: str | Path,
-) -> str:
+) -> None:
     """Zip a written pack directory into the portable v1 export artifact."""
     pack_path = Path(pack_dir).expanduser().resolve()
     zip_path = Path(output_zip_path).expanduser().resolve()
@@ -32,6 +31,3 @@ def export_pack_zip(
     with ZipFile(zip_path, "w", compression=ZIP_DEFLATED) as zip_file:
         for file_name in REQUIRED_PACK_FILES:
             zip_file.write(pack_path / file_name, arcname=file_name)
-
-    return str(zip_path)
-

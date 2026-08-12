@@ -1,23 +1,30 @@
-"""Shared teacher-side pack build pipeline."""
+"""Main Runner. Orchestrate teacher source ingestion into an exported course pack."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from teacher.domain.orchestrators.artifact_manager import (
+from config.arguments import (
     ARTIFACTS_DIR,
-    prepare_teacher_artifacts,
+    DEFAULT_BUILDER_VERSION,
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_TOP_K,
+)
+from teacher.domain.orchestrators.artifact_manager import (
+    prepare_zip_destination,
+    teacher_artifact_zip_path,
 )
 from teacher.domain.orchestrators.pack_writer import (
-    DEFAULT_BUILDER_VERSION,
-    DEFAULT_TOP_K,
     build_pack_metadata,
     write_pack_directory,
 )
 from teacher.domain.orchestrators.zip_exporter import export_pack_zip
 from teacher.domain.rag.common.chunker import chunk_extracted_document
-from teacher.domain.rag.common.embedder import DEFAULT_EMBEDDING_MODEL, embed_chunks
+from teacher.domain.rag.common.embedder import embed_chunks
 from teacher.domain.rag.common.models import ExtractedDocument, TeacherPipelineResult
 
 
@@ -51,14 +58,13 @@ def build_pack_from_source(
     *,
     extract_document: ExtractDocument,
     source_type: str,
-    output_dir: str | Path | None = None,
     zip_path: str | Path | None = None,
     pack_id: str | None = None,
     title: str | None = None,
     version: str = "v1",
     description: str = "",
-    chunk_size: int = 1200,
-    overlap: int = 150,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overlap: int = DEFAULT_CHUNK_OVERLAP,
     embedding_model: str = DEFAULT_EMBEDDING_MODEL,
     default_top_k: int = DEFAULT_TOP_K,
     builder_version: str = DEFAULT_BUILDER_VERSION,
@@ -68,17 +74,14 @@ def build_pack_from_source(
     """Run the current v1 teacher pipeline for one extracted source type."""
     source_path = Path(source_file_path).expanduser().resolve()
     resolved_pack_id = pack_id or default_pack_id(source_path)
-
-    if output_dir is None or zip_path is None:
-        if output_dir is not None or zip_path is not None:
-            raise ValueError("output_dir and zip_path must be provided together")
-        artifact_paths = prepare_teacher_artifacts(
-            resolved_pack_id,
-            artifacts_dir=artifacts_dir,
-            rewrite_existing=rewrite_existing,
-        )
-        output_dir = artifact_paths.pack_dir
-        zip_path = artifact_paths.zip_path
+    requested_zip_path = zip_path or teacher_artifact_zip_path(
+        resolved_pack_id,
+        artifacts_dir=artifacts_dir,
+    )
+    final_zip_path = prepare_zip_destination(
+        requested_zip_path,
+        rewrite_existing=rewrite_existing,
+    )
 
     extracted_document = extract_document(source_path)
     chunks = chunk_extracted_document(
@@ -104,21 +107,26 @@ def build_pack_from_source(
         default_top_k=default_top_k,
         builder_version=builder_version,
     )
-    written_paths = write_pack_directory(
-        output_dir,
-        metadata=metadata,
-        embedded_chunks=embedded_chunks,
-    )
-    exported_zip_path = export_pack_zip(output_dir, zip_path)
+    with TemporaryDirectory(
+        dir=final_zip_path.parent,
+        prefix=f".{final_zip_path.stem}-",
+    ) as temporary_dir:
+        staging_root = Path(temporary_dir)
+        staging_pack_dir = staging_root / "pack"
+        staging_zip_path = staging_root / final_zip_path.name
+
+        write_pack_directory(
+            staging_pack_dir,
+            metadata=metadata,
+            embedded_chunks=embedded_chunks,
+        )
+        export_pack_zip(staging_pack_dir, staging_zip_path)
+        staging_zip_path.replace(final_zip_path)
 
     return TeacherPipelineResult(
-        extracted_document=extracted_document,
-        chunks=chunks,
-        embedded_chunks=embedded_chunks,
+        source_path=extracted_document.source_path,
+        page_count=extracted_document.page_count,
+        chunk_count=len(chunks),
         metadata=metadata,
-        pack_directory=str(Path(output_dir).expanduser().resolve()),
-        pack_json_path=written_paths["pack_json"],
-        chunks_json_path=written_paths["chunks_json"],
-        vectors_npy_path=written_paths["vectors_npy"],
-        zip_path=exported_zip_path,
+        zip_path=str(final_zip_path),
     )

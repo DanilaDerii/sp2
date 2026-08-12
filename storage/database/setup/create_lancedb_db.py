@@ -39,8 +39,6 @@ def pack_chunks_schema(vector_dim: int = DEFAULT_VECTOR_DIM):
             pa.field("chunk_index", pa.int32()),
             pa.field("page", pa.int32()),
             pa.field("section", pa.string()),
-            pa.field("topic", pa.string()),
-            pa.field("char_count", pa.int32()),
         ]
     )
 

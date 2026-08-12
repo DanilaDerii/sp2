@@ -23,8 +23,6 @@ class PackChunk:
     chunk_index: int
     page: int | None
     section: str | None
-    topic: str | None
-    char_count: int
 
 
 def _installed_pack_filter(installed_pack_id: int) -> str:
@@ -44,8 +42,6 @@ def _row_to_pack_chunk(row: dict) -> PackChunk:
         chunk_index=row["chunk_index"],
         page=row["page"],
         section=row["section"],
-        topic=row["topic"],
-        char_count=row["char_count"],
     )
 
 
@@ -62,8 +58,6 @@ def _pack_chunk_to_row(chunk: PackChunk) -> dict:
         "chunk_index": chunk.chunk_index,
         "page": chunk.page,
         "section": chunk.section,
-        "topic": chunk.topic,
-        "char_count": chunk.char_count,
     }
 
 

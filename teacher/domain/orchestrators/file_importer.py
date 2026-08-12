@@ -1,18 +1,16 @@
-"""Teacher ingest service layer."""
+"""Import teacher source files into the pack-building pipeline."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 
+from config.arguments import SUPPORTED_SOURCE_SUFFIXES
 from teacher.domain.rag.common.models import TeacherPipelineResult
-from teacher.domain.rag.common.pipeline import build_pack_from_source
+from teacher.domain.orchestrators.pack_pipeline import build_pack_from_source
 from teacher.domain.rag.doc.docx.extractor import extract_docx_text
 from teacher.domain.rag.doc.odt.extractor import extract_odt_text
 from teacher.domain.rag.pdf.extractor import extract_pdf_text
-
-SUPPORTED_SOURCE_SUFFIXES = (".pdf", ".odt", ".docx")
-
 
 @dataclass(frozen=True, slots=True)
 class TeacherIngestResult:
@@ -25,20 +23,18 @@ class TeacherIngestResult:
     chunk_count: int
     embedding_model: str
     embedding_dim: int
-    pack_dir: str
     zip_path: str
 
 
 def _teacher_ingest_result(result: TeacherPipelineResult) -> TeacherIngestResult:
     return TeacherIngestResult(
-        source_path=result.extracted_document.source_path,
+        source_path=result.source_path,
         pack_id=result.metadata.pack_id,
         title=result.metadata.title,
-        page_count=result.extracted_document.page_count,
-        chunk_count=len(result.chunks),
+        page_count=result.page_count,
+        chunk_count=result.chunk_count,
         embedding_model=result.metadata.embedding_model,
         embedding_dim=result.metadata.embedding_dim,
-        pack_dir=result.pack_directory,
         zip_path=result.zip_path,
     )
 

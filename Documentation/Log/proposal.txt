@@ -1,7 +1,7 @@
 SP2 Product Proposal And Direction
 ==================================
 
-Last audited: 2026-06-30
+Last audited: 2026-08-12
 
 This is the product-facing project idea and direction reference. Keep low-level
 data and storage details in `data_schema.txt`.
@@ -73,7 +73,7 @@ Current App Logic
 Teacher mode:
 - Build a pack from a supported source file.
 - Dispatch by file suffix in the teacher service.
-- Extract PDF text with pdftotext.
+- Extract PDF text with PyMuPDF.
 - Extract ODT text with Pandoc through `pypandoc_binary`.
 - Extract DOCX text with Pandoc through `pypandoc_binary`.
 - Chunk the material.
@@ -139,31 +139,6 @@ What Separates SP2
   model fallback when course context is not found.
 
 
-Current Prototype State
------------------------
-Implemented teacher mode:
-- PDF ingestion with pdftotext.
-- ODT ingestion with Pandoc through `pypandoc_binary`.
-- DOCX ingestion with Pandoc through `pypandoc_binary`.
-- Chunking.
-- Local embedding generation.
-- Zip export.
-
-Implemented student mode:
-- Direct zip import.
-- Pack validation.
-- Local storage seeding.
-- Query embedding.
-- Course-context retrieval scoped by installed pack.
-- Clear course-context or no-course-context result states.
-- Local retrieval access for app/tool integration.
-
-Implemented LM Studio role:
-- Tool integration for listing packs, reading one pack, importing a pack by
-  path, and retrieving course context.
-- End-to-end direction proved: LM Studio -> SP2 tool integration -> local SP2
-  runtime -> context back to LM Studio.
-
 
 Near-Term Direction
 -------------------
@@ -178,20 +153,11 @@ quality instead of adding another architecture path:
 - hybrid vector + keyword retrieval
 - reranking
 - clearer LM Studio tool instructions
-- pack management operations such as delete/uninstall and duplicate handling
+- delete/uninstall pack management - done
+- duplicate import handling
 - Keep retrieval/search logic out of low-level CRUD modules.
 
 
-Short Presentation Flow
------------------------
-1. Students need course-specific AI, not generic AI.
-2. Teachers need one practical way to prepare course knowledge.
-3. SP2 creates portable course packs.
-4. Students import packs locally.
-5. LM Studio provides chat, model selection, and target local embedding serving.
-6. SP2 provides course retrieval before answer generation.
-7. Current prototype already proves the build/import/retrieve/MCP loop.
-8. Next work is answer quality and pack management.
 
 
 Short Summary

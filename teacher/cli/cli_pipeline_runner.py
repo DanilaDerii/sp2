@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from teacher.domain.rag.common.pipeline import build_pack_from_source
+from teacher.domain.orchestrators.pack_pipeline import build_pack_from_source
 from teacher.domain.rag.pdf.extractor import extract_pdf_text
 
 
@@ -33,11 +33,10 @@ def main() -> None:
     print(f"source: {pdf_path}")
     print(f"pack_id: {result.metadata.pack_id}")
     print(f"title: {result.metadata.title}")
-    print(f"pages: {result.extracted_document.page_count}")
-    print(f"chunks: {len(result.chunks)}")
+    print(f"pages: {result.page_count}")
+    print(f"chunks: {result.chunk_count}")
     print(f"embedding_model: {result.metadata.embedding_model}")
     print(f"embedding_dim: {result.metadata.embedding_dim}")
-    print(f"pack_dir: {result.pack_directory}")
     print(f"zip_path: {result.zip_path}")
 
 

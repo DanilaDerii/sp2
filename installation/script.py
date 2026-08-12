@@ -41,6 +41,16 @@ def _run(command: list[str], *, cwd: Path = REPO_ROOT) -> None:
         raise SetupError(f"Command failed with exit code {completed.returncode}: {' '.join(command)}")
 
 
+def _check_prerequisites() -> None:
+    _print_step("Checking system prerequisites")
+    if sys.version_info < (3, 10):
+        raise SetupError(
+            "SP2 requires Python 3.10 or newer; "
+            f"current interpreter is Python {sys.version_info.major}.{sys.version_info.minor}"
+        )
+    _ok(f"Python {sys.version_info.major}.{sys.version_info.minor} is supported")
+
+
 def _create_venv() -> Path:
     _print_step("Creating Python virtual environment")
     python_path = _venv_python()
@@ -113,6 +123,7 @@ def main() -> int:
     print(f"Repo root: {REPO_ROOT}")
 
     try:
+        _check_prerequisites()
         python_path = _create_venv()
         _install_requirements(python_path)
         _initialize_storage(python_path)

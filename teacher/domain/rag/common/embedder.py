@@ -4,11 +4,13 @@ from typing import Any
 
 import httpx
 
-from .models import ChunkedText, EmbeddedChunk
+from config.arguments import (
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_HTTP_TIMEOUT,
+    DEFAULT_LM_STUDIO_BASE_URL,
+)
 
-DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
-DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
-DEFAULT_HTTP_TIMEOUT = 120.0
+from .models import ChunkedText, EmbeddedChunk
 
 
 class EmbeddingRequestError(RuntimeError):
@@ -123,8 +125,6 @@ def embed_chunks(
                 chunk_index=chunk.chunk_index,
                 page=chunk.page,
                 section=chunk.section,
-                topic=chunk.topic,
-                char_count=chunk.char_count,
             )
         )
 

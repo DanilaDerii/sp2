@@ -1,6 +1,6 @@
 # SP2 LM Studio MCP Integration
 
-Last audited: 2026-07-07
+Last audited: 2026-08-12
 
 This directory contains the implemented MCP server that exposes SP2 ingest,
 pack management, and retrieval as local tools for LM Studio.
@@ -34,6 +34,7 @@ course-context calls.
 - `sp2_get_pack(installed_pack_id)`
 - `sp2_get_course_context(pack, question)`
 - `sp2_import_pack_from_path(pack_zip_path)`
+- `sp2_delete_pack(pack)`
 - `sp2_ingest_file_from_path(file_path)`
 
 Current supported teacher source suffixes:

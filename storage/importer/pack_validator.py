@@ -7,9 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
-REQUIRED_PACK_FILES = ("pack.json", "chunks.json", "vectors.npy")
-
+from config.arguments import REQUIRED_PACK_FILES
 
 class PackValidationError(ValueError):
     """Raised when a teacher pack does not match the student import contract."""
@@ -42,8 +40,6 @@ class PackChunkRecord:
     chunk_index: int
     page: int | None
     section: str | None
-    topic: str | None
-    char_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,16 +155,6 @@ def _validate_chunks(raw_chunks: Any) -> list[PackChunkRecord]:
         seen_chunk_ids.add(chunk_id)
 
         text = _require_chunk_string(raw_chunk, "text", index)
-        raw_char_count = raw_chunk.get("char_count")
-        if raw_char_count is None:
-            char_count = len(text)
-        elif isinstance(raw_char_count, int) and not isinstance(raw_char_count, bool):
-            char_count = raw_char_count
-        else:
-            raise PackValidationError(
-                f"chunks.json[{index}] field must be an integer or null: char_count"
-            )
-
         chunks.append(
             PackChunkRecord(
                 chunk_id=chunk_id,
@@ -179,8 +165,6 @@ def _validate_chunks(raw_chunks: Any) -> list[PackChunkRecord]:
                 chunk_index=_require_chunk_int(raw_chunk, "chunk_index", index),
                 page=_optional_chunk_int(raw_chunk, "page", index),
                 section=_optional_chunk_string(raw_chunk, "section", index),
-                topic=_optional_chunk_string(raw_chunk, "topic", index),
-                char_count=char_count,
             )
         )
 

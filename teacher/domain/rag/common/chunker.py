@@ -1,10 +1,12 @@
 """Chunk generation worker for normalized extracted source text."""
 
-from .models import ChunkedText, ExtractedDocument
+from config.arguments import (
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
+    MAX_SECTION_LENGTH,
+)
 
-DEFAULT_CHUNK_SIZE = 1200
-DEFAULT_CHUNK_OVERLAP = 150
-MAX_SECTION_LENGTH = 160
+from .models import ChunkedText, ExtractedDocument
 
 
 def _split_text(text: str, chunk_size: int, overlap: int) -> list[str]:
@@ -84,11 +86,8 @@ def chunk_extracted_document(
                     chunk_index=chunk_index,
                     page=page.page_number,
                     section=section,
-                    topic=None,
-                    char_count=len(chunk_text),
                 )
             )
             chunk_index += 1
 
     return chunks
-

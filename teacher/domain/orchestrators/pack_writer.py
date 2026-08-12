@@ -8,10 +8,9 @@ from typing import Any
 
 import numpy as np
 
-from ..rag.common.models import EmbeddedChunk, PackMetadata
+from config.arguments import DEFAULT_BUILDER_VERSION, DEFAULT_TOP_K
 
-DEFAULT_TOP_K = 5
-DEFAULT_BUILDER_VERSION = "v1-prototype"
+from ..rag.common.models import EmbeddedChunk, PackMetadata
 
 
 def _utc_now_iso() -> str:
@@ -31,8 +30,6 @@ def _chunk_records(embedded_chunks: list[EmbeddedChunk]) -> list[dict[str, Any]]
             "chunk_index": chunk.chunk_index,
             "page": chunk.page,
             "section": chunk.section,
-            "topic": chunk.topic,
-            "char_count": chunk.char_count,
         }
         for chunk in embedded_chunks
     ]
@@ -73,8 +70,8 @@ def write_pack_directory(
     *,
     metadata: PackMetadata,
     embedded_chunks: list[EmbeddedChunk],
-) -> dict[str, str]:
-    """Write the v1 pack files into a directory and return their paths."""
+) -> None:
+    """Write the v1 pack files into a temporary staging directory."""
     output_path = Path(output_dir).expanduser().resolve()
     output_path.mkdir(parents=True, exist_ok=True)
 
@@ -96,9 +93,3 @@ def write_pack_directory(
         json.dump(_chunk_records(embedded_chunks), file, indent=2)
 
     np.save(vectors_npy_path, vectors)
-
-    return {
-        "pack_json": str(pack_json_path),
-        "chunks_json": str(chunks_json_path),
-        "vectors_npy": str(vectors_npy_path),
-    }

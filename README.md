@@ -4,6 +4,10 @@ SP2 is a local course-pack and retrieval tool for LM Studio. LM Studio owns the
 chat UI and final answer. SP2 owns course-pack storage, retrieval, and the MCP
 tool that returns course context.
 
+SP2 requires Python 3.10 or newer. PDF ingestion uses the pip-installed PyMuPDF
+package; no separate Poppler installation is required. The setup script checks
+the Python version before creating the environment.
+
 ## 1. Install And Open LM Studio
 
 Install LM Studio and open it at least once before using the `lms` command.
@@ -17,7 +21,6 @@ text-embedding-nomic-embed-text-v1.5
 and
 Qwen2.5 7B Instruct 1M
 ```
-![alt text](image.png)
 
 
 ## 3. Run The SP2 Setup Script
@@ -46,8 +49,6 @@ lms server start
 
 load embeding model in developer -> local server -> load model
 select text-embedding-nomic-embed-text-v1.5
-
-![alt text](image-1.png)
 
 ## 5. Add The MCP Config In LM Studio
 
@@ -141,10 +142,10 @@ contain it.
 
 If you need pack deleted: 
 
-'''
+```text
 Use mcp/sp2-course-context.
 delete pack 1
-'''
+```
 
 ## Important
 

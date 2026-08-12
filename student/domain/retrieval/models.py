@@ -32,8 +32,6 @@ class RetrievedChunk:
     chunk_index: int
     page: int | None
     section: str | None
-    topic: str | None
-    char_count: int
     distance: float | None
     score: float | None
 

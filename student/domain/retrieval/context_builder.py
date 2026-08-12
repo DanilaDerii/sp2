@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+from config.arguments import (
+    DEFAULT_HTTP_TIMEOUT,
+    DEFAULT_LM_STUDIO_BASE_URL,
+    DEFAULT_TOP_K,
+)
 from storage.cruds.sqlite.pack_repository import InstalledPack, get_installed_pack
 
-from .chunk_search import DEFAULT_TOP_K, search_chunks_for_query
+from .chunk_search import DEFAULT_MAX_DISTANCE, search_chunks_for_query
 from .models import CourseContextPacket, RetrievedChunk
-from .query_embedder import (
-    DEFAULT_HTTP_TIMEOUT_SECONDS,
-    DEFAULT_LM_STUDIO_BASE_URL,
-    embed_question_for_pack,
-)
+from .query_embedder import embed_question_for_pack
 
 
 class ContextBuilderError(RuntimeError):
@@ -32,6 +33,12 @@ def _resolved_top_k(installed_pack: InstalledPack, top_k: int | None) -> int:
     return installed_pack.default_top_k or DEFAULT_TOP_K
 
 
+def _resolved_max_distance(max_distance: float | None) -> float:
+    if max_distance is not None:
+        return max_distance
+    return DEFAULT_MAX_DISTANCE
+
+
 def _course_context_message(chunks: list[RetrievedChunk]) -> str:
     return f"Found {len(chunks)} relevant course-pack chunk(s)."
 
@@ -47,7 +54,7 @@ def build_course_context_packet(
     top_k: int | None = None,
     max_distance: float | None = None,
     embedding_base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
-    embedding_timeout: float = DEFAULT_HTTP_TIMEOUT_SECONDS,
+    embedding_timeout: float = DEFAULT_HTTP_TIMEOUT,
 ) -> CourseContextPacket:
     """Return course context or a no-context packet for one student question."""
     installed_pack = _get_active_installed_pack(installed_pack_id)
@@ -61,7 +68,7 @@ def build_course_context_packet(
         installed_pack_id=installed_pack.id,
         query_embedding=query_embedding,
         top_k=_resolved_top_k(installed_pack, top_k),
-        max_distance=max_distance,
+        max_distance=_resolved_max_distance(max_distance),
     )
 
     if chunks:

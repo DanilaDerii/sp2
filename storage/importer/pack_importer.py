@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
+from config.arguments import REQUIRED_PACK_FILES
 from storage.database.setup.create_sqlite_db import create_sqlite_db
 from storage.cruds.lancedb.chunk_repository import (
     PackChunk,
@@ -22,7 +23,7 @@ from storage.cruds.sqlite.pack_repository import (
     delete_installed_pack,
 )
 
-from .pack_validator import REQUIRED_PACK_FILES, PackValidationError, validate_pack_directory
+from .pack_validator import PackValidationError, validate_pack_directory
 
 
 STORAGE_DIR = Path(__file__).resolve().parents[1]
@@ -115,8 +116,6 @@ def _pack_chunks_from_validated_pack(validated_pack, installed_pack_id: int) -> 
                 chunk_index=chunk.chunk_index,
                 page=chunk.page,
                 section=chunk.section,
-                topic=chunk.topic,
-                char_count=chunk.char_count,
             )
         )
 

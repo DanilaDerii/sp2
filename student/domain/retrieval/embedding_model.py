@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from config.arguments import DEFAULT_EMBEDDING_MODEL
 from storage.cruds.sqlite.pack_repository import InstalledPack
-
-
-DEFAULT_QUERY_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
 
 
 class EmbeddingModelError(RuntimeError):
@@ -28,7 +26,7 @@ class EmbeddingModelSpec:
 
 def default_query_embedding_spec() -> EmbeddingModelSpec:
     """Return the fixed v1 query embedding model policy."""
-    return EmbeddingModelSpec(model=DEFAULT_QUERY_EMBEDDING_MODEL)
+    return EmbeddingModelSpec(model=DEFAULT_EMBEDDING_MODEL)
 
 
 def embedding_spec_for_pack(installed_pack: InstalledPack) -> EmbeddingModelSpec:
@@ -38,10 +36,10 @@ def embedding_spec_for_pack(installed_pack: InstalledPack) -> EmbeddingModelSpec
     one place so later dynamic model switching can be added without rewriting the
     embedding or retrieval modules.
     """
-    if installed_pack.embedding_model != DEFAULT_QUERY_EMBEDDING_MODEL:
+    if installed_pack.embedding_model != DEFAULT_EMBEDDING_MODEL:
         raise EmbeddingModelMismatchError(
             "Installed pack embedding model does not match the student query embedder: "
-            f"pack={installed_pack.embedding_model!r}, query={DEFAULT_QUERY_EMBEDDING_MODEL!r}"
+            f"pack={installed_pack.embedding_model!r}, query={DEFAULT_EMBEDDING_MODEL!r}"
         )
 
     return EmbeddingModelSpec(
