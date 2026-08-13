@@ -5,11 +5,9 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from teacher.domain.orchestrators.file_importer import (
-    TeacherIngestResult,
-    ingest_path_to_file,
-)
+from teacher.domain.orchestrators.bundle_parsing import build_pack_from_path
 from teacher.domain.rag.common.embedder import EmbeddingRequestError
+from teacher.domain.rag.common.models import TeacherPipelineResult
 
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
@@ -34,15 +32,15 @@ class TeacherIngestResponse(BaseModel):
     zip_path: str
 
 
-def _teacher_ingest_response(result: TeacherIngestResult) -> TeacherIngestResponse:
+def _teacher_ingest_response(result: TeacherPipelineResult) -> TeacherIngestResponse:
     return TeacherIngestResponse(
         source_path=result.source_path,
-        pack_id=result.pack_id,
-        title=result.title,
+        pack_id=result.metadata.pack_id,
+        title=result.metadata.title,
         page_count=result.page_count,
         chunk_count=result.chunk_count,
-        embedding_model=result.embedding_model,
-        embedding_dim=result.embedding_dim,
+        embedding_model=result.metadata.embedding_model,
+        embedding_dim=result.metadata.embedding_dim,
         zip_path=result.zip_path,
     )
 
@@ -55,7 +53,7 @@ def _teacher_ingest_response(result: TeacherIngestResult) -> TeacherIngestRespon
 def ingest_file_path(request: IngestFilePathRequest) -> TeacherIngestResponse:
     """Build a teacher pack from a local supported source path."""
     try:
-        result = ingest_path_to_file(request.file_path)
+        result = build_pack_from_path(request.file_path)
     except FileNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

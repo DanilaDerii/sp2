@@ -3,34 +3,32 @@
 import argparse
 from pathlib import Path
 
-from teacher.domain.orchestrators.pack_pipeline import build_pack_from_source
-from teacher.domain.rag.pdf.extractor import extract_pdf_text
+from teacher.domain.orchestrators.bundle_parsing import build_pack_from_path
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Build a teacher course pack from one PDF file.",
+        description=(
+            "Build a teacher course pack from one supported file or from all supported "
+            "files below a directory."
+        ),
     )
     parser.add_argument(
-        "pdf_path",
-        help="Path to the PDF file to ingest.",
+        "source_path",
+        help="Path to a PDF, ODT, or DOCX file, or a directory containing those files.",
     )
     return parser
 
 
 def main() -> None:
-    """Run the teacher pipeline from a single PDF path argument."""
+    """Run the single-file or directory teacher pack pipeline."""
     args = _build_parser().parse_args()
-    pdf_path = Path(args.pdf_path).expanduser().resolve()
+    source_path = Path(args.source_path).expanduser().resolve()
 
-    result = build_pack_from_source(
-        pdf_path,
-        extract_document=extract_pdf_text,
-        source_type="pdf",
-    )
+    result = build_pack_from_path(source_path)
 
     print("Teacher pipeline completed")
-    print(f"source: {pdf_path}")
+    print(f"source: {source_path}")
     print(f"pack_id: {result.metadata.pack_id}")
     print(f"title: {result.metadata.title}")
     print(f"pages: {result.page_count}")

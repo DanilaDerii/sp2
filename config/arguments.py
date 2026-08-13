@@ -21,6 +21,5 @@ DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
 DEFAULT_HTTP_TIMEOUT = 120.0
 
 # Teacher ingestion and pack export
-SUPPORTED_SOURCE_SUFFIXES = (".pdf", ".odt", ".docx")
 DEFAULT_BUILDER_VERSION = "v1-prototype"
 REQUIRED_PACK_FILES = ("pack.json", "chunks.json", "vectors.npy")
