@@ -5,11 +5,11 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from storage.cruds.installed_pack_cleaner import (
-    InstalledPackCleanError,
-    InstalledPackCleanResult,
+from storage.installed_pack_manager import (
     InstalledPackNotFoundError,
-    delete_installed_pack_everywhere,
+    PackUninstallError,
+    PackUninstallResult,
+    uninstall_pack,
 )
 from storage.cruds.sqlite.pack_repository import (
     InstalledPack,
@@ -91,13 +91,13 @@ def _imported_pack_response(imported_pack: ImportedPack) -> ImportedPackResponse
 
 
 def _deleted_installed_pack_response(
-    cleaned_pack: InstalledPackCleanResult,
+    uninstalled_pack: PackUninstallResult,
 ) -> DeletedInstalledPackResponse:
     return DeletedInstalledPackResponse(
-        installed_pack=_installed_pack_response(cleaned_pack.installed_pack),
-        deleted_chunk_count=cleaned_pack.deleted_chunk_count,
-        deleted_files=cleaned_pack.deleted_files,
-        deleted_sqlite_row=cleaned_pack.deleted_sqlite_row,
+        installed_pack=_installed_pack_response(uninstalled_pack.installed_pack),
+        deleted_chunk_count=uninstalled_pack.deleted_chunk_count,
+        deleted_files=uninstalled_pack.deleted_files,
+        deleted_sqlite_row=uninstalled_pack.deleted_sqlite_row,
     )
 
 
@@ -155,16 +155,16 @@ def import_pack_from_path(request: ImportPackPathRequest) -> ImportedPackRespons
 def delete_pack(installed_pack_id: int) -> DeletedInstalledPackResponse:
     """Delete one installed pack from student storage."""
     try:
-        cleaned_pack = delete_installed_pack_everywhere(installed_pack_id)
+        uninstalled_pack = uninstall_pack(installed_pack_id)
     except InstalledPackNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
-    except InstalledPackCleanError as exc:
+    except PackUninstallError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
 
-    return _deleted_installed_pack_response(cleaned_pack)
+    return _deleted_installed_pack_response(uninstalled_pack)

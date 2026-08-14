@@ -164,7 +164,8 @@ To reset local SP2 storage during development:
 
 ```bash
 cd /path/to/sp2
-environment/.venv/bin/python -m storage.database.setup.reset_student_databases --yes
-find storage/installed_packs -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
-find artifacts -mindepth 1 -maxdepth 1 ! -name .gitkeep -exec rm -rf {} +
+environment/.venv/bin/python -m cli.cli_clearOut --yes
 ```
+
+This clears installed packs and recreates SQLite and LanceDB. Teacher-generated
+zip files in `artifacts/` are left intact.
