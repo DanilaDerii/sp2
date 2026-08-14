@@ -39,7 +39,7 @@ def extract_odt_text(odt_path: str | Path) -> ExtractedDocument:
     if not full_text:
         raise RuntimeError(f"Pandoc extracted no text from {source_path.name}")
 
-    pages = [ExtractedPage(page_number=1, text=full_text)]
+    pages = [ExtractedPage(page_number=None, text=full_text)]
     return ExtractedDocument(
         source_path=str(source_path),
         page_count=len(pages),

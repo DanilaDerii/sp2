@@ -100,7 +100,7 @@ def embed_chunks(
         return []
 
     vectors = embed_texts(
-        [chunk.text for chunk in chunks],
+        [f"search_document: {chunk.text}" for chunk in chunks],
         model=model,
         base_url=base_url,
         timeout=timeout,

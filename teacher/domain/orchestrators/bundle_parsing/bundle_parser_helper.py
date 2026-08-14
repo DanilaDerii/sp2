@@ -16,6 +16,7 @@ from teacher.domain.rag.common.models import (
 from teacher.domain.rag.doc.docx.extractor import extract_docx_text
 from teacher.domain.rag.doc.odt.extractor import extract_odt_text
 from teacher.domain.rag.pdf.extractor import extract_pdf_text
+from teacher.domain.rag.ppt.extractor import extract_powerpoint_text
 
 
 _ExtractDocument = Callable[[str | Path], ExtractedDocument]
@@ -25,6 +26,8 @@ _SOURCE_EXTRACTORS: dict[str, _SourceExtractor] = {
     ".pdf": ("pdf", extract_pdf_text),
     ".odt": ("odt", extract_odt_text),
     ".docx": ("docx", extract_docx_text),
+    ".ppt": ("ppt", extract_powerpoint_text),
+    ".pptx": ("pptx", extract_powerpoint_text),
 }
 
 

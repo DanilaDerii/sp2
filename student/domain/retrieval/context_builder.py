@@ -76,8 +76,7 @@ def build_course_context_packet(
             mode="course_context",
             installed_pack_id=installed_pack.id,
             pack_id=installed_pack.pack_id,
-            question=query_embedding.question,
-            embedding_model=query_embedding.model,
+            embedding_model=installed_pack.embedding_model,
             chunks=chunks,
             message=_course_context_message(chunks),
         )
@@ -86,8 +85,7 @@ def build_course_context_packet(
         mode="no_course_context",
         installed_pack_id=installed_pack.id,
         pack_id=installed_pack.pack_id,
-        question=query_embedding.question,
-        embedding_model=query_embedding.model,
+        embedding_model=installed_pack.embedding_model,
         chunks=[],
         message=_no_course_context_message(),
     )

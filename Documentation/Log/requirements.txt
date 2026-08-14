@@ -10,6 +10,10 @@ Current implementation uses one root SP2 dependency file:
 System prerequisites checked by `installation/script.py`:
 - Python 3.10 or newer.
 
+Optional system prerequisite:
+- LibreOffice for legacy `.ppt` ingestion. Modern `.pptx` files are read directly
+  with `python-pptx`.
+
 Direction:
 - Explain installation as one SP2 setup, not two separate apps.
 - Keep one root virtualenv at `environment/.venv`.
@@ -17,6 +21,7 @@ Direction:
   DOCX ingest so Windows users do not need a separate Pandoc install step.
 - Use `pymupdf` as the pip-managed PDF text extractor so PDF ingest does not
   require a separate Poppler installation.
+- Use `python-pptx` for direct, slide-aware `.pptx` extraction.
 - Embedding setup now uses LM Studio's local OpenAI-compatible embeddings API.
   Keep setup docs clear that LM Studio must be installed and its local server
   must be running.

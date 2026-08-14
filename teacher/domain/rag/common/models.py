@@ -8,7 +8,7 @@ from pathlib import Path
 class ExtractedPage:
     """Extracted text for one page or page-like source unit."""
 
-    page_number: int
+    page_number: int | None
     text: str
 
 

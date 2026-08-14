@@ -15,7 +15,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "source_path",
-        help="Path to a PDF, ODT, or DOCX file, or a directory containing those files.",
+        help=(
+            "Path to a PDF, ODT, DOCX, PPT, or PPTX file, or a directory "
+            "containing those files."
+        ),
     )
     return parser
 

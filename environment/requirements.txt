@@ -7,3 +7,4 @@ pyarrow
 mcp[cli]
 pypandoc_binary
 PyMuPDF
+python-pptx

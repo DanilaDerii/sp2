@@ -8,6 +8,10 @@ SP2 requires Python 3.10 or newer. PDF ingestion uses the pip-installed PyMuPDF
 package; no separate Poppler installation is required. The setup script checks
 the Python version before creating the environment.
 
+Modern PPTX ingestion uses the pip-installed `python-pptx` package. Legacy PPT
+ingestion requires LibreOffice on the system PATH; it is used only to translate
+the old binary presentation into a temporary PPTX before slide text extraction.
+
 ## 1. Install And Open LM Studio
 
 Install LM Studio and open it at least once before using the `lms` command.
@@ -112,6 +116,8 @@ Supported teacher source files:
 .pdf
 .odt
 .docx
+.ppt
+.pptx
 ```
 
 To let LM Studio build and import a pack through MCP, use:

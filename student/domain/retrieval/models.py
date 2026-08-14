@@ -13,8 +13,6 @@ ContextMode = Literal["course_context", "no_course_context"]
 class QueryEmbedding:
     """One embedded student question."""
 
-    question: str
-    model: str
     vector: list[float]
 
 
@@ -43,7 +41,6 @@ class CourseContextPacket:
     mode: ContextMode
     installed_pack_id: int
     pack_id: str
-    question: str
     embedding_model: str
     chunks: list[RetrievedChunk]
     message: str

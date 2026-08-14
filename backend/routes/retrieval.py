@@ -52,7 +52,6 @@ class CourseContextResponse(BaseModel):
     mode: Literal["course_context", "no_course_context"]
     installed_pack_id: int
     pack_id: str
-    question: str
     embedding_model: str
     chunks: list[RetrievedChunkResponse]
     message: str
@@ -80,7 +79,6 @@ def _course_context_response(packet: CourseContextPacket) -> CourseContextRespon
         mode=packet.mode,
         installed_pack_id=packet.installed_pack_id,
         pack_id=packet.pack_id,
-        question=packet.question,
         embedding_model=packet.embedding_model,
         chunks=[_retrieved_chunk_response(chunk) for chunk in packet.chunks],
         message=packet.message,

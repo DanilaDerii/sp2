@@ -158,7 +158,7 @@ def embed_question(
     """Embed one student question with the fixed v1 retrieval embedding model."""
     normalized_question = _validate_question(question)
     vectors = _embed_texts(
-        [normalized_question],
+        [f"search_query: {normalized_question}"],
         model=model,
         base_url=base_url,
         timeout=timeout,
@@ -176,11 +176,7 @@ def embed_question(
             f"pack={expected_dim}, query={len(vector)}"
         )
 
-    return QueryEmbedding(
-        question=normalized_question,
-        model=model,
-        vector=vector,
-    )
+    return QueryEmbedding(vector=vector)
 
 
 def embed_question_with_spec(
