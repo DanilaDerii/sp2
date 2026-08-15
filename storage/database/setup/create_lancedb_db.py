@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
+from config.arguments import DEFAULT_EMBEDDING_DIM
+
 
 DATABASE_DIR = Path(__file__).resolve().parents[1]
 LANCE_DIR = DATABASE_DIR / "lance_storage"
 PACK_CHUNKS_TABLE_NAME = "pack_chunks"
-# LM Studio text-embedding-nomic-embed-text-v1.5 returns 768-dimensional vectors.
-DEFAULT_VECTOR_DIM = 768
 
 
 def _table_names(db) -> set[str]:
@@ -17,7 +17,7 @@ def _table_names(db) -> set[str]:
     return set(tables)
 
 
-def pack_chunks_schema(vector_dim: int = DEFAULT_VECTOR_DIM):
+def pack_chunks_schema(vector_dim: int = DEFAULT_EMBEDDING_DIM):
     try:
         import pyarrow as pa
     except ModuleNotFoundError as exc:
@@ -43,7 +43,11 @@ def pack_chunks_schema(vector_dim: int = DEFAULT_VECTOR_DIM):
     )
 
 
-def create_lancedb_db(vector_dim: int = DEFAULT_VECTOR_DIM, *, verbose: bool = True) -> None:
+def create_lancedb_db(
+    vector_dim: int = DEFAULT_EMBEDDING_DIM,
+    *,
+    verbose: bool = True,
+) -> None:
     try:
         import lancedb
     except ModuleNotFoundError as exc:

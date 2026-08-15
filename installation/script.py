@@ -1,133 +1,68 @@
-"""Setup the local SP2 Python environment and storage."""
+"""Run the complete cross-platform SP2 setup process."""
 
 from __future__ import annotations
 
-import json
-import os
-import subprocess
+import argparse
 import sys
 from pathlib import Path
-from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-VENV_DIR = REPO_ROOT / "environment" / ".venv"
-REQUIREMENTS_PATH = REPO_ROOT / "environment" / "requirements.txt"
-MCP_SERVER_PATH = REPO_ROOT / "integrations" / "lm_studio_mcp" / "server.py"
-SP2_BACKEND_API_BASE_URL = "http://127.0.0.1:8001"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from installation.lm_studio_setup import _find_lms, _setup_lm_studio  # noqa: E402
+from installation.backend_setup import (  # noqa: E402
+    _print_future_backend_command,
+    _start_backend,
+)
+from installation.setup_helpers import (  # noqa: E402
+    SetupError,
+    _check_python_version,
+    _create_venv,
+    _initialize_storage,
+    _install_requirements,
+    _ok,
+    _print_next_steps,
+)
 
 
-class SetupError(RuntimeError):
-    """Raised when a required setup step fails."""
-
-
-def _venv_python() -> Path:
-    if os.name == "nt":
-        return VENV_DIR / "Scripts" / "python.exe"
-    return VENV_DIR / "bin" / "python"
-
-
-def _print_step(message: str) -> None:
-    print(f"\n==> {message}")
-
-
-def _ok(message: str) -> None:
-    print(f"[ok] {message}")
-
-
-def _run(command: list[str], *, cwd: Path = REPO_ROOT) -> None:
-    completed = subprocess.run(command, cwd=cwd, check=False)
-    if completed.returncode != 0:
-        raise SetupError(f"Command failed with exit code {completed.returncode}: {' '.join(command)}")
-
-
-def _check_prerequisites() -> None:
-    _print_step("Checking system prerequisites")
-    if sys.version_info < (3, 10):
-        raise SetupError(
-            "SP2 requires Python 3.10 or newer; "
-            f"current interpreter is Python {sys.version_info.major}.{sys.version_info.minor}"
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Install SP2, download its default LM Studio models, load the "
+            "models, initialize local storage, and start the backend."
         )
-    _ok(f"Python {sys.version_info.major}.{sys.version_info.minor} is supported")
-
-
-def _create_venv() -> Path:
-    _print_step("Creating Python virtual environment")
-    python_path = _venv_python()
-    if python_path.exists():
-        _ok(f"Virtual environment already exists: {VENV_DIR}")
-        return python_path
-
-    _run([sys.executable, "-m", "venv", str(VENV_DIR)])
-    if not python_path.exists():
-        raise SetupError(f"Virtual environment Python was not created: {python_path}")
-    _ok(f"Created virtual environment: {VENV_DIR}")
-    return python_path
-
-
-def _install_requirements(python_path: Path) -> None:
-    _print_step("Installing Python dependencies")
-    if not REQUIREMENTS_PATH.is_file():
-        raise SetupError(f"Requirements file not found: {REQUIREMENTS_PATH}")
-    _run([str(python_path), "-m", "pip", "install", "-r", str(REQUIREMENTS_PATH)])
-    _ok(f"Installed dependencies from: {REQUIREMENTS_PATH}")
-
-
-def _initialize_storage(python_path: Path) -> None:
-    _print_step("Initializing SP2 storage")
-    _run([str(python_path), "-m", "storage.database.setup.create_sqlite_db"])
-    _ok("SQLite database is ready")
-    _run([str(python_path), "-m", "storage.database.setup.create_lancedb_db"])
-    _ok("LanceDB table is ready")
-
-
-def _mcp_config(python_path: Path) -> dict[str, Any]:
-    return {
-        "mcpServers": {
-            "sp2-course-context": {
-                "command": str(python_path),
-                "args": [str(MCP_SERVER_PATH)],
-                "env": {
-                    "SP2_BACKEND_API_BASE_URL": SP2_BACKEND_API_BASE_URL,
-                },
-            }
-        }
-    }
-
-
-def _print_next_steps(python_path: Path) -> None:
-    backend_command = (
-        f"cd {REPO_ROOT}\n"
-        f"{python_path} -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001"
     )
-
-    _print_step("Next: start LM Studio server")
-    print("Start LM Studio's local server from the LM Studio UI or with:")
-    print()
-    print("lms server start")
-
-    _print_step("Next: add SP2 MCP config in LM Studio")
-    print("Paste this JSON into LM Studio's MCP/server configuration:")
-    print(json.dumps(_mcp_config(python_path), indent=2))
-
-    _print_step("Next: start SP2 backend")
-    print("Run this command when you want to use SP2 tools:")
-    print()
-    print(backend_command)
-    print()
-    print("To stop the backend afterward, press Ctrl+C in that terminal.")
+    parser.add_argument(
+        "--skip-model-setup",
+        action="store_true",
+        help="Install SP2 without downloading or loading LM Studio models.",
+    )
+    return parser
 
 
 def main() -> int:
+    args = _build_parser().parse_args()
     print("SP2 setup")
     print(f"Repo root: {REPO_ROOT}")
 
     try:
-        _check_prerequisites()
+        _check_python_version()
+        lms_path = None if args.skip_model_setup else _find_lms()
         python_path = _create_venv()
         _install_requirements(python_path)
         _initialize_storage(python_path)
-        _print_next_steps(python_path)
+
+        if lms_path is not None:
+            _setup_lm_studio(lms_path)
+
+        _start_backend(python_path)
+        _print_next_steps(
+            python_path,
+            model_setup_complete=lms_path is not None,
+        )
+        _print_future_backend_command(python_path)
     except SetupError as exc:
         print()
         print(f"[error] {exc}")

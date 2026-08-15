@@ -1,7 +1,7 @@
 SP2 Requirements Note
 =====================
 
-Last audited: 2026-08-12
+Last audited: 2026-08-15
 
 Current implementation uses one root SP2 dependency file:
 
@@ -9,10 +9,7 @@ Current implementation uses one root SP2 dependency file:
 
 System prerequisites checked by `installation/script.py`:
 - Python 3.10 or newer.
-
-Optional system prerequisite:
-- LibreOffice for legacy `.ppt` ingestion. Modern `.pptx` files are read directly
-  with `python-pptx`.
+- LM Studio's bundled `lms` CLI, unless `--skip-model-setup` is used.
 
 Direction:
 - Explain installation as one SP2 setup, not two separate apps.
@@ -22,8 +19,13 @@ Direction:
 - Use `pymupdf` as the pip-managed PDF text extractor so PDF ingest does not
   require a separate Poppler installation.
 - Use `python-pptx` for direct, slide-aware `.pptx` extraction.
+- Do not support legacy `.ppt` ingest because it would require a separate office
+  application; users must first save those files as `.pptx`.
+- Use LM Studio's bundled `lms` CLI to download the default GGUF chat and
+  embedding models during setup, then load both models and verify the embedding
+  model.
 - Embedding setup now uses LM Studio's local OpenAI-compatible embeddings API.
-  Keep setup docs clear that LM Studio must be installed and its local server
-  must be running.
+  Keep setup docs clear that LM Studio must be installed. Setup starts its local
+  server and the SP2 backend automatically.
 
 Separate student and teacher requirements files are retired to avoid setup drift.

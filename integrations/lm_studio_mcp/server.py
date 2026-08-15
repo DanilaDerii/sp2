@@ -17,11 +17,12 @@ if str(REPO_ROOT) not in sys.path:
 
 from mcp.server.fastmcp import FastMCP
 
+from config.arguments import DEFAULT_MCP_SERVER_NAME
 from integrations.lm_studio_mcp.student_tools import register_student_tools
 from integrations.lm_studio_mcp.teacher_tools import register_teacher_tools
 
 
-MCP_SERVER_NAME = "sp2-course-context"
+MCP_SERVER_NAME = DEFAULT_MCP_SERVER_NAME
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)

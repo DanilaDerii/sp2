@@ -1,6 +1,6 @@
 # SP2 LM Studio MCP Integration
 
-Last audited: 2026-08-12
+Last audited: 2026-08-15
 
 This directory contains the implemented MCP server that exposes SP2 ingest,
 pack management, and retrieval as local tools for LM Studio.
@@ -42,13 +42,21 @@ Current supported teacher source suffixes:
 - `.pdf`
 - `.odt`
 - `.docx`
+- `.pptx`
 
 ## Local Backend Dependency
 
-The SP2 backend should be running before LM Studio calls SP2 tools:
+The installer starts the SP2 backend automatically. For later starts on macOS
+or Linux, run:
 
 ```bash
 environment/.venv/bin/python -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
+```
+
+On Windows PowerShell, run:
+
+```powershell
+& '.\environment\.venv\Scripts\python.exe' -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
 ```
 
 The MCP tools call:
@@ -78,10 +86,10 @@ repo working directory.
 ```json
 {
   "mcpServers": {
-    "sp2-course-context": {
-      "command": "/home/d/sp2/environment/.venv/bin/python",
+    "lecture_sense_rag": {
+      "command": "/absolute/path/to/sp2/environment/.venv/bin/python",
       "args": [
-        "/home/d/sp2/integrations/lm_studio_mcp/server.py"
+        "/absolute/path/to/sp2/integrations/lm_studio_mcp/server.py"
       ],
       "env": {
         "SP2_BACKEND_API_BASE_URL": "http://127.0.0.1:8001"
@@ -90,6 +98,10 @@ repo working directory.
   }
 }
 ```
+
+The installer creates this JSON with the correct absolute Windows, macOS, or
+Linux paths. Windows JSON uses its `.venv\\Scripts\\python.exe` path; JSON
+escaping handles the backslashes automatically.
 
 ## Implementation Notes
 

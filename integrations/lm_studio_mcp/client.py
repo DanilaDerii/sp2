@@ -7,13 +7,10 @@ from typing import Any
 
 import httpx
 
+from config.arguments import DEFAULT_SP2_BACKEND_BASE_URL
 
-DEFAULT_BACKEND_API_BASE_URL = "http://127.0.0.1:8001"
+
 BACKEND_API_BASE_URL_ENV = "SP2_BACKEND_API_BASE_URL"
-BACKEND_START_HINT = (
-    "environment/.venv/bin/python -m uvicorn "
-    "backend.api.api:app --host 127.0.0.1 --port 8001"
-)
 HTTP_TIMEOUT_SECONDS = 120.0
 
 
@@ -33,7 +30,7 @@ def _api_url(base_url: str, path: str) -> str:
 
 def backend_api_url(path: str) -> str:
     """Return an absolute URL for an SP2 backend API path."""
-    base_url = _api_base_url(BACKEND_API_BASE_URL_ENV, DEFAULT_BACKEND_API_BASE_URL)
+    base_url = _api_base_url(BACKEND_API_BASE_URL_ENV, DEFAULT_SP2_BACKEND_BASE_URL)
     return _api_url(base_url, path)
 
 
@@ -63,7 +60,8 @@ def _request_json(
             response = client.request(method, url, params=params, json=json_body)
     except httpx.ConnectError as exc:
         raise RuntimeError(
-            f"Could not connect to the SP2 backend API. Start it with: {BACKEND_START_HINT}"
+            "Could not connect to the SP2 backend API. Run the backend start "
+            "command printed by installation/script.py."
         ) from exc
     except httpx.TimeoutException as exc:
         raise RuntimeError(f"SP2 backend API request timed out: {method} {path}") from exc

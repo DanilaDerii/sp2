@@ -16,7 +16,7 @@ from teacher.domain.rag.common.models import (
 from teacher.domain.rag.doc.docx.extractor import extract_docx_text
 from teacher.domain.rag.doc.odt.extractor import extract_odt_text
 from teacher.domain.rag.pdf.extractor import extract_pdf_text
-from teacher.domain.rag.ppt.extractor import extract_powerpoint_text
+from teacher.domain.rag.ppt.extractor import extract_pptx_text
 
 
 _ExtractDocument = Callable[[str | Path], ExtractedDocument]
@@ -26,8 +26,7 @@ _SOURCE_EXTRACTORS: dict[str, _SourceExtractor] = {
     ".pdf": ("pdf", extract_pdf_text),
     ".odt": ("odt", extract_odt_text),
     ".docx": ("docx", extract_docx_text),
-    ".ppt": ("ppt", extract_powerpoint_text),
-    ".pptx": ("pptx", extract_powerpoint_text),
+    ".pptx": ("pptx", extract_pptx_text),
 }
 
 
@@ -44,6 +43,12 @@ def _resolve_source_path(source_path: str | Path) -> Path:
 def _extractor_for_path(source_path: str | Path) -> _SourceExtractor:
     """Return the source type and extractor registered for a source file."""
     resolved_source = Path(source_path).expanduser()
+    if resolved_source.suffix.lower() == ".ppt":
+        raise ValueError(
+            f"Legacy PPT files are not supported: {resolved_source.name!r}. "
+            "Save the presentation as a .pptx file and try again."
+        )
+
     extractor = _SOURCE_EXTRACTORS.get(resolved_source.suffix.lower())
     if extractor is None:
         supported = ", ".join(_SOURCE_EXTRACTORS)
@@ -60,10 +65,22 @@ def _discover_supported_files(source_path: Path) -> list[Path]:
         _extractor_for_path(source_path)
         return [source_path]
 
+    directory_files = [path for path in source_path.rglob("*") if path.is_file()]
+    legacy_ppt = next(
+        (path for path in directory_files if path.suffix.lower() == ".ppt"),
+        None,
+    )
+    if legacy_ppt is not None:
+        relative_path = legacy_ppt.relative_to(source_path)
+        raise ValueError(
+            f"Directory contains an unsupported legacy PPT file: {relative_path}. "
+            "Save it as a .pptx file and try again."
+        )
+
     source_files = [
         path
-        for path in source_path.rglob("*")
-        if path.is_file() and path.suffix.lower() in _SOURCE_EXTRACTORS
+        for path in directory_files
+        if path.suffix.lower() in _SOURCE_EXTRACTORS
     ]
     return sorted(
         source_files,

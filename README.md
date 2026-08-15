@@ -1,177 +1,191 @@
-# SP2 Installation
+# SP2
 
-SP2 is a local course-pack and retrieval tool for LM Studio. LM Studio owns the
-chat UI and final answer. SP2 owns course-pack storage, retrieval, and the MCP
-tool that returns course context.
+SP2 turns local course files into searchable packs for LM Studio. SP2 stores and
+searches the course material; LM Studio provides the chat and final answer.
 
-SP2 requires Python 3.10 or newer. PDF ingestion uses the pip-installed PyMuPDF
-package; no separate Poppler installation is required. The setup script checks
-the Python version before creating the environment.
+## Prerequisites
 
-Modern PPTX ingestion uses the pip-installed `python-pptx` package. Legacy PPT
-ingestion requires LibreOffice on the system PATH; it is used only to translate
-the old binary presentation into a temporary PPTX before slide text extraction.
+- Python 3.10 or newer
+- LM Studio installed and opened at least once
+- LM Studio local server authentication turned off
+- Internet access and about 6 GB of free space
+- A local copy of this repository
 
-## 1. Install And Open LM Studio
+No models or document tools need to be installed manually. The setup script
+handles them.
 
-Install LM Studio and open it at least once before using the `lms` command.
+## Install
 
-## 2. Download And Load The Embedding Model
-
-In LM Studio, download and load:
-
-```text
-text-embedding-nomic-embed-text-v1.5
-and
-Qwen2.5 7B Instruct 1M
-```
-
-
-## 3. Run The SP2 Setup Script
-
-From a terminal, go to the folder where you cloned or copied SP2, then run:
+Linux or macOS:
 
 ```bash
 cd /path/to/sp2
 python3 installation/script.py
 ```
 
-The setup script creates or reuses `environment/.venv`, installs
-`environment/requirements.txt`, initializes SQLite and LanceDB, then prints the
-MCP JSON and backend start command.
+Windows PowerShell:
 
-The setup script does not start LM Studio, edit `mcp.json`, download models, or
-start the SP2 backend.
-
-## 4. Start The LM Studio Server
-
-Start LM Studio's local server from the LM Studio UI, or run:
-
-```bash
-lms server start
+```powershell
+Set-Location -LiteralPath 'C:\path\to\sp2'
+py .\installation\script.py
 ```
 
-load embeding model in developer -> local server -> load model
-select text-embedding-nomic-embed-text-v1.5
+The script:
 
-## 5. Add The MCP Config In LM Studio
+- creates the Python environment and installs dependencies;
+- creates SQLite and LanceDB;
+- downloads and loads the Nomic embedding model;
+- downloads and loads the Qwen chat model;
+- starts the LM Studio server and SP2 backend;
+- opens LM Studio's MCP approval prompt;
+- prints the backend command for future starts.
 
-In LM Studio, open:
+## Approve the LM Studio Tool
+
+When LM Studio asks to add `lecture_sense_rag`, approve it. LM Studio displays
+the tool in chat as:
 
 ```text
-Developer tab -> Local Server -> mcp.json
-of if you havent enabled developer mode on installation first go:
-Open LM Studio → Settings → Developer → turn on Developer Mode.
+mcp/lecture-sense-rag
 ```
 
-If `mcp.json` is empty, paste this full JSON:
+Open a new chat and make sure this tool is enabled. If the approval prompt does
+not open, use the installation link or `mcp.json` content printed by the setup
+script.
 
-```json
-{
-  "mcpServers": {
-    "sp2-course-context": {
-      "command": "/path/to/sp2/environment/.venv/bin/python",
-      "args": [
-        "/path/to/sp2/integrations/lm_studio_mcp/server.py"
-      ],
-      "env": {
-        "SP2_BACKEND_API_BASE_URL": "http://127.0.0.1:8001"
-      }
-    }
-  }
-}
-```
+## Start the Backend Later
 
-If it already has `"mcpServers": { ... }`, paste only the
-`"sp2-course-context": { ... }` entry inside that object.
+The installer starts the backend automatically. After restarting your device,
+open LM Studio, start its local server, load the Qwen and Nomic models, and then
+start the SP2 backend.
 
-Replace `/path/to/sp2` with your real SP2 folder path. The setup script prints
-the same config with the correct absolute paths for your machine.
-
-## 6. Start The SP2 Backend
-
-Use the backend command printed by the setup script. It will use the real path on
-your machine and will look like this:
+Linux or macOS:
 
 ```bash
 cd /path/to/sp2
-/path/to/sp2/environment/.venv/bin/python -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
+environment/.venv/bin/python -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
 ```
 
-Leave that terminal running while using SP2 from LM Studio.
+Windows PowerShell:
 
-To stop the backend later, press:
+```powershell
+Set-Location -LiteralPath 'C:\path\to\sp2'
+& '.\environment\.venv\Scripts\python.exe' -m uvicorn backend.api.api:app --host 127.0.0.1 --port 8001
+```
+
+Leave that terminal open. Press `Ctrl+C` to stop the backend.
+
+## Supported Course Files
+
+SP2 supports `.pdf`, `.odt`, `.docx`, and `.pptx`. Legacy `.ppt` files must be
+saved as `.pptx` first.
+
+You can provide one exact file or a directory. A directory is searched
+recursively and its supported files are combined into one pack.
+
+Use absolute paths. Windows paths are supported.
+
+## MCP Prompt Examples
+
+Replace the example paths and pack numbers with your own values.
+
+### Build and install a pack
+
+Tool: `sp2_ingest_file_from_path`
 
 ```text
-Ctrl+C
+Use mcp/lecture-sense-rag.
+Call sp2_ingest_file_from_path with:
+file_path: /absolute/path/to/course-file-or-directory
 ```
 
-## 7. Ingest Or Import A Teacher Source File
+This builds a portable ZIP, installs it, and returns its numeric installed pack
+ID.
 
-Keep the LM Studio server and SP2 backend running first.
-
-Supported teacher source files:
+The ZIP is saved in the repository's `artifacts/` directory:
 
 ```text
-.pdf
-.odt
-.docx
-.ppt
-.pptx
+<sp2-repository>/artifacts/<pack-id>.zip
 ```
 
-To let LM Studio build and import a pack through MCP, use:
+The tool response also returns its exact `zip_path`. Copy that ZIP to another
+device and import it there with `sp2_import_pack_from_path`.
+
+### Import an existing pack ZIP
+
+Tool: `sp2_import_pack_from_path`
 
 ```text
-Use mcp/sp2-course-context. Import this file: /path/to/teacher-file.odt
+Use mcp/lecture-sense-rag.
+Call sp2_import_pack_from_path with:
+pack_zip_path: /absolute/path/to/course-pack.zip
 ```
 
-The tool returns the installed pack id. Use that id for retrieval questions.
+### List installed packs
 
-
-## 8. Prompt LM Studio To Use SP2
-
-For consistent demos, ask LM Studio directly to use the SP2 course-context tool
-before answering.
-
-Use this prompt shape:
-
-```
-Use mcp/sp2-course-context tool.
-pack: <installed_pack_id>
-question: <your question here>
-
-After the tool returns, answer in normal prose using the returned course chunks.
-If the returned chunks do not contain the answer, say the course pack does not
-contain it.
-```
-
-If you need pack deleted: 
+Tool: `sp2_list_packs`
 
 ```text
-Use mcp/sp2-course-context.
-delete pack 1
+Use mcp/lecture-sense-rag.
+Call sp2_list_packs with:
+pack_id: null
+active_only: false
 ```
 
-## Important
+The returned numeric `id` is used by the next tools.
 
-Two local servers are involved:
+### Show one installed pack
+
+Tool: `sp2_get_pack`
 
 ```text
-LM Studio server: http://127.0.0.1:1234/v1
-SP2 backend:      http://127.0.0.1:8001
+Use mcp/lecture-sense-rag.
+Call sp2_get_pack with:
+installed_pack_id: 1
 ```
 
-LM Studio and the SP2 backend must both be running for SP2 tools to work.
+### Ask a question
 
-## Storage Maintenance
+Tool: `sp2_get_course_context`
 
-To reset local SP2 storage during development:
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_get_course_context with:
+pack: 1
+question: What are the prerequisites for this course?
+
+After the tool returns, answer using the returned course chunks.
+If the chunks do not contain the answer, say so.
+```
+
+### Delete an installed pack
+
+Tool: `sp2_delete_pack`
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_delete_pack with:
+pack: 1
+```
+
+This deletes the installed files, database row, and vectors. ZIP files in
+`artifacts/` are kept.
+
+## Clear Local Storage
+
+Linux or macOS:
 
 ```bash
 cd /path/to/sp2
 environment/.venv/bin/python -m cli.cli_clearOut --yes
 ```
 
-This clears installed packs and recreates SQLite and LanceDB. Teacher-generated
-zip files in `artifacts/` are left intact.
+Windows PowerShell:
+
+```powershell
+Set-Location -LiteralPath 'C:\path\to\sp2'
+& '.\environment\.venv\Scripts\python.exe' -m cli.cli_clearOut --yes
+```
+
+This removes installed packs and recreates SQLite and LanceDB. ZIP files in
+`artifacts/` are kept.

@@ -13,10 +13,10 @@ def register_teacher_tools(mcp: Any) -> None:
 
     @mcp.tool()
     def sp2_ingest_file_from_path(file_path: str) -> dict[str, Any]:
-        """Build a teacher pack from a supported file and import it into student storage.
+        """Build and install one pack from a supported file or directory tree.
 
         Args:
-            file_path: Absolute or user-expanded path to a supported teacher source file.
+            file_path: Absolute or user-expanded path to a source file or directory.
         """
         normalized_path = required_text(file_path, "file_path")
 
