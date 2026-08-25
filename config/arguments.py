@@ -37,6 +37,28 @@ DEFAULT_LLM_MODEL_DOWNLOAD = (
     "lmstudio-community/Qwen2.5-7B-Instruct-1M-GGUF@q4_k_m"
 )
 
+# Chat model comparison harness (evaluation/) — candidate download URLs for
+# models not already covered by DEFAULT_LLM_MODEL_DOWNLOAD above.
+CANDIDATE_EVAL_MODELS: dict[str, str] = {
+    "qwen2.5-3b-instruct": (
+        "https://huggingface.co/"
+        "lmstudio-community/Qwen2.5-3B-Instruct-GGUF@q4_k_m"
+    ),
+    "llama-3.2-3b-instruct": (
+        "https://huggingface.co/"
+        "lmstudio-community/Llama-3.2-3B-Instruct-GGUF@q4_k_m"
+    ),
+    # lmstudio-community's copy of this repo intermittently fails to resolve
+    # through LM Studio's HF proxy ("Invalid username or password", not an
+    # auth problem on our end - confirmed via `lms whoami`). bartowski's repo
+    # has the same weights/quantization (lmstudio-community's own README
+    # credits bartowski for the GGUF conversion) and resolves reliably.
+    "phi-3.5-mini-instruct": (
+        "https://huggingface.co/"
+        "bartowski/Phi-3.5-mini-instruct-GGUF@q4_k_m"
+    ),
+}
+
 # Teacher ingestion and pack export
 DEFAULT_BUILDER_VERSION = "v1-prototype"
 REQUIRED_PACK_FILES = ("pack.json", "chunks.json", "vectors.npy")

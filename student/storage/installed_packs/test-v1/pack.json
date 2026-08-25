@@ -1,0 +1,11 @@
+{
+  "pack_id": "test",
+  "title": "test",
+  "version": "v1",
+  "description": "",
+  "embedding_model": "all-minilm:latest",
+  "embedding_dim": 384,
+  "default_top_k": 5,
+  "created_at": "2026-06-24T08:12:23+00:00",
+  "builder_version": "v1-prototype"
+}
