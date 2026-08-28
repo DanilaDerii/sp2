@@ -6,6 +6,7 @@ searches the course material; LM Studio provides the chat and final answer.
 ## Prerequisites
 
 - Python 3.10 or newer
+- pip
 - LM Studio installed and opened at least once
 - LM Studio local server authentication turned off
 - Internet access and about 6 GB of free space
@@ -19,11 +20,21 @@ handles them.
 Linux or macOS:
 
 ```bash
+git clone https://github.com/DanilaDerii/sp2.git
+cd sp2
+```
+
+```bash
 cd /path/to/sp2
 python3 installation/script.py
 ```
 
 Windows PowerShell:
+
+```powershell
+git clone https://github.com/DanilaDerii/sp2.git
+Set-Location .\sp2
+```
 
 ```powershell
 Set-Location -LiteralPath 'C:\path\to\sp2'
