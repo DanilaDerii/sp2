@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from config.arguments import DEFAULT_TOP_K
+from config.arguments import CHUNK_CANDIDATE_MULTIPLIER, DEFAULT_TOP_K
 from storage.cruds.lancedb.connection import get_pack_chunks_table
 
+from .chunk_selector import select_chunks
 from .models import QueryEmbedding, RetrievedChunk
 
 
@@ -101,18 +102,21 @@ def search_chunks_by_vector(
     if max_distance is not None and max_distance < 0:
         raise ChunkSearchError("max_distance must be greater than or equal to 0")
 
+    candidate_limit = resolved_top_k * CHUNK_CANDIDATE_MULTIPLIER
+
     table = get_pack_chunks_table()
     rows = (
         table.search(resolved_query_vector)
         .where(_installed_pack_filter(resolved_installed_pack_id), prefilter=True)
-        .limit(resolved_top_k)
+        .limit(candidate_limit)
         .to_list()
     )
 
-    chunks = [_row_to_retrieved_chunk(row) for row in rows]
-    return [
-        chunk for chunk in chunks if _within_max_distance(chunk, max_distance)
+    candidates = [_row_to_retrieved_chunk(row) for row in rows]
+    within_distance = [
+        chunk for chunk in candidates if _within_max_distance(chunk, max_distance)
     ]
+    return select_chunks(within_distance, top_k=resolved_top_k)
 
 
 def search_chunks_for_query(

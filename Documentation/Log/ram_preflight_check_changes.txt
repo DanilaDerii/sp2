@@ -1,0 +1,155 @@
+RAM Preflight Check for the Installer
+=======================================
+
+Branch: installer-ram-check (based on default-model-swap)
+Date: 2026-08-31
+
+Item 1 of 4 in the "installation robustness on any device" list. Items 2-4
+(auto-launching LM Studio if not running, MCP config not overwriting stale
+entries, recovering from a stale LM Studio lock file after a crash) are
+separate future passes, not part of this change.
+
+
+The Idea
+--------
+installation/script.py had zero awareness of available system memory before
+this change. During this project's own testing, a 7.5-7.6GB Linux machine
+hit repeated real out-of-memory crashes running SP2's own default model
+(LM Studio + one loaded chat model + the SP2 backend running at the same
+time). README's Prerequisites section listed disk space but never mentioned
+RAM at all. A laptop with less RAM than the machine we tested on would get
+no warning before things start failing partway through setup or first use.
+
+This change adds an early, advisory-only RAM check: detect total system
+memory, print a message scaled to how much headroom the machine actually
+has, and never block setup regardless of the result - RAM is a
+performance/stability concern here, not a hard incompatibility (SP2 can
+still install and run on a low-RAM machine, just less reliably), so it is
+treated the same way the codebase already treats other soft concerns: warn
+and continue.
+
+
+What Was Added
+---------------
+
+1. installation/setup_helpers.py
+   Two new functions.
+
+   _total_system_memory_bytes() -> int | None
+     Added after _command_text(), grouped with the other small
+     platform-detection helpers in this file. Three-way OS branch, stdlib
+     only (no new dependency - checked environment/requirements.txt first,
+     no psutil or similar already present):
+       - Linux (sys.platform.startswith("linux")): parses the "MemTotal:"
+         line out of /proc/meminfo (value is in kB in that file, converted
+         to bytes).
+       - macOS (sys.platform == "darwin"): runs `sysctl -n hw.memsize` via
+         subprocess (that command reports bytes directly).
+       - Windows (os.name == "nt"): calls the Win32 GlobalMemoryStatusEx
+         API through ctypes, using a manually defined MEMORYSTATUSEX
+         ctypes.Structure (dwLength, dwMemoryLoad, ullTotalPhys, and the
+         remaining fields of that struct) - no new dependency, ctypes is
+         stdlib.
+       - Any detection failure on any branch, or an unrecognized platform,
+         returns None. Nothing in this function ever raises.
+
+   _check_system_memory() -> None
+     Added directly after the existing _check_python_version(). Calls
+     _total_system_memory_bytes(), converts to GB, and prints one of four
+     messages:
+       - detection returned None: neutral "could not determine total
+         system memory; skipping the RAM check" message, no warning either
+         way
+       - < 8 GB: [warning]-prefixed message - close other applications,
+         expect slower performance or occasional instability
+       - 8 GB to < 16 GB: mild note - should be enough, still recommends
+         closing memory-heavy applications
+       - >= 16 GB: _ok() confirmation, no warning
+     Never raises SetupError. Docstring explicitly states this is advisory
+     only and never blocks setup.
+
+2. installation/script.py
+   - _check_system_memory added to the existing import from
+     installation.setup_helpers
+   - one new call, _check_system_memory(), inserted in main() immediately
+     after _check_python_version() and before _find_lms() - the earliest
+     possible point in the whole setup flow, so a user sees this before
+     anything else happens (before any download, before venv creation,
+     before anything that takes real time)
+
+3. README.md
+   Added one new bullet to the Prerequisites list (previously listed
+   Python version, LM Studio, auth-off, disk space, repo copy - no RAM
+   figure existed anywhere before this):
+     "8 GB RAM recommended (4 GB minimum); SP2 keeps LM Studio and a chat
+     model loaded at the same time, so expect slower performance or
+     occasional instability below 8 GB"
+
+
+What Was NOT Changed
+---------------------
+No changes to any other installer file (backend_setup.py, lm_studio_setup.py,
+mcp_setup.py untouched). This check is purely additive - it does not change
+the control flow of anything else in script.py, and it cannot cause main()
+to return a non-zero exit code, since it never raises.
+
+
+Testing / Verification Performed
+----------------------------------
+This machine is Linux only. Only the Linux code path has been directly
+verified:
+
+  - _total_system_memory_bytes() called directly in the venv's Python:
+    returned 8106733568 bytes (7.55 GB), which matches what `free -h`
+    reported on this same machine throughout this entire session.
+  - _check_system_memory() tested with the real detector against this
+    machine's real 7.55 GB -> correctly printed the "< 8 GB" warning tier.
+  - Threshold boundaries tested by monkeypatching
+    _total_system_memory_bytes to return fixed values and calling
+    _check_system_memory() directly: 3.9 GB, 7.9 GB (both -> warning tier),
+    8.0 GB, 15.9 GB (both -> mild-note tier), 16.0 GB, 32.0 GB (both -> ok,
+    no warning), and a None return (-> neutral skip message, no warning
+    either way). All six cases produced the exact expected message.
+  - Full end-to-end run of `python3 installation/script.py` on this
+    machine: the RAM message printed in the correct position (right after
+    the Python version check, before the LM Studio CLI check), showed the
+    correct "< 8 GB" tier for this machine's real RAM, and the rest of
+    setup still completed successfully afterward (exit code 0) - confirms
+    the check does not block or otherwise disrupt the existing flow.
+
+
+NOT YET TESTED - macOS and Windows
+------------------------------------
+The macOS branch (sysctl -n hw.memsize) and the Windows branch (ctypes +
+GlobalMemoryStatusEx) have NOT been run on real hardware of either kind -
+none was available during this work. Both are standard, well-documented
+patterns for their respective platforms, but that is not the same as
+verified. Concretely still needed:
+
+  - Run on an actual Mac: confirm _total_system_memory_bytes() returns the
+    correct byte count (cross-check against `sysctl hw.memsize` run
+    manually, or Activity Monitor / About This Mac), and confirm the
+    subprocess call to `sysctl` succeeds without permission issues.
+  - Run on an actual Windows machine: confirm the ctypes
+    GlobalMemoryStatusEx call succeeds and returns the correct byte count
+    (cross-check against Task Manager or `wmic computersystem get
+    totalphysicalmemory`), and confirm there are no issues with the manual
+    MEMORYSTATUSEX struct definition (field order/types must exactly match
+    the real Win32 struct or the call will behave incorrectly, even though
+    it happened to compile/parse cleanly here since this is stdlib ctypes
+    code that was never actually executed on Windows).
+  - If either platform's detection turns out to be broken, the safe
+    fallback (return None -> "could not determine" message, no crash) means
+    a bug there degrades gracefully rather than breaking setup - but the
+    RAM warning itself would silently just not appear on that platform
+    until it's fixed and verified.
+
+
+Bottom Line
+-----------
+Linux path fully verified working, correct, and non-blocking. macOS and
+Windows paths are implemented following standard patterns for each
+platform but are unverified - need testing on real hardware before anyone
+should treat this as confirmed working cross-platform, despite
+installation/script.py's own module docstring already claiming
+"cross-platform" for the setup process as a whole.

@@ -19,6 +19,12 @@ MAX_SECTION_LENGTH = 160
 # Retrieval
 DEFAULT_TOP_K = 5
 
+# Chunk selection
+CHUNK_CANDIDATE_MULTIPLIER = 4  # over-fetch: candidate_limit = top_k * this
+SHORT_CHUNK_WORD_THRESHOLD = 12  # <=12 normalized words counts as "short"
+SHORT_CHUNK_RATIO = 0.5  # fraction of top_k that may be short chunks (floor 1)
+DUPLICATE_SIMILARITY_THRESHOLD = 0.85  # Jaccard threshold for near-duplicate text
+
 # Embeddings
 DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
@@ -30,11 +36,11 @@ DEFAULT_EMBEDDING_MODEL_DOWNLOAD = (
 DEFAULT_HTTP_TIMEOUT = 120.0
 
 # Chat model
-DEFAULT_LLM_MODEL = "qwen2.5-7b-instruct-1m"
+DEFAULT_LLM_MODEL = "llama-3.2-3b-instruct"
 DEFAULT_LLM_MODEL_KEY = DEFAULT_LLM_MODEL
 DEFAULT_LLM_MODEL_DOWNLOAD = (
     "https://huggingface.co/"
-    "lmstudio-community/Qwen2.5-7B-Instruct-1M-GGUF@q4_k_m"
+    "lmstudio-community/Llama-3.2-3B-Instruct-GGUF@q4_k_m"
 )
 
 # Teacher ingestion and pack export

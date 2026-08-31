@@ -10,6 +10,9 @@ searches the course material; LM Studio provides the chat and final answer.
 - LM Studio installed and opened at least once
 - LM Studio local server authentication turned off
 - Internet access and about 6 GB of free space
+- 8 GB RAM recommended (4 GB minimum); SP2 keeps LM Studio and a chat model
+  loaded at the same time, so expect slower performance or occasional
+  instability below 8 GB
 - A local copy of this repository
 
 No models or document tools need to be installed manually. The setup script
@@ -46,7 +49,7 @@ The script:
 - creates the Python environment and installs dependencies;
 - creates SQLite and LanceDB;
 - downloads and loads the Nomic embedding model;
-- downloads and loads the Qwen chat model;
+- downloads and loads the Llama chat model;
 - starts the LM Studio server and SP2 backend;
 - opens LM Studio's MCP approval prompt;
 - prints the backend command for future starts.
@@ -67,7 +70,7 @@ script.
 ## Start the Backend Later
 
 The installer starts the backend automatically. After restarting your device,
-open LM Studio, start its local server, load the Qwen and Nomic models, and then
+open LM Studio, start its local server, load the Llama and Nomic models, and then
 start the SP2 backend.
 
 Linux or macOS:

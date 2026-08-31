@@ -1,0 +1,168 @@
+Chunk Selection Fix - Retrieval Dilution
+=========================================
+
+Branch: chunk-selector (based on dan_branch, includes commit 545190d)
+Date: 2026-08-31
+
+
+The Idea
+--------
+Retrieval sometimes returned low-value chunks alongside good ones. Verified
+empirically before writing any code: querying the installed "test" pack
+(catering/bakery slide deck, 84 chunks) with a vague question like
+"Tell me about kitchen tools" pulled 3 of 5 top chunks from generic
+intro/meta slides rather than actual tool descriptions. Separately, static
+inspection of the same pack found 13 of 84 chunks (about 15%) are near-empty
+label fragments (e.g. "54.Blow Torch", 2 words, no body text) - this happens
+because teacher/domain/rag/common/chunker.py chunks strictly per page with no
+minimum size and no merging of short pages into neighbors.
+
+Dan had already diagnosed this independently and left a scoped stub at
+student/domain/retrieval/chunk_selector.py (module docstring only, no code)
+on dan_branch, plus notes in tmp.md. His spec: over-fetch a larger candidate
+set from LanceDB, then filter it down before returning top_k - remove
+exact/near-duplicate chunks, limit (not exclude) repeated low-information
+title chunks, explicitly avoid pure length-based filtering since a short
+chunk like "Objectives" can still be valuable, keep it deterministic and
+conservative, and do not change the DB schema or the API/MCP contract.
+
+This change implements exactly that spec rather than inventing a separate
+design.
+
+
+What Was Added
+---------------
+
+1. config/arguments.py
+   New "# Chunk selection" section added after the existing "# Retrieval"
+   section (after DEFAULT_TOP_K = 5), 4 new constants:
+
+     CHUNK_CANDIDATE_MULTIPLIER = 4        over-fetch factor: LanceDB is
+                                            asked for top_k * 4 rows instead
+                                            of exactly top_k
+     SHORT_CHUNK_WORD_THRESHOLD = 12       chunks with <=12 normalized words
+                                            count as "short" for the cap
+                                            below (not excluded outright)
+     SHORT_CHUNK_RATIO = 0.5               fraction of top_k that is allowed
+                                            to be short chunks, floor of 1
+                                            (top_k=5 -> budget of 3,
+                                             top_k=1 -> budget of 1)
+     DUPLICATE_SIMILARITY_THRESHOLD = 0.85 Jaccard word-set similarity
+                                            threshold above which two chunks
+                                            count as near-duplicates
+
+2. student/domain/retrieval/chunk_selector.py (NEW CODE - file previously
+   existed as a docstring-only stub from Dan, no implementation)
+   Added ~108 lines below Dan's existing docstring (kept as-is, it explains
+   the rationale). Also appended a short "Known limitation" paragraph to
+   that docstring noting that longer generic/meta paragraphs (not short, not
+   duplicates) are NOT caught by this pass - that is a harder topical
+   relevance problem, intentionally out of scope here.
+
+   New code:
+     - class ChunkSelectionError(RuntimeError) - matches the existing
+       ChunkSearchError / QueryEmbeddingError convention used elsewhere in
+       this package
+     - _normalized_words(text) -> frozenset[str] - lowercases and tokenizes
+       with re.findall(r"\w+", ...)
+     - _jaccard_similarity(a, b) -> float - word-set overlap, empty/empty
+       treated as 1.0 (duplicate), one-empty as 0.0
+     - _is_near_duplicate(words, selected_words, threshold) -> bool
+     - _validate_top_k(top_k) -> int - same style as chunk_search.py's
+       validator
+     - _validate_similarity_threshold(value) -> float - must be in (0, 1]
+     - _default_max_short_chunks(top_k) -> int - max(1, ceil(top_k * 0.5))
+     - select_chunks(candidates, *, top_k, short_word_threshold=...,
+       max_short_chunks=None, duplicate_similarity_threshold=...) ->
+       list[RetrievedChunk]
+         Pure function, no I/O, no database access. Walks candidates in the
+         order given (must already be best-first by vector distance - this
+         function never reorders, only skips) and greedily builds the
+         result:
+           1. skip if near-duplicate (Jaccard >= threshold) of anything
+              already selected - checked BEFORE the short-chunk check,
+              since dedup is a correctness rule and the short cap is a
+              diversity budget, dedup should win
+           2. skip if the chunk is "short" (<=12 words) AND the short
+              budget for this call is already spent
+           3. otherwise add it to the result, track its word-set for future
+              duplicate checks, and increment the short counter if it was
+              short
+         Stops once top_k chunks are selected. Empty input returns [].
+
+3. student/domain/retrieval/chunk_search.py
+   Only search_chunks_by_vector() changed (search_chunks_for_query and
+   everything else in the file is untouched):
+     - import added: CHUNK_CANDIDATE_MULTIPLIER from config.arguments,
+       select_chunks from .chunk_selector
+     - candidate_limit = resolved_top_k * CHUNK_CANDIDATE_MULTIPLIER computed
+       before the LanceDB query
+     - .limit(resolved_top_k) changed to .limit(candidate_limit) in the
+       LanceDB search call
+     - after building candidates and applying the existing
+       _within_max_distance filter (unchanged logic, just renamed the local
+       variable from `chunks` to `within_distance` since it is now a larger
+       pre-selection candidate pool, not the final result), the function now
+       returns select_chunks(within_distance, top_k=resolved_top_k) instead
+       of returning the filtered list directly
+
+   search_chunks_by_vector's function signature and return type
+   (list[RetrievedChunk]) are UNCHANGED. This means context_builder.py,
+   backend/routes/retrieval.py (the /retrieval/context HTTP route), and the
+   MCP tool built on top of it needed ZERO changes - confirmed by reading
+   all of them during planning. This satisfies Dan's "must not change API
+   or MCP contracts" requirement.
+
+
+What Was NOT Changed
+---------------------
+student/domain/retrieval/context_builder.py and
+student/domain/retrieval/models.py - read during planning, confirmed no
+changes needed to either.
+
+
+Testing / Verification Performed
+----------------------------------
+No test framework exists anywhere in this repo (no pytest, no tests/
+directory) - confirmed during planning. Verification was manual:
+
+1. REPL sanity checks of select_chunks() directly with hand-built
+   RetrievedChunk fixtures: empty input, an all-duplicate candidate list
+   correctly collapsing to 1 result, and top_k=1 never excluding a single
+   best short chunk. All passed.
+
+2. Controlled before/after comparison scripts (querying the raw LanceDB
+   table directly for the OLD top-5 behavior, vs. calling the new
+   search_chunks_by_vector() for the AFTER behavior, same embedded query
+   vector reused for both so it is a fair comparison) run against two real
+   installed packs:
+     - installed_pack_id=2 ("test", the catering/bakery deck, 84 chunks):
+       4 queries tested, 20 total chunk slots compared, 1 slot changed
+       (a short "10. Tongs" chunk, over the short-chunk budget, was
+       replaced by a longer "28. Oven Mitts and Hot Pads" chunk)
+     - installed_pack_id=3 ("01-introduction-to-ai", 40 chunks): 3 queries
+       tested, 15 total chunk slots compared, 0 slots changed
+
+   Honest result: 1 of 35 tested chunk slots changed across both packs.
+   The algorithm was confirmed working exactly as designed in every case,
+   but neither real pack tested has any exact-duplicate chunks, so the
+   duplicate-removal half of this change has not been exercised by real
+   data - only the short-chunk cap has, and only once did it have enough
+   short chunks clustered together to actually trigger.
+
+   The original motivating example ("Tell me about kitchen tools" pulling
+   generic meta paragraphs) is NOT fixed by this change and was confirmed
+   identical before/after - as expected, since those paragraphs are neither
+   short nor duplicates (documented as a known limitation in the module
+   docstring, see above).
+
+
+Bottom Line
+-----------
+Correct, safe, conservative, matches Dan's spec exactly, verified to never
+make retrieval results worse in every test run. Real-world impact measured
+so far is small (1 of 35 chunk slots changed across two real packs) because
+neither test pack had dense duplicate content or large clusters of short
+chunks beating out substantive ones. May show more impact on messier/larger
+real packs (bundles of multiple files, decks with repeated
+agenda/boilerplate slides) - not yet tested against that scenario.
