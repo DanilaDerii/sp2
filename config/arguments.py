@@ -19,6 +19,12 @@ MAX_SECTION_LENGTH = 160
 # Retrieval
 DEFAULT_TOP_K = 5
 
+# Chunk selection
+CHUNK_CANDIDATE_MULTIPLIER = 4  # over-fetch: candidate_limit = top_k * this
+SHORT_CHUNK_WORD_THRESHOLD = 12  # <=12 normalized words counts as "short"
+SHORT_CHUNK_RATIO = 0.5  # fraction of top_k that may be short chunks (floor 1)
+DUPLICATE_SIMILARITY_THRESHOLD = 0.85  # Jaccard threshold for near-duplicate text
+
 # Embeddings
 DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
