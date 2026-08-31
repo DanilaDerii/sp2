@@ -64,7 +64,7 @@ def _download_models(lms_path: str) -> None:
 
     _print_step("Downloading the LM Studio chat model")
     print(f"Model: {DEFAULT_LLM_MODEL_DOWNLOAD}")
-    print("This GGUF download is approximately 4.7 GB.")
+    print("This GGUF download is approximately 2 GB.")
     _run(
         [lms_path, "get", DEFAULT_LLM_MODEL_DOWNLOAD, "--gguf", "--yes"]
     )

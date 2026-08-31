@@ -46,7 +46,7 @@ The script:
 - creates the Python environment and installs dependencies;
 - creates SQLite and LanceDB;
 - downloads and loads the Nomic embedding model;
-- downloads and loads the Qwen chat model;
+- downloads and loads the Llama chat model;
 - starts the LM Studio server and SP2 backend;
 - opens LM Studio's MCP approval prompt;
 - prints the backend command for future starts.
@@ -67,7 +67,7 @@ script.
 ## Start the Backend Later
 
 The installer starts the backend automatically. After restarting your device,
-open LM Studio, start its local server, load the Qwen and Nomic models, and then
+open LM Studio, start its local server, load the Llama and Nomic models, and then
 start the SP2 backend.
 
 Linux or macOS:

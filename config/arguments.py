@@ -36,11 +36,11 @@ DEFAULT_EMBEDDING_MODEL_DOWNLOAD = (
 DEFAULT_HTTP_TIMEOUT = 120.0
 
 # Chat model
-DEFAULT_LLM_MODEL = "qwen2.5-7b-instruct-1m"
+DEFAULT_LLM_MODEL = "llama-3.2-3b-instruct"
 DEFAULT_LLM_MODEL_KEY = DEFAULT_LLM_MODEL
 DEFAULT_LLM_MODEL_DOWNLOAD = (
     "https://huggingface.co/"
-    "lmstudio-community/Qwen2.5-7B-Instruct-1M-GGUF@q4_k_m"
+    "lmstudio-community/Llama-3.2-3B-Instruct-GGUF@q4_k_m"
 )
 
 # Teacher ingestion and pack export
