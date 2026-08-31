@@ -20,6 +20,8 @@ from config.arguments import (
 
 
 MCP_SERVER_PATH = REPO_ROOT / "integrations" / "lm_studio_mcp" / "server.py"
+MCP_CONFIG_PATH = Path.home() / ".lmstudio" / "mcp.json"
+_SP2_SERVER_PATH_SUFFIX = "integrations/lm_studio_mcp/server.py"
 
 
 def _mcp_server_config(python_path: Path) -> dict[str, Any]:
@@ -38,6 +40,81 @@ def _mcp_config(python_path: Path) -> dict[str, Any]:
             DEFAULT_MCP_SERVER_NAME: _mcp_server_config(python_path),
         }
     }
+
+
+def _is_sp2_mcp_entry(entry: dict[str, Any]) -> bool:
+    """True if this mcp.json entry's args point at SP2's own MCP server.
+
+    Matches on path shape rather than the server's current name, so it
+    catches entries left over from any past install regardless of what key
+    they were registered under or which repo path they pointed at.
+    """
+    args = entry.get("args")
+    if not isinstance(args, list):
+        return False
+    return any(
+        isinstance(arg, str) and arg.replace("\\", "/").endswith(_SP2_SERVER_PATH_SUFFIX)
+        for arg in args
+    )
+
+
+def _is_stale_sp2_entry(key: str, entry: dict[str, Any]) -> bool:
+    """True if an SP2-owned entry is under an old key or points at dead paths."""
+    if key != DEFAULT_MCP_SERVER_NAME:
+        return True
+
+    command = entry.get("command")
+    if isinstance(command, str) and not Path(command).is_file():
+        return True
+
+    args = entry.get("args")
+    if isinstance(args, list):
+        for arg in args:
+            if isinstance(arg, str) and not Path(arg).is_file():
+                return True
+
+    return False
+
+
+def _prune_stale_mcp_entries() -> list[str]:
+    """Remove stale SP2 entries from mcp.json, leaving everything else alone.
+
+    Only ever removes dead entries; never adds or changes a live one - adding
+    a new MCP server stays gated behind LM Studio's own approval UI via the
+    add_mcp deep link, since that grants a new capability and removal does
+    not. Returns the list of removed keys, or [] if there was nothing to do.
+    """
+    if not MCP_CONFIG_PATH.is_file():
+        return []
+
+    try:
+        config = json.loads(MCP_CONFIG_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"[warning] Could not read {MCP_CONFIG_PATH}, skipping cleanup: {exc}")
+        return []
+
+    servers = config.get("mcpServers")
+    if not isinstance(servers, dict):
+        return []
+
+    stale_keys = [
+        key
+        for key, entry in servers.items()
+        if isinstance(entry, dict) and _is_sp2_mcp_entry(entry) and _is_stale_sp2_entry(key, entry)
+    ]
+    if not stale_keys:
+        return []
+
+    for key in stale_keys:
+        del servers[key]
+
+    try:
+        MCP_CONFIG_PATH.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    except OSError as exc:
+        print(f"[warning] Could not write {MCP_CONFIG_PATH}, skipping cleanup: {exc}")
+        return []
+
+    return stale_keys
 
 
 def _mcp_install_url(python_path: Path) -> str:

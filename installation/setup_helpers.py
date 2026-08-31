@@ -20,6 +20,7 @@ from installation.mcp_setup import (
     _mcp_config,
     _mcp_install_url,
     _open_mcp_install_url,
+    _prune_stale_mcp_entries,
 )
 
 
@@ -224,6 +225,10 @@ def _print_next_steps(python_path: Path, *, model_setup_complete: bool) -> None:
         print("Download and load the required models before ingesting course files.")
 
     _print_step("Connect SP2 to LM Studio")
+    removed_keys = _prune_stale_mcp_entries()
+    if removed_keys:
+        _ok(f"Removed stale SP2 entries from mcp.json: {', '.join(removed_keys)}")
+
     install_url = _mcp_install_url(python_path)
     if _open_mcp_install_url(install_url):
         _ok("Opened LM Studio's MCP approval prompt")
