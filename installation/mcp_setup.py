@@ -23,6 +23,17 @@ MCP_SERVER_PATH = REPO_ROOT / "integrations" / "lm_studio_mcp" / "server.py"
 MCP_CONFIG_PATH = Path.home() / ".lmstudio" / "mcp.json"
 _SP2_SERVER_PATH_SUFFIX = "integrations/lm_studio_mcp/server.py"
 
+# Electron's singleton-instance lock files for LM Studio on Linux. When the
+# app is killed abruptly (crash, OOM kill) rather than exiting normally,
+# these are left behind, and every subsequent launch attempt silently exits
+# immediately because Electron thinks another instance is already running.
+LM_STUDIO_CONFIG_DIR = Path.home() / ".config" / "LM Studio"
+LM_STUDIO_LOCK_PATHS = (
+    LM_STUDIO_CONFIG_DIR / "SingletonLock",
+    LM_STUDIO_CONFIG_DIR / "Session Storage" / "LOCK",
+    LM_STUDIO_CONFIG_DIR / "Local Storage" / "leveldb" / "LOCK",
+)
+
 
 def _mcp_server_config(python_path: Path) -> dict[str, Any]:
     return {
@@ -190,6 +201,78 @@ def _running_linux_appimage() -> Path | None:
             ):
                 return candidate
     return None
+
+
+def _lm_studio_process_running() -> bool:
+    """Scan /proc for any process that looks like LM Studio, of any kind.
+
+    Broader than _running_linux_appimage, which only matches .AppImage
+    installs - this also catches .deb/.rpm/Flatpak installs by checking each
+    process's short name (comm) and its own executable (argv[0]). Used as a
+    safety check before ever deleting a lock file: a false negative here
+    (reporting "not running" when it actually is) is the dangerous failure
+    mode, so this errs toward matching broadly - but only against the
+    process's own identity (comm, argv[0]), never against arbitrary
+    arguments. An earlier version scanned every cmdline argument's basename
+    and false-matched a Python one-liner that merely mentioned this
+    function's own name in its source text - matching only comm and argv[0]
+    avoids that class of false positive entirely.
+    """
+    proc_dir = Path("/proc")
+    if not proc_dir.is_dir():
+        return False
+
+    for process_dir in proc_dir.iterdir():
+        if not process_dir.name.isdigit():
+            continue
+        try:
+            comm = (process_dir / "comm").read_text(encoding="utf-8", errors="replace").strip()
+        except (OSError, PermissionError):
+            comm = ""
+        if comm and _looks_like_lm_studio(comm):
+            return True
+
+        try:
+            arguments = (process_dir / "cmdline").read_bytes().split(b"\0")
+        except (OSError, PermissionError):
+            continue
+        if arguments and arguments[0]:
+            executable_name = Path(os.fsdecode(arguments[0])).name
+            if _looks_like_lm_studio(executable_name):
+                return True
+
+    return False
+
+
+def _clear_stale_lm_studio_lock() -> list[str]:
+    """Remove LM Studio's lock files, but only if nothing is actually running.
+
+    Linux only - Windows uses an OS-level named mutex rather than a lock
+    file we could safely delete, and macOS's exact lock path was never
+    confirmed against real hardware, so this deliberately does nothing on
+    either rather than guess. Never deletes anything unless a live process
+    scan finds zero LM Studio processes - see _lm_studio_process_running.
+    """
+    if not sys.platform.startswith("linux"):
+        return []
+
+    if _lm_studio_process_running():
+        return []
+
+    removed: list[str] = []
+    for lock_path in LM_STUDIO_LOCK_PATHS:
+        # SingletonLock is a symlink (to a "host-pid" marker, not a real
+        # file); Path.exists() follows symlinks and reports False for a
+        # dangling one, so check is_symlink() too or a stale lock is missed.
+        if not (lock_path.exists() or lock_path.is_symlink()):
+            continue
+        try:
+            lock_path.unlink()
+        except OSError:
+            continue
+        removed.append(str(lock_path))
+
+    return removed
 
 
 def _installed_linux_app() -> Path | None:

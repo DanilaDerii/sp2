@@ -1,0 +1,183 @@
+Recover From a Stale LM Studio Lock File
+===========================================
+
+Branch: lm-studio-stale-lock-recovery (based on mcp-config-cleanup)
+Date: 2026-08-31
+
+Item 4 of 4 in the "installation robustness on any device" list. Items 1-3
+(RAM preflight check, LM Studio auto-launch, MCP config pruning) are done
+and merged separately. This closes out the full list.
+
+
+The Idea
+--------
+LM Studio is an Electron app and uses app.requestSingleInstanceLock() to
+stop two copies running at once - on Linux this shows up as
+~/.config/LM Studio/SingletonLock plus related LOCK files under
+Session Storage and Local Storage/leveldb. We hit this exact failure three
+separate times this session: the kernel's OOM killer (confirmed via
+journalctl) killed LM Studio with SIGKILL, giving it no chance to clean up,
+and every subsequent launch attempt then silently exited immediately with
+no window and no error - Electron saw the stale lock, assumed a real
+instance was running, tried an IPC handoff that failed silently, and gave
+up. We only recovered by manually finding and deleting those files by hand,
+repeatedly.
+
+This directly undermined item 2's auto-launch code too: if a stale lock is
+present when _launch_lm_studio_app() tries to launch, the spawned process
+would exit immediately just like our manual attempts did, and the retry
+loop would burn its whole 45-second budget before giving up - silently
+defeating the exact feature meant to help in this situation. It matters
+more for SP2's actual target machines than most compatibility issues:
+low-RAM laptops are the ones most likely to hit an OOM kill in the first
+place, so this disproportionately hits the users SP2 is supposed to serve
+well.
+
+
+Deliberate Platform Scope
+----------------------------
+Linux only, by design - not just an untested gap like the Mac/Windows
+branches in items 1 and 2. Electron's singleton-lock mechanism is a simple
+lock file on Linux (confirmed firsthand this session), but on Windows it's
+predominantly an OS-level named mutex, not a file we could safely delete,
+and on macOS the exact lock path was never confirmed against real
+hardware. Writing deletion logic for a mechanism we don't actually
+understand risks deleting the wrong thing, so this pass does nothing (no-op,
+returns []) on non-Linux platforms rather than guess.
+
+
+What Was Added
+---------------
+
+1. installation/mcp_setup.py
+   New constants, added after the existing MCP_CONFIG_PATH /
+   _SP2_SERVER_PATH_SUFFIX:
+     - LM_STUDIO_CONFIG_DIR = Path.home() / ".config" / "LM Studio"
+     - LM_STUDIO_LOCK_PATHS - the three paths found and deleted by hand
+       this session: SingletonLock, "Session Storage/LOCK",
+       "Local Storage/leveldb/LOCK"
+
+   Two new functions, added right before the existing _installed_linux_app:
+
+   _lm_studio_process_running() -> bool
+     Scans /proc for any process that looks like LM Studio, checking each
+     process's short name (comm) and its own executable (argv[0]) through
+     the existing _looks_like_lm_studio helper. This is the safety-critical
+     check used before ever deleting anything - see "Two Real Bugs Found
+     During Testing" below for why it only checks comm/argv[0] and not
+     arbitrary command-line arguments, which is not what the first version
+     did.
+
+   _clear_stale_lm_studio_lock() -> list[str]
+     - Returns [] immediately on any non-Linux platform (the scope decision
+       above).
+     - Returns [] immediately if _lm_studio_process_running() is True -
+       never touches anything if a real process might exist.
+     - Otherwise checks each path in LM_STUDIO_LOCK_PATHS and deletes the
+       ones present, returning the list of paths actually removed. Each
+       deletion is wrapped in its own try/except OSError so one failure
+       doesn't block clearing the others.
+
+2. installation/lm_studio_setup.py
+   New import: _clear_stale_lm_studio_lock from installation.mcp_setup.
+   In _ensure_lm_studio_server's existing fallback branch (from item 2),
+   immediately before the existing `if _launch_lm_studio_app():` line:
+   calls _clear_stale_lm_studio_lock(), and if anything was removed, prints
+   "[ok] Cleared a stale LM Studio lock from a previous crash" before
+   proceeding to the unchanged launch attempt.
+
+
+Two Real Bugs Found During Testing (not theorized - actually hit both)
+---------------------------------------------------------------------------
+
+Bug 1 - false positive in process detection. The first version of
+_lm_studio_process_running scanned every argument of every process's
+cmdline (not just argv[0]) for anything that looked like "lmstudio" after
+normalizing. While testing it, it falsely reported LM Studio as running
+when it genuinely was not, because a Python one-liner I ran to debug it
+(`python -c "... from installation.mcp_setup import
+_looks_like_lm_studio ..."`) had its own `-c` script text scanned as a
+cmdline argument, and that script text literally contained the function
+name being imported, which normalizes to contain "lmstudio". Any process
+whose command line merely mentions "LM Studio" anywhere - a log analysis
+script, an unrelated shell command - would trigger the same false match.
+Fixed by only checking comm and argv[0] (the process's own identity), never
+scanning arbitrary arguments. This was a false positive (over-cautious,
+refuses to act), not a dangerous direction, but it would have made the
+whole feature silently useless in ordinary circumstances since it would
+almost always report "something's running" and refuse to clear a lock that
+actually needed clearing.
+
+Bug 2 - SingletonLock is a symlink, not a regular file. It points to a
+target like "chunguslite-machine-19951" (host+pid marker), which isn't a
+real path that exists on disk. Path.exists() follows symlinks and returns
+False for a dangling one - so the first version of
+_clear_stale_lm_studio_lock silently skipped SingletonLock every time
+("not lock_path.exists(): continue"), even when it was genuinely present
+and stale, and only ever cleared the two regular-file LOCK files next to
+it. Caught by checking the file directly after a "successful" prune run
+and finding SingletonLock still there. Fixed by checking
+`lock_path.exists() or lock_path.is_symlink()`.
+
+
+Testing / Verification Performed
+----------------------------------
+All on Linux, using this machine's real LM Studio installation and its
+real config directory (not a synthetic sandbox):
+
+  - Confirmed _lm_studio_process_running() correctly returns True while
+    LM Studio is genuinely running (both via the comm-based path and,
+    separately, confirmed the fixed argv[0]-only cmdline path doesn't
+    false-positive on unrelated processes).
+  - Confirmed _clear_stale_lm_studio_lock() is a true no-op while LM Studio
+    is running: returns [], the real lock file is left completely
+    untouched (verified via directory listing before/after).
+  - Reproduced the actual crash scenario directly: killed LM Studio's
+    processes with SIGKILL (matching how the OOM killer actually
+    terminates it) in two stages - first a partial kill that left worker/
+    renderer processes alive, confirmed the detector correctly still
+    reported "running" and refused to touch the lock (the safe outcome for
+    a partial kill); then a full kill of every remaining process, confirmed
+    the detector correctly flipped to "not running" only once everything
+    was genuinely dead.
+  - With a real orphaned SingletonLock left behind (from the SIGKILL,
+    exactly mirroring how the OOM kills left it behind three times earlier
+    this session): confirmed _clear_stale_lm_studio_lock() removed exactly
+    the stale files and reported them correctly.
+  - Ran the complete integrated path in a single call - killed LM Studio
+    fully, let a real stale lock form, then called
+    _ensure_lm_studio_server() once with no manual pre-clearing - confirmed
+    it printed "[ok] Cleared a stale LM Studio lock from a previous crash",
+    launched LM Studio, and successfully became ready, all in one pass.
+    This is the exact failure sequence that happened for real three times
+    this session, now automated end to end.
+  - Ran the full `python3 installation/script.py` afterward (LM Studio left
+    running from the previous test) to confirm the ordinary fast path is
+    unchanged: "[ok] LM Studio server is ready" immediately, no lock
+    message, setup completed successfully (exit code 0).
+
+
+Bottom Line
+-----------
+Fully implemented and thoroughly verified on Linux, including reproducing
+the exact real crash scenario end to end and catching two genuine bugs
+through actual testing rather than assuming the first version was correct.
+Deliberately Linux-only by design, not by oversight - Windows and macOS use
+different locking mechanisms this session had no way to verify against
+real hardware, so this does nothing on those platforms rather than risk
+deleting the wrong thing.
+
+
+All Four Compatibility Items - Summary
+------------------------------------------
+1. RAM preflight check (Documentation/Log/ram_preflight_check_changes.txt)
+2. LM Studio auto-launch (Documentation/Log/lm_studio_autolaunch_changes.txt)
+3. MCP config pruning (Documentation/Log/mcp_config_cleanup_changes.txt)
+4. Stale lock recovery (this file)
+
+Each was built on a separate branch off the previous one
+(chunk-selector -> default-model-swap -> installer-ram-check ->
+lm-studio-autolaunch -> mcp-config-cleanup -> lm-studio-stale-lock-recovery),
+each verified end-to-end with the real `installation/script.py` before
+moving to the next, per the one-at-a-time approach requested for this
+session's work.

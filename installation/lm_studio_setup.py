@@ -21,7 +21,7 @@ from config.arguments import (
     DEFAULT_LLM_MODEL_KEY,
     DEFAULT_LM_STUDIO_BASE_URL,
 )
-from installation.mcp_setup import _launch_lm_studio_app
+from installation.mcp_setup import _clear_stale_lm_studio_lock, _launch_lm_studio_app
 from installation.setup_helpers import SetupError, _ok, _print_step, _run
 
 
@@ -128,6 +128,10 @@ def _ensure_lm_studio_server(lms_path: str) -> bool:
             "Could not start the LM Studio server; the LM Studio app may not "
             "be running. Attempting to launch it now."
         )
+        cleared_locks = _clear_stale_lm_studio_lock()
+        if cleared_locks:
+            _ok("Cleared a stale LM Studio lock from a previous crash")
+
         if _launch_lm_studio_app():
             _ok("Launched LM Studio")
         else:
