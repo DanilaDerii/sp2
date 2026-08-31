@@ -19,6 +19,7 @@ from installation.backend_setup import (  # noqa: E402
 from installation.setup_helpers import (  # noqa: E402
     SetupError,
     _check_python_version,
+    _check_system_memory,
     _create_venv,
     _initialize_storage,
     _install_requirements,
@@ -49,6 +50,7 @@ def main() -> int:
 
     try:
         _check_python_version()
+        _check_system_memory()
         lms_path = None if args.skip_model_setup else _find_lms()
         python_path = _create_venv()
         _install_requirements(python_path)

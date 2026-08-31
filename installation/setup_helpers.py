@@ -51,6 +51,66 @@ def _command_text(command: list[str]) -> str:
     return shlex.join(command)
 
 
+def _total_system_memory_bytes() -> int | None:
+    """Return total system RAM in bytes, or None if it cannot be determined."""
+    if sys.platform.startswith("linux"):
+        try:
+            with open("/proc/meminfo", encoding="utf-8") as meminfo:
+                for line in meminfo:
+                    if line.startswith("MemTotal:"):
+                        return int(line.split()[1]) * 1024
+        except (OSError, ValueError, IndexError):
+            return None
+        return None
+
+    if sys.platform == "darwin":
+        try:
+            completed = subprocess.run(
+                ["sysctl", "-n", "hw.memsize"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except OSError:
+            return None
+        if completed.returncode != 0:
+            return None
+        try:
+            return int(completed.stdout.strip())
+        except ValueError:
+            return None
+
+    if os.name == "nt":
+        import ctypes
+
+        class _MemoryStatusEx(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = _MemoryStatusEx()
+        status.dwLength = ctypes.sizeof(_MemoryStatusEx)
+        try:
+            success = ctypes.windll.kernel32.GlobalMemoryStatusEx(  # type: ignore[attr-defined]
+                ctypes.byref(status)
+            )
+        except (AttributeError, OSError):
+            return None
+        if not success:
+            return None
+        return int(status.ullTotalPhys)
+
+    return None
+
+
 def _run(
     command: list[str],
     *,
@@ -91,6 +151,37 @@ def _check_python_version() -> None:
             f"{sys.version_info.minor}"
         )
     _ok(f"Python {sys.version_info.major}.{sys.version_info.minor} is supported")
+
+
+def _check_system_memory() -> None:
+    """Warn about likely performance/stability issues on low-RAM machines.
+
+    Advisory only - never blocks setup. SP2 keeps LM Studio and a chat model
+    loaded at the same time, and that combination has caused real
+    out-of-memory crashes on an 7.5-7.6GB machine during development, so
+    machines with less RAM than that should know what to expect up front.
+    """
+    total_bytes = _total_system_memory_bytes()
+    if total_bytes is None:
+        print("Could not determine total system memory; skipping the RAM check.")
+        return
+
+    total_gb = total_bytes / (1024**3)
+    if total_gb < 8:
+        print(
+            f"[warning] Detected about {total_gb:.1f} GB of RAM. SP2 keeps LM "
+            "Studio and a chat model loaded at the same time; close other "
+            "applications while using SP2, and expect slower performance or "
+            "occasional instability on this amount of RAM."
+        )
+    elif total_gb < 16:
+        print(
+            f"Detected about {total_gb:.1f} GB of RAM. This should be enough "
+            "for SP2's default model, but closing memory-heavy applications "
+            "(browsers with many tabs, IDEs) is still recommended."
+        )
+    else:
+        _ok(f"Detected about {total_gb:.1f} GB of RAM")
 
 
 def _create_venv() -> Path:

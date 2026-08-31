@@ -10,6 +10,9 @@ searches the course material; LM Studio provides the chat and final answer.
 - LM Studio installed and opened at least once
 - LM Studio local server authentication turned off
 - Internet access and about 6 GB of free space
+- 8 GB RAM recommended (4 GB minimum); SP2 keeps LM Studio and a chat model
+  loaded at the same time, so expect slower performance or occasional
+  instability below 8 GB
 - A local copy of this repository
 
 No models or document tools need to be installed manually. The setup script
