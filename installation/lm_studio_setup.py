@@ -21,10 +21,12 @@ from config.arguments import (
     DEFAULT_LLM_MODEL_KEY,
     DEFAULT_LM_STUDIO_BASE_URL,
 )
+from installation.mcp_setup import _launch_lm_studio_app
 from installation.setup_helpers import SetupError, _ok, _print_step, _run
 
 
 LM_STUDIO_SERVER_WAIT_SECONDS = 30
+LM_STUDIO_APP_LAUNCH_WAIT_SECONDS = 45
 
 
 def _find_lms() -> str:
@@ -105,6 +107,15 @@ def _stop_lm_studio_server(lms_path: str) -> None:
         _ok("Stopped the LM Studio server after setup failure")
 
 
+def _try_start_server(lms_path: str) -> bool:
+    """Attempt `lms server start` once, returning success instead of raising."""
+    try:
+        _run([lms_path, "server", "start"])
+    except SetupError:
+        return False
+    return True
+
+
 def _ensure_lm_studio_server(lms_path: str) -> bool:
     _print_step("Checking the LM Studio server")
     if _server_is_ready():
@@ -112,7 +123,32 @@ def _ensure_lm_studio_server(lms_path: str) -> bool:
         return False
 
     print("LM Studio server is not reachable; starting it now.")
-    _run([lms_path, "server", "start"])
+    if not _try_start_server(lms_path):
+        print(
+            "Could not start the LM Studio server; the LM Studio app may not "
+            "be running. Attempting to launch it now."
+        )
+        if _launch_lm_studio_app():
+            _ok("Launched LM Studio")
+        else:
+            print("[warning] Could not launch LM Studio automatically.")
+
+        launch_deadline = time.monotonic() + LM_STUDIO_APP_LAUNCH_WAIT_SECONDS
+        started = False
+        while time.monotonic() < launch_deadline:
+            time.sleep(2)
+            if _try_start_server(lms_path):
+                started = True
+                break
+
+        if not started:
+            raise SetupError(
+                "Could not start the LM Studio server. SP2 tried to launch "
+                "the LM Studio app automatically, but it still did not "
+                "become available. Open LM Studio manually, then run setup "
+                "again."
+            )
+
     try:
         deadline = time.monotonic() + LM_STUDIO_SERVER_WAIT_SECONDS
         while time.monotonic() < deadline:

@@ -1,0 +1,167 @@
+Auto-Launch LM Studio If Not Running
+======================================
+
+Branch: lm-studio-autolaunch (based on installer-ram-check)
+Date: 2026-08-31
+
+Item 2 of 4 in the "installation robustness on any device" list. Item 1 (RAM
+preflight check) is done and merged separately. Items 3-4 (MCP config not
+overwriting stale entries, no recovery from a stale LM Studio lock file
+after a crash) are separate future passes.
+
+
+The Idea
+--------
+_ensure_lm_studio_server() in installation/lm_studio_setup.py only called
+`lms server start` when the server wasn't reachable. If LM Studio's app
+process wasn't currently open - even if it had been installed and opened
+before, satisfying the README's literal prerequisite - that command failed
+outright with "LM Studio daemon is not running and no valid installation
+could be found or installed." We hit this exact error ourselves earlier
+this session. The installer never attempted to actually launch the app; it
+just failed.
+
+installation/mcp_setup.py already had a working cross-platform mechanism
+for opening an lmstudio:// URL (_open_mcp_install_url), built for the
+add-MCP-server approval flow, but nothing else reused it.
+
+
+What Was Added
+---------------
+
+1. installation/mcp_setup.py
+   New function _launch_lm_studio_app() -> bool, added right before the
+   existing _open_mcp_install_url(). Reuses the existing detection helpers
+   in this file (_registered_linux_handler, _installed_linux_app) but does
+   NOT reuse _open_mcp_install_url/_run_uri_opener's actual launch
+   mechanism - see "A Bug Found During Testing" below for why a separate
+   function was necessary instead of just calling the existing one with a
+   bare URL, which was the original plan.
+
+   Same three-way OS branch as _open_mcp_install_url:
+     - Windows: os.startfile("lmstudio://")
+     - macOS: subprocess.Popen(["open", "lmstudio://"], ...) - fire and
+       forget, does not wait
+     - Linux: if the lmstudio:// scheme is registered, subprocess.Popen(
+       ["xdg-open", "lmstudio://"], ...); otherwise finds the app via
+       _installed_linux_app() and subprocess.Popen([str(lm_studio_app)],
+       ..., start_new_session=True) with no URL argument (launches it as if
+       double-clicked, no MCP-add side effect since no URL is passed)
+   Every branch uses Popen (or os.startfile, which is inherently
+   fire-and-forget) - none of them wait for the launched process to exit,
+   because the launched process is the actual persistent app.
+
+2. installation/lm_studio_setup.py
+   - New import: _launch_lm_studio_app from installation.mcp_setup
+   - New constant: LM_STUDIO_APP_LAUNCH_WAIT_SECONDS = 45 (retry budget
+     after attempting an app launch), alongside the existing
+     LM_STUDIO_SERVER_WAIT_SECONDS = 30
+   - New helper _try_start_server(lms_path) -> bool - wraps the existing
+     `_run([lms_path, "server", "start"])` call in try/except SetupError,
+     returning True/False instead of raising, so the caller can attempt it
+     more than once
+   - _ensure_lm_studio_server() changed: the single unconditional
+     `_run([lms_path, "server", "start"])` call was replaced with:
+       1. try _try_start_server() once (same as the old behavior when LM
+          Studio is already running - this path is unchanged and still
+          fast)
+       2. if that fails: print a message, call _launch_lm_studio_app(),
+          then retry _try_start_server() in a loop (sleep 2s between
+          attempts) for up to LM_STUDIO_APP_LAUNCH_WAIT_SECONDS
+       3. if the whole retry budget elapses with no success, raise
+          SetupError with a message that explicitly says automatic launch
+          was attempted, so the user knows to check LM Studio manually
+          rather than assume the script never tried
+     The existing "wait for _server_is_ready()" loop after a successful
+     start, and its except (SetupError, KeyboardInterrupt):
+     _stop_lm_studio_server(...); raise cleanup, are unchanged.
+
+
+A Bug Found During Testing (not just theorized - actually hit it)
+---------------------------------------------------------------------
+The original plan was to reuse _open_mcp_install_url("lmstudio://") as-is
+for this, since it already has working cross-platform launch logic. First
+test attempt (LM Studio fully quit, then called the new code path) showed
+this was wrong: `ps aux` confirmed a real LM Studio process actually
+launched and was booting (high CPU, clearly starting up) - but the function
+still reported failure, and worse, the process then disappeared entirely.
+
+Root cause: _open_mcp_install_url's Linux fallback runs the launch through
+_run_uri_opener, which calls subprocess.run(command, timeout=10, ...).
+subprocess.run blocks until the child process exits or the timeout elapses.
+That is correct for _open_mcp_install_url's actual designed use case
+(handing a URL off to an ALREADY-RUNNING LM Studio instance via Electron's
+single-instance-lock IPC hand-off, where the launched process exits
+quickly after handing off) but wrong for launching a fresh COLD instance,
+where the launched process IS the long-running app and never exits within
+10 seconds. Python's subprocess.run kills the child when its timeout
+elapses (documented behavior) - so the 10-second timeout did not just
+misreport the launch as failed, it actively killed the LM Studio process
+that had just started booting.
+
+This is why _launch_lm_studio_app() is a separate new function using
+subprocess.Popen (never waits, never times out, never kills the child)
+rather than a modification of _open_mcp_install_url/_run_uri_opener -
+changing those would risk breaking their existing, already-working use
+case (the MCP approval-prompt flow later in setup, which correctly relies
+on the short-lived-handoff-process assumption).
+
+
+Testing / Verification Performed
+----------------------------------
+All testing on Linux only (see "Known Gap" below).
+
+  - Fast path (LM Studio already running): called _ensure_lm_studio_server
+    directly - confirmed identical behavior to before this change (goes
+    straight to "[ok] LM Studio server is ready", no launch attempt, no
+    behavior change).
+  - Cold start (LM Studio fully quit - confirmed via `ps aux` showing zero
+    LM Studio processes beforehand): called _ensure_lm_studio_server again.
+    Confirmed via output and `ps aux`:
+      - printed "Could not start the LM Studio server..." and "Attempting
+        to launch it now"
+      - "[ok] Launched LM Studio"
+      - a few retries printed the expected transient "LM Studio daemon is
+        not running" messages from `lms server start` while the app was
+        still booting
+      - "Success! Server is now running on port 1234"
+      - "[ok] LM Studio server is ready at http://127.0.0.1:1234/v1"
+      - function returned True
+    Confirmed with `lms status` afterward: server on, process stable, not
+    a fluke/transient success.
+  - Full end-to-end run of `python3 installation/script.py` afterward
+    (LM Studio left running from the cold-start test) - confirmed the
+    "LM Studio server is ready" fast-path message and the rest of setup
+    completed successfully (exit code 0), so the change does not disrupt
+    the normal already-running case either.
+
+
+NOT YET TESTED - macOS and Windows
+------------------------------------
+Same gap as the RAM preflight check (Documentation/Log/
+ram_preflight_check_changes.txt): only Linux hardware was available this
+session. The macOS (`open lmstudio://` via Popen) and Windows
+(`os.startfile("lmstudio://")`) branches of _launch_lm_studio_app are
+untested on real hardware. Both use standard OS-level
+fire-and-forget launch mechanisms (os.startfile never blocks by design;
+`open` on macOS hands off to LaunchServices and returns immediately without
+waiting for the target app), so the same blocking-timeout bug that hit the
+Linux path should not apply to them - but that reasoning is exactly the
+kind of assumption that turned out to be wrong for the Linux path before
+it was actually tested. Needs real verification on both platforms before
+being treated as confirmed working.
+
+Also not verified: whether the 45-second LM_STUDIO_APP_LAUNCH_WAIT_SECONDS
+budget is generous enough on a genuinely slow/constrained machine (this
+session's cold-start test completed within that budget, but on a machine
+already struggling with RAM - the exact kind of machine this whole
+compatibility effort is about - first launch could plausibly take longer).
+
+
+Bottom Line
+-----------
+Linux path fully verified working for both the fast path (already running)
+and the cold-start auto-launch path, including a real bug caught and fixed
+during testing rather than assumed away. macOS and Windows launch branches
+are implemented using platform-standard fire-and-forget mechanisms but are
+unverified on real hardware.

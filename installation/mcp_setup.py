@@ -144,6 +144,56 @@ def _installed_linux_app() -> Path | None:
     return None
 
 
+def _launch_lm_studio_app() -> bool:
+    """Launch the LM Studio app without waiting for it to exit.
+
+    Unlike _open_mcp_install_url, this is for a cold start where no LM Studio
+    instance is running yet: the launched process IS the long-running app,
+    not a short-lived URL-handoff helper, so it must never be waited on.
+    subprocess.run(..., timeout=...) would be wrong here - Python kills the
+    child when the timeout elapses, which would kill LM Studio mid-launch.
+    """
+    try:
+        if os.name == "nt":
+            os.startfile("lmstudio://")  # type: ignore[attr-defined]
+            return True
+
+        if sys.platform == "darwin":
+            subprocess.Popen(
+                ["open", "lmstudio://"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+
+        if sys.platform.startswith("linux"):
+            if _registered_linux_handler():
+                subprocess.Popen(
+                    ["xdg-open", "lmstudio://"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                return True
+
+            lm_studio_app = _installed_linux_app()
+            if lm_studio_app is None:
+                return False
+            clean_env = os.environ.copy()
+            clean_env.pop("ELECTRON_RUN_AS_NODE", None)
+            subprocess.Popen(
+                [str(lm_studio_app)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                env=clean_env,
+                start_new_session=True,
+            )
+            return True
+    except OSError:
+        return False
+
+    return False
+
+
 def _open_mcp_install_url(install_url: str) -> bool:
     try:
         if os.name == "nt":
