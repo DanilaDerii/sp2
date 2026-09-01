@@ -1,0 +1,43 @@
+@startuml
+
+' Diagram type: Functional Decomposition Diagram (FDD)
+' Scope: Complete SP2 ingestion, from teacher source intake through local installation.
+' The container expresses decomposition; the blocks do not imply execution order.
+
+title SP2 Content Ingestion - Functional Decomposition
+
+top to bottom direction
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam linetype ortho
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #475569
+  FontColor #0F172A
+}
+skinparam frame {
+  BackgroundColor #EFF6FF
+  BorderColor #1D4ED8
+  FontColor #1E3A8A
+}
+
+frame "<b>SP2 Content Ingestion</b>" {
+  rectangle "<b>1. Source Intake and Extraction</b>\nInput: local file or directory path\nSupport PDF, ODT, DOCX, and PPTX sources\nOutput: extracted pages with source metadata" as source
+
+  rectangle "<b>2. Searchable Content Creation</b>\nInput: extracted pages\nCreate overlapping chunks with IDs, page, and section\nGenerate LM Studio document embeddings\nOutput: matched chunk-vector records" as searchable
+
+  rectangle "<b>3. Portable Pack Construction</b>\nBuild pack metadata\nProduce pack.json, chunks.json, and vectors.npy\nOutput: portable course-pack ZIP" as pack
+
+  rectangle "<b>4. Validation and Local Installation</b>\nVerify unique IDs, counts, and vector dimensions\nStore pack files in the installed-packs directory\nStore metadata in SQLite\nStore chunks and vectors in LanceDB" as installation
+
+  rectangle "<b>5. Consistency and Result Reporting</b>\nReject malformed and duplicate packs\nRoll back partial files, SQLite rows, and LanceDB rows\nReturn pack ID, title, chunk count, model, dimension, and paths" as result
+
+  source -[hidden]down-> searchable
+  searchable -[hidden]down-> pack
+  pack -[hidden]down-> installation
+  installation -[hidden]down-> result
+}
+
+@enduml
