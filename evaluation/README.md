@@ -24,3 +24,16 @@ Regenerate the JSONL after changing the source labels with:
 ```sh
 environment/.venv/bin/python evaluation/build_ml_pdf_eval.py
 ```
+
+After importing `ml.pdf` into SP2 and starting the backend and LM Studio's
+embedding server, evaluate held-out retrieval with:
+
+```sh
+environment/.venv/bin/python evaluation/run_retrieval_eval.py --pack-id PACK_ID --split test
+```
+
+The runner reports `retrieval_recall_at_k`: the share of answerable questions
+for which a retrieved chunk includes at least one labeled PDF page. It also
+reports `citation_ready_rate`, because the retrieval response carries each
+chunk's source page. This verifies evidence availability, not whether the
+chat model formats citations correctly in its final prose.
