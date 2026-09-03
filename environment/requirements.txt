@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+httpx
+numpy
+lancedb
+pyarrow
+mcp[cli]>=1.27,<2
+pypandoc_binary
+PyMuPDF
+python-pptx
