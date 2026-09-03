@@ -1,0 +1,722 @@
+[
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::0",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "CHAPTER two Digital transformation: decisions, processes, and artificial intelligence",
+    "chunk_index": 0,
+    "page": 1,
+    "section": "CHAPTER two Digital transformation: decisions, processes, and artificial intelligence"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::1",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "SECTION 2.1 \u2013 Decision Support Systems Making Organizational Business Decisions Measuring Organizational Business Decisions Using MIS to Make Business Decisions SECTION 2.2 \u2013 Digital Transformation: Business Process and Artificial Intelligence Managing Business Processes Using MIS to Improve Business Processes Using AI to Make Business Decisions and Drive Digital Transformation CHAPTER TWO OVERVIEW",
+    "chunk_index": 1,
+    "page": 2,
+    "section": "SECTION 2.1 \u2013 Decision Support Systems Making Organizational Business Decisions Measuring Organizational Business Decisions Using MIS to Make Business Decisions"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::2",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "SECTION 2.1: DECISION SUPPORT SYSTEMS",
+    "chunk_index": 2,
+    "page": 3,
+    "section": "SECTION 2.1: DECISION SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::3",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Explain the importance of decision making for managers at each of the three primary organization levels along with the associated decision characteristics Define critical success factors (CSFs) and key performance indicators (KPIs), and explain how managers use them to measure the success of MIS projects Classify the different operational, managerial, and strategic support systems, and explain how managers can use them to make decisions & gain competitive advantage Learning outcomes",
+    "chunk_index": 3,
+    "page": 4,
+    "section": "Explain the importance of decision making for managers at each of the three primary organization levels along with the associated decision characteristics Defin"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::4",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MAKING ORGANIZATIONAL BUSINESS DECISIONS",
+    "chunk_index": 4,
+    "page": 5,
+    "section": "MAKING ORGANIZATIONAL BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::5",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "THE DECISION-MAKING PROCESS The Six-step Decision-making Process",
+    "chunk_index": 5,
+    "page": 6,
+    "section": "THE DECISION-MAKING PROCESS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::6",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "DECISION-MAKING LEVELS Organizational Decision-Making Levels",
+    "chunk_index": 6,
+    "page": 7,
+    "section": "DECISION-MAKING LEVELS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::7",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Operational DECISION-MAKING levels Operational level - Employees develop, control, and maintain core business activities required to run the day-to-day operations Operational decisions - Affect how the firm is run from day to day Structured decisions - Situations where established processes offer potential solutions OPERATIONAL",
+    "chunk_index": 7,
+    "page": 8,
+    "section": "Operational DECISION-MAKING levels"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::8",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Managerial DECISION-MAKING levels Managerial level \u2013 Employees evaluate company operations to identify, adapt to, and leverage change Managerial decisions - These concern how the organization should achieve the goals and objectives set by its strategy Semistructured decisions \u2013 Occur in situations in which a few established processes help to evaluate potential solutions, but not enough to lead to a definite recommended decision MANAGERIAL",
+    "chunk_index": 8,
+    "page": 9,
+    "section": "Managerial DECISION-MAKING levels"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::9",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Strategic DECISION-MAKING levels Strategic level \u2013 Managers develop overall strategies, goals, and objectives Strategic decisions - Involve higher-level issues concerned with the overall direction of the organization Unstructured decisions \u2013 Occurs in situations in which no procedures or rules exist to guide decision makers toward the correct choice STRATEGIC",
+    "chunk_index": 9,
+    "page": 10,
+    "section": "Strategic DECISION-MAKING levels"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::10",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS Project \u2013 A temporary activity a company undertakes to create a unique product, service, or result Metrics \u2013 Measurements that evaluate results to determine whether a project is meeting its goals",
+    "chunk_index": 10,
+    "page": 11,
+    "section": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::11",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS Critical success factors (CSFs) \u2013 The crucial steps companies make to perform to achieve their goals and objectives and implement strategies Create high-quality products Retain competitive advantages Reduce product costs Increase customer satisfaction Hire and retain the best professionals",
+    "chunk_index": 11,
+    "page": 12,
+    "section": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::12",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS Key performance indicators (KPIs) \u2013 The quantifiable metrics a company uses to evaluate progress toward critical success factors Turnover rates of employees Number of product returns Number of new customers Average customer spending",
+    "chunk_index": 12,
+    "page": 13,
+    "section": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::13",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS",
+    "chunk_index": 13,
+    "page": 14,
+    "section": "MEASURING ORGANIZATIONAL BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::14",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Efficiency and EFFECTIVENESS METRICS Efficiency MIS metrics \u2013 Measure the performance of MIS itself, such as throughput, transaction speed, and system availability Effectiveness MIS metrics \u2013 Measures the impact MIS has on business processes and activities, including customer satisfaction and customer conversation rates",
+    "chunk_index": 14,
+    "page": 15,
+    "section": "Efficiency and EFFECTIVENESS METRICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::15",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Efficiency and EFFECTIVENESS METRICS",
+    "chunk_index": 15,
+    "page": 16,
+    "section": "Efficiency and EFFECTIVENESS METRICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::16",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "The INTERRELATIONSHIP BETWEEN EFFICIENCY AND EFFECTIVENESS Ideal Operation Occurs in the Upper Right Corner",
+    "chunk_index": 16,
+    "page": 17,
+    "section": "The INTERRELATIONSHIP BETWEEN EFFICIENCY AND EFFECTIVENESS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::17",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "THE INTERRELATIONSHIP BETWEEN EFFICIENCY AND EFFECTIVENESS METRICS Benchmark \u2013 Baseline values the system seeks to attain Benchmarking \u2013 A process of continuously measuring system results, comparing those results to optimal system performance (benchmark values), and identifying steps and procedures to improve system performance",
+    "chunk_index": 17,
+    "page": 18,
+    "section": "THE INTERRELATIONSHIP BETWEEN EFFICIENCY AND EFFECTIVENESS METRICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::18",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "USING MIS TO MAKE BUSINESS DECISIONS Model \u2013 A simplified representation or abstraction of reality Models help managers to Calculate risks Understand uncertainty Change variables Manipulate time to make decisions",
+    "chunk_index": 18,
+    "page": 19,
+    "section": "USING MIS TO MAKE BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::19",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "USING MIS TO MAKE BUSINESS DECISIONS Types of Decision-Making MIS Systems",
+    "chunk_index": 19,
+    "page": 20,
+    "section": "USING MIS TO MAKE BUSINESS DECISIONS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::20",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "OPERATIONAL SUPPORT SYSTEMS Transactional Data \u2013 Encompasses all of the data contained within a single business process or unit of work, and its primary purpose is to support the performing of daily operational or structured decisions Transaction processing system (TPS) \u2013 Basic business system that serves the operational level and assists in making structured decisions Online transaction processing (OLTP) - Capturing of transaction and event data using technology to process, store, and update Source document \u2013 The original transaction record",
+    "chunk_index": 20,
+    "page": 21,
+    "section": "OPERATIONAL SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::21",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "OPERATIONAL SUPPORT SYSTEMS Systems Thinking View of a TPS",
+    "chunk_index": 21,
+    "page": 22,
+    "section": "OPERATIONAL SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::22",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MANAGERIAL SUPPORT SYSTEMS Analytical Information - Encompasses all organizational data, and its primary purpose is to support the performing of managerial analysis or semistructured decisions Online analytical processing (OLAP) \u2013 Manipulation of information to create business intelligence in support of strategic decision making Decision support system (DSS) \u2013 Models information to support managers and business professionals during the decision-making process",
+    "chunk_index": 22,
+    "page": 23,
+    "section": "MANAGERIAL SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::23",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MANAGERIAL SUPPORT SYSTEMS Systems Thinking View of a DSS",
+    "chunk_index": 23,
+    "page": 24,
+    "section": "MANAGERIAL SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::24",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MANAGERIAL SUPPORT SYSTEMS Interaction Between a TPS and DSS",
+    "chunk_index": 24,
+    "page": 25,
+    "section": "MANAGERIAL SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::25",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC SUPPORT SYSTEMS Executive information system (EIS) \u2013 A specialized DSS that supports senior-level executives and unstructured, long-term, nonroutine decisions requiring judgment, evaluation, and insight",
+    "chunk_index": 25,
+    "page": 26,
+    "section": "STRATEGIC SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::26",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC SUPPORT SYSTEMS Organization Information Levels",
+    "chunk_index": 26,
+    "page": 27,
+    "section": "STRATEGIC SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::27",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC SUPPORT SYSTEMS Interaction Between a TPS and EIS",
+    "chunk_index": 27,
+    "page": 28,
+    "section": "STRATEGIC SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::28",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC SUPPORT SYSTEMS Digital dashboard - Tracks KPIs and CSFs by compiling information from multiple sources and tailoring it to meet user needs",
+    "chunk_index": 28,
+    "page": 29,
+    "section": "STRATEGIC SUPPORT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::29",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "SECTION 2.2: Digital Transformation: Business Process and Artificial Intelligence",
+    "chunk_index": 29,
+    "page": 30,
+    "section": "SECTION 2.2: Digital Transformation: Business Process and Artificial Intelligence"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::30",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Explain the value of business processes for a company and differentiate between customer-facing and business-facing processes Demonstrate the value of business process modeling and compare As-Is and To-Be models Differentiate among automation, streamlining, and reengineering Describe artificial intelligence and its six branches LEARNING OUTCOMES",
+    "chunk_index": 30,
+    "page": 31,
+    "section": "Explain the value of business processes for a company and differentiate between customer-facing and business-facing processes Demonstrate the value of business "
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::31",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Managing business processes",
+    "chunk_index": 31,
+    "page": 32,
+    "section": "Managing business processes"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::32",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MANAGING BUSINESS PROCESSES The Order-to-Delivery Process",
+    "chunk_index": 32,
+    "page": 33,
+    "section": "MANAGING BUSINESS PROCESSES"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::33",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MANAGING BUSINESS PROCESSES Customer facing process - Results in a product or service that is received by an organization\u2019s external customer Business facing process - Invisible to the external customer but essential to the effective management of the business",
+    "chunk_index": 33,
+    "page": 34,
+    "section": "MANAGING BUSINESS PROCESSES"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::34",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS MODELING Business Process Model and Notation (BPMN) - A graphical notation that depicts the steps in a business process",
+    "chunk_index": 34,
+    "page": 35,
+    "section": "BUSINESS PROCESS MODELING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::35",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS MODELING Business process model - A graphic description of a process, showing the sequence of process tasks, which is developed for a specific Business process modeling (or mapping) - The activity of creating a detailed flow chart or process map of a work process showing its inputs, tasks, and activities, in a structured sequence As-Is process model - Represent the current state of the operation that has been mapped, without any specific improvements or changes to existing processes To-Be process model - Shows the results of applying change improvement opportunities to the current (As-Is) process model",
+    "chunk_index": 35,
+    "page": 36,
+    "section": "BUSINESS PROCESS MODELING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::36",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS MODELING",
+    "chunk_index": 36,
+    "page": 37,
+    "section": "BUSINESS PROCESS MODELING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::37",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS MODELING",
+    "chunk_index": 37,
+    "page": 38,
+    "section": "BUSINESS PROCESS MODELING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::38",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS BEST PRACTICES Business Process Driving MIS Choices The Best Choice for Operations",
+    "chunk_index": 38,
+    "page": 39,
+    "section": "BUSINESS PROCESS BEST PRACTICES"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::39",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS BEST PRACTICES MIS Driving Business Processes The Worst Choice for Operations",
+    "chunk_index": 39,
+    "page": 40,
+    "section": "BUSINESS PROCESS BEST PRACTICES"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::40",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS BEST PRACTICES Use case - A description of how a system, product, or service can be used to achieve specific goals, tasks, or objectives",
+    "chunk_index": 40,
+    "page": 41,
+    "section": "BUSINESS PROCESS BEST PRACTICES"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::41",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS BEST PRACTICES Workflow \u2013 Includes the tasks, activities, and responsibilities required to execute each step in a business process Digitization - The automation of existing manual and paper-based processes and workflows to a digital format",
+    "chunk_index": 41,
+    "page": 42,
+    "section": "BUSINESS PROCESS BEST PRACTICES"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::42",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "BUSINESS PROCESS BEST PRACTICE Types of change an organization can achieve, along with the magnitudes of change and the potential business benefit",
+    "chunk_index": 42,
+    "page": 43,
+    "section": "BUSINESS PROCESS BEST PRACTICE"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::43",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "OPERATIONAL BUSINESS PROCESSES - AUTOMATION Operational business processes - Static, routine, daily business processes such as stocking inventory, checking out customers, or daily opening and closing processes Business process improvement - Attempts to understand and measure the current process and make performance improvements accordingly Automation - The process of computerizing manual tasks, making them more efficient and effective, and dramatically lowering operational costs",
+    "chunk_index": 43,
+    "page": 44,
+    "section": "OPERATIONAL BUSINESS PROCESSES - AUTOMATION"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::44",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "OPERATIONAL BUSINESS PROCESSES \u2013 robotic process automation Robotic process automation - The use of software with artificial intelligence (AI) and machine learning capabilities to handle high-volume, repeatable tasks that previously required a human to perform",
+    "chunk_index": 44,
+    "page": 45,
+    "section": "OPERATIONAL BUSINESS PROCESSES \u2013 robotic process automation"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::45",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "MANAGERIAL BUSINESS PROCESSES STREAMLINING Managerial business processes - Semidynamic, semiroutine, monthly business processes such as resource allocation, sales strategy, or manufacturing process improvements Streamlining \u2013 Improves business process efficiencies by simplifying or eliminating unnecessary steps Bottleneck \u2013 Occur when resources reach full capacity and cannot handle any additional demands Redundancy \u2013 Occurs when a task or activity is unnecessarily repeated",
+    "chunk_index": 45,
+    "page": 46,
+    "section": "MANAGERIAL BUSINESS PROCESSES STREAMLINING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::46",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC BUSINESS PROCESSES REENGINEERING Strategic business processes - Dynamic, nonroutine, long-term business processes such as financial planning, expansion strategies, and stakeholder interactions Business process reengineering (BPR) - Analysis and redesign of workflow within and between enterprises",
+    "chunk_index": 46,
+    "page": 47,
+    "section": "STRATEGIC BUSINESS PROCESSES REENGINEERING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::47",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC BUSINESS PROCESSES REENGINEERING A company can improve the way it travels the road by moving from foot to horse and then horse to car BPR looks at taking a different path, such as an airplane which ignore the road completely",
+    "chunk_index": 47,
+    "page": 48,
+    "section": "STRATEGIC BUSINESS PROCESSES REENGINEERING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::48",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC BUSINESS PROCESSES REENGINEERING Progressive Insurance Mobile Claims Process",
+    "chunk_index": 48,
+    "page": 49,
+    "section": "STRATEGIC BUSINESS PROCESSES REENGINEERING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::49",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC BUSINESS PROCESSES REENGINEERING",
+    "chunk_index": 49,
+    "page": 50,
+    "section": "STRATEGIC BUSINESS PROCESSES REENGINEERING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::50",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC BUSINESS PROCESSES REENGINEERING",
+    "chunk_index": 50,
+    "page": 51,
+    "section": "STRATEGIC BUSINESS PROCESSES REENGINEERING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::51",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "STRATEGIC BUSINESS PROCESSES REENGINEERING",
+    "chunk_index": 51,
+    "page": 52,
+    "section": "STRATEGIC BUSINESS PROCESSES REENGINEERING"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::52",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "USING AI TO MAKE BUSINESS DECISIONS AND DRIVE DIGITAL TRANSFORMATION Artificial intelligence (AI) \u2013 Simulates human intelligence such as the ability to reason and learn, focusing on three cognitive skills: learning, reasoning, and self-correction Digital transformation - The process of using digital technologies to fundamentally transform business processes, operations, and customer experiences.",
+    "chunk_index": 52,
+    "page": 53,
+    "section": "USING AI TO MAKE BUSINESS DECISIONS AND DRIVE DIGITAL TRANSFORMATION"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::53",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "EXAMPLES OF ARTIFICIAL INTELLIGENCE",
+    "chunk_index": 53,
+    "page": 54,
+    "section": "EXAMPLES OF ARTIFICIAL INTELLIGENCE"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::54",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "ALGORITHM BASICS Algorithm - Mathematical formula places in software that performs analytics on a dataset. Algorithms are step-by-step procedure of rules for solving a problem or accomplishing a particular task Here is an example of a simple sum algorithm 1. Start 2. Read the first number (num1) from the user 3. Read the second number (num2) from the user 4. Add num1 and num2, and store the result in a variable sum 5. Display the sum 6. End",
+    "chunk_index": 54,
+    "page": 55,
+    "section": "ALGORITHM BASICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::55",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "ALGORITHM BASICS Transforming inputs to outputs with algorithm process in AI INPUT | OUTPUT Email | Determine if the email is spam Audio clip | Text transcript of the audio English sentence | Chinese sentence",
+    "chunk_index": 55,
+    "page": 56,
+    "section": "ALGORITHM BASICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::56",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "ALGORITHM BASICS Black box algorithm - Decision-making process that cannot be easily understood or explained by the computer or researcher Genetic algorithm - An artificial intelligence system that mimics the evolutionary, survival-of-the-fittest process to generate increasingly better solutions to a problem ?",
+    "chunk_index": 56,
+    "page": 57,
+    "section": "ALGORITHM BASICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::57",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Types of artificial intelligence Weak AI (also called narrow AI) - Artificial intelligence systems that simulate human reasoning can perform a specific task with a true purpose Strong AI (also called Artificial General Intelligence) - A type of artificial intelligence that can perform any intellectual task that a human can perform Generalized AI, also known as Artificial General Intelligence (AGI) - Refers to AI systems that possess human-level intelligence and are capable of understanding, learning, and performing any intellectual task a human being can do",
+    "chunk_index": 57,
+    "page": 58,
+    "section": "Types of artificial intelligence"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::58",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Six branches of artificial intelligence Machine learning Neural networks Expert systems Natural language processing Computer vision Robotics",
+    "chunk_index": 58,
+    "page": 59,
+    "section": "Six branches of artificial intelligence"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::59",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 1: Machine learning Machine learning - A type of artificial intelligence that enables computers to understand concepts in the environment and to learn",
+    "chunk_index": 59,
+    "page": 60,
+    "section": "AI TYPE 1: Machine learning"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::60",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 1: Machine learning",
+    "chunk_index": 60,
+    "page": 61,
+    "section": "AI TYPE 1: Machine learning"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::61",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 1: Machine learning",
+    "chunk_index": 61,
+    "page": 62,
+    "section": "AI TYPE 1: Machine learning"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::62",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 1: Machine learning",
+    "chunk_index": 62,
+    "page": 63,
+    "section": "AI TYPE 1: Machine learning"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::63",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 1: Machine learning Overfitting - Occurs when a machine learning model matches the training data so closely that the model fails to make correct predictions on new data Underfitting - Occurs when a machine learning model has poor predictive abilities because it did not learn the complexity in the training data",
+    "chunk_index": 63,
+    "page": 64,
+    "section": "AI TYPE 1: Machine learning"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::64",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 2: Neural networks Neural Network \u2013 Attempts to emulate the way the human brain works Fuzzy logic \u2013 A mathematical method of handling imprecise or subjective information Deep learning \u2013 A process that employs specialized algorithms to model and study complex datasets; the method is also used to establish relationships among data and datasets",
+    "chunk_index": 64,
+    "page": 65,
+    "section": "AI TYPE 2: Neural networks"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::65",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 3: Natural language processing Natural language processing (NLP) - Refers to the development of algorithms that can analyze and understand human language, including text and speech",
+    "chunk_index": 65,
+    "page": 66,
+    "section": "AI TYPE 3: Natural language processing"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::66",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 4: COMPUTER VISION Computer Vision - Refers to the development of algorithms that can interpret and analyze visual information, including images and videos",
+    "chunk_index": 66,
+    "page": 67,
+    "section": "AI TYPE 4: COMPUTER VISION"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::67",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 5: EXPERT SYSTEMS Expert Systems - Computerized advisory programs that imitate the reasoning processes of experts in solving difficult problems",
+    "chunk_index": 67,
+    "page": 68,
+    "section": "AI TYPE 5: EXPERT SYSTEMS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::68",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "AI TYPE 6: ROBOTICS Robotics - Focuses on creating artificial intelligence devices that can move and react to sensory input",
+    "chunk_index": 68,
+    "page": 69,
+    "section": "AI TYPE 6: ROBOTICS"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::69",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "THE BIGGEST PROBLEM WITH AI AND ML: BIAS IN THE TRAINING DATA Bias - A disproportionate weight in favor of or against an idea or thing, usually in a way that is closed-minded, prejudicial, or unfair Affinity bias - A tendency to connect with, hire, and promote those with similar interests, experiences, or backgrounds Conformity bias - Acting similarly, or conforming to those around you, regardless of your own views Confirmation bias - Actively looking for evidence that backs up preconceived ideas about someone Name bias - The tendency to prefer certain types of name",
+    "chunk_index": 69,
+    "page": 70,
+    "section": "THE BIGGEST PROBLEM WITH AI AND ML: BIAS IN THE TRAINING DATA"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::70",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "THE BIGGEST PROBLEM WITH AI AND ML: BIAS IN THE TRAINING DATA The four type of bias in machine learning include: Sample bias - A problem with using incorrect training data to train the machine Prejudice bias - A result of training data that is influenced by cultural or other stereotypes Measurement bias - Occurs when there is a problem with the data collected that skews the data in one direction Variance bias - A mathematical property of an algorithm",
+    "chunk_index": 70,
+    "page": 71,
+    "section": "THE BIGGEST PROBLEM WITH AI AND ML: BIAS IN THE TRAINING DATA"
+  },
+  {
+    "chunk_id": "Week02_Chapter2_Decisions_and_Processes.pptx::chunk::71",
+    "source_id": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "source_type": "pptx",
+    "source_title": "Week02_Chapter2_Decisions_and_Processes.pptx",
+    "text": "Now that you have finished the chapter, please review the learning outcomes in your text Learning outcome review",
+    "chunk_index": 71,
+    "page": 72,
+    "section": "Now that you have finished the chapter, please review the learning outcomes in your text"
+  }
+]
