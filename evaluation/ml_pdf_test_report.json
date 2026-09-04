@@ -1,0 +1,638 @@
+{
+  "run": {
+    "recorded_at": "2026-09-03T07:53:04.207747+00:00",
+    "git_revision": "f6c0ff02ec06920cd57e10cb86f1726099672394",
+    "pack_id": 4,
+    "split": "test",
+    "top_k": 5,
+    "embedding_models": [
+      "text-embedding-nomic-embed-text-v1.5"
+    ]
+  },
+  "summary": {
+    "split": "test",
+    "sample_count": 33,
+    "top_k": 5,
+    "retrieval_recall_at_k": 0.8125,
+    "citation_ready_rate": 0.8125,
+    "unanswerable_no_context_rate": 0.0
+  },
+  "results": [
+    {
+      "id": "ml-algorithm_choice-01",
+      "answerable": true,
+      "question": "What is choosing a machine-learning algorithm?",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        5,
+        6,
+        7,
+        9,
+        34
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-02",
+      "answerable": true,
+      "question": "Can you explain choosing a machine-learning algorithm in simple terms?",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        5,
+        6,
+        7,
+        9,
+        29
+      ],
+      "page_hit": false,
+      "citation_ready": false,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-03",
+      "answerable": true,
+      "question": "I am revising for an exam. What should I remember about choosing a machine-learning algorithm?",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        5,
+        6,
+        7,
+        9,
+        29
+      ],
+      "page_hit": false,
+      "citation_ready": false,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-04",
+      "answerable": true,
+      "question": "How does this lecture describe choosing a machine-learning algorithm?",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        5,
+        6,
+        9,
+        29,
+        34
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-05",
+      "answerable": true,
+      "question": "Give me a concise answer about choosing a machine-learning algorithm based on the slides.",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        5,
+        6,
+        9,
+        34,
+        35
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-06",
+      "answerable": true,
+      "question": "What is the main idea of choosing a machine-learning algorithm in this material?",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        5,
+        6,
+        7,
+        9,
+        29
+      ],
+      "page_hit": false,
+      "citation_ready": false,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-07",
+      "answerable": true,
+      "question": "Please summarize what the lecture says about choosing a machine-learning algorithm.",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        4,
+        5,
+        6,
+        9,
+        35
+      ],
+      "page_hit": false,
+      "citation_ready": false,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-algorithm_choice-08",
+      "answerable": true,
+      "question": "A classmate asked me about choosing a machine-learning algorithm. How should I answer from this lecture?",
+      "expected_pages": [
+        34
+      ],
+      "retrieved_pages": [
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "page_hit": false,
+      "citation_ready": false,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-01",
+      "answerable": true,
+      "question": "What is the training and testing split?",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        35,
+        37,
+        38,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-02",
+      "answerable": true,
+      "question": "Can you explain the training and testing split in simple terms?",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        35,
+        37,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-03",
+      "answerable": true,
+      "question": "I am revising for an exam. What should I remember about the training and testing split?",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        35,
+        37,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-04",
+      "answerable": true,
+      "question": "How does this lecture describe the training and testing split?",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        35,
+        37,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-05",
+      "answerable": true,
+      "question": "Give me a concise answer about the training and testing split based on the slides.",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        35,
+        37,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-06",
+      "answerable": true,
+      "question": "What is the main idea of the training and testing split in this material?",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        37,
+        38,
+        39
+      ],
+      "page_hit": false,
+      "citation_ready": false,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-07",
+      "answerable": true,
+      "question": "Please summarize what the lecture says about the training and testing split.",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        35,
+        37,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-train_test_split-08",
+      "answerable": true,
+      "question": "A classmate asked me about the training and testing split. How should I answer from this lecture?",
+      "expected_pages": [
+        35
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        35,
+        37,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-01",
+      "answerable": true,
+      "question": "What is feature engineering?",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        5,
+        17,
+        36,
+        38,
+        40
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-02",
+      "answerable": true,
+      "question": "Can you explain feature engineering in simple terms?",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        5,
+        16,
+        32,
+        36,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-03",
+      "answerable": true,
+      "question": "I am revising for an exam. What should I remember about feature engineering?",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        16,
+        32,
+        33,
+        36,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-04",
+      "answerable": true,
+      "question": "How does this lecture describe feature engineering?",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        5,
+        16,
+        35,
+        36,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-05",
+      "answerable": true,
+      "question": "Give me a concise answer about feature engineering based on the slides.",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        8,
+        16,
+        32,
+        36,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-06",
+      "answerable": true,
+      "question": "What is the main idea of feature engineering in this material?",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        16,
+        19,
+        36,
+        38,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-07",
+      "answerable": true,
+      "question": "Please summarize what the lecture says about feature engineering.",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        5,
+        16,
+        36,
+        38,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-feature_engineering-08",
+      "answerable": true,
+      "question": "A classmate asked me about feature engineering. How should I answer from this lecture?",
+      "expected_pages": [
+        36
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        16,
+        36,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-01",
+      "answerable": true,
+      "question": "What is underfitting, overfitting, and model evaluation?",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-02",
+      "answerable": true,
+      "question": "Can you explain underfitting, overfitting, and model evaluation in simple terms?",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-03",
+      "answerable": true,
+      "question": "I am revising for an exam. What should I remember about underfitting, overfitting, and model evaluation?",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-04",
+      "answerable": true,
+      "question": "How does this lecture describe underfitting, overfitting, and model evaluation?",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        5,
+        35,
+        36,
+        37,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-05",
+      "answerable": true,
+      "question": "Give me a concise answer about underfitting, overfitting, and model evaluation based on the slides.",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        16,
+        36,
+        37,
+        38,
+        39
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-06",
+      "answerable": true,
+      "question": "What is the main idea of underfitting, overfitting, and model evaluation in this material?",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-07",
+      "answerable": true,
+      "question": "Please summarize what the lecture says about underfitting, overfitting, and model evaluation.",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        5,
+        35,
+        36,
+        37,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-fit_and_metrics-08",
+      "answerable": true,
+      "question": "A classmate asked me about underfitting, overfitting, and model evaluation. How should I answer from this lecture?",
+      "expected_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "retrieved_pages": [
+        5,
+        8,
+        36,
+        37,
+        38
+      ],
+      "page_hit": true,
+      "citation_ready": true,
+      "mode": "course_context"
+    },
+    {
+      "id": "ml-unanswerable_5",
+      "answerable": false,
+      "question": "What does ROC-AUC measure?",
+      "expected_pages": [],
+      "retrieved_pages": [
+        5,
+        16,
+        18,
+        39,
+        40
+      ],
+      "page_hit": null,
+      "citation_ready": null,
+      "mode": "course_context"
+    }
+  ]
+}

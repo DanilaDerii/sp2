@@ -1,0 +1,52 @@
+{
+  "documents": [
+    {
+      "role": "validation",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/validation/Ch 4_ BBA1005_Using capital budgeting to assess feasibility of a business project SV.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/ch-4-bba1005-using-capital-budgeting-to-assess-feasibility-of-a-business-project-sv_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "validation",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/validation/OS-Lecture-09.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/os-lecture-09_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "test_same_domain",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/test_same-domain/04 - NLP.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/04-nlp_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "test_same_domain",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/test_same-domain/Ch 7_BBA1005_ Bank Financial Instruments and Interest SV.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/ch-7-bba1005-bank-financial-instruments-and-interest-sv_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "test_same_domain",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/test_same-domain/OS-Lecture-07 (1).pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/os-lecture-07-1_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "test_cross_domain",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/test_cross-domain/04 Learning to Define and Explore.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/04-learning-to-define-and-explore_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "test_cross_domain",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/test_cross-domain/Class#6-7 SDLC_SE_Agile.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/class-6-7-sdlc-se-agile_eval_200.jsonl",
+      "sample_count": 200
+    },
+    {
+      "role": "test_cross_domain",
+      "source_pdf": "/Users/kana/Desktop/sp2/evaluation/test_cross-domain/music.pdf",
+      "dataset": "/Users/kana/Desktop/sp2/evaluation/datasets/music_eval_200.jsonl",
+      "sample_count": 200
+    }
+  ]
+}

@@ -30,6 +30,8 @@ from __future__ import annotations
 
 import math
 import re
+from dataclasses import dataclass
+from typing import Literal
 
 from config.arguments import (
     DUPLICATE_SIMILARITY_THRESHOLD,
@@ -42,6 +44,25 @@ from .models import RetrievedChunk
 
 class ChunkSelectionError(RuntimeError):
     """Raised when chunk selection parameters are invalid."""
+
+
+SelectionDecision = Literal[
+    "selected",
+    "near_duplicate",
+    "short_chunk_cap",
+    "not_examined_final_limit",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class ChunkSelectionTrace:
+    """One selector decision, retained for evaluation diagnostics only."""
+
+    chunk: RetrievedChunk
+    candidate_rank: int
+    word_count: int
+    decision: SelectionDecision
+    final_rank: int | None
 
 
 _WORD_PATTERN = re.compile(r"\w+")
@@ -83,6 +104,90 @@ def _default_max_short_chunks(top_k: int) -> int:
     return max(1, math.ceil(top_k * SHORT_CHUNK_RATIO))
 
 
+def select_chunks_with_trace(
+    candidates: list[RetrievedChunk],
+    *,
+    top_k: int,
+    short_word_threshold: int = SHORT_CHUNK_WORD_THRESHOLD,
+    max_short_chunks: int | None = None,
+    duplicate_similarity_threshold: float = DUPLICATE_SIMILARITY_THRESHOLD,
+) -> tuple[list[RetrievedChunk], list[ChunkSelectionTrace]]:
+    """Select chunks and retain the reason every candidate was accepted or skipped.
+
+    The returned selection is intentionally identical to ``select_chunks``.
+    The trace lets evaluation diagnose selector behavior without duplicating
+    production rules in a separate test-only implementation.
+    """
+    resolved_top_k = _validate_top_k(top_k)
+    resolved_threshold = _validate_similarity_threshold(duplicate_similarity_threshold)
+    resolved_max_short = (
+        max(1, int(max_short_chunks))
+        if max_short_chunks is not None
+        else _default_max_short_chunks(resolved_top_k)
+    )
+
+    selected: list[RetrievedChunk] = []
+    selected_words: list[frozenset[str]] = []
+    traces: list[ChunkSelectionTrace] = []
+    short_count = 0
+
+    for candidate_rank, chunk in enumerate(candidates, start=1):
+        words = _normalized_words(chunk.text or "")
+        word_count = len(words)
+        if len(selected) >= resolved_top_k:
+            traces.append(
+                ChunkSelectionTrace(
+                    chunk=chunk,
+                    candidate_rank=candidate_rank,
+                    word_count=word_count,
+                    decision="not_examined_final_limit",
+                    final_rank=None,
+                )
+            )
+            continue
+
+        if _is_near_duplicate(words, selected_words, resolved_threshold):
+            traces.append(
+                ChunkSelectionTrace(
+                    chunk=chunk,
+                    candidate_rank=candidate_rank,
+                    word_count=word_count,
+                    decision="near_duplicate",
+                    final_rank=None,
+                )
+            )
+            continue
+
+        is_short = word_count <= short_word_threshold
+        if is_short and short_count >= resolved_max_short:
+            traces.append(
+                ChunkSelectionTrace(
+                    chunk=chunk,
+                    candidate_rank=candidate_rank,
+                    word_count=word_count,
+                    decision="short_chunk_cap",
+                    final_rank=None,
+                )
+            )
+            continue
+
+        selected.append(chunk)
+        selected_words.append(words)
+        if is_short:
+            short_count += 1
+        traces.append(
+            ChunkSelectionTrace(
+                chunk=chunk,
+                candidate_rank=candidate_rank,
+                word_count=word_count,
+                decision="selected",
+                final_rank=len(selected),
+            )
+        )
+
+    return selected, traces
+
+
 def select_chunks(
     candidates: list[RetrievedChunk],
     *,
@@ -96,33 +201,11 @@ def select_chunks(
     Candidates must already be sorted best-first (e.g. by ascending vector
     distance); this function never reorders them, it only skips entries.
     """
-    resolved_top_k = _validate_top_k(top_k)
-    resolved_threshold = _validate_similarity_threshold(duplicate_similarity_threshold)
-    resolved_max_short = (
-        max(1, int(max_short_chunks))
-        if max_short_chunks is not None
-        else _default_max_short_chunks(resolved_top_k)
+    selected, _ = select_chunks_with_trace(
+        candidates,
+        top_k=top_k,
+        short_word_threshold=short_word_threshold,
+        max_short_chunks=max_short_chunks,
+        duplicate_similarity_threshold=duplicate_similarity_threshold,
     )
-
-    selected: list[RetrievedChunk] = []
-    selected_words: list[frozenset[str]] = []
-    short_count = 0
-
-    for chunk in candidates:
-        if len(selected) >= resolved_top_k:
-            break
-
-        words = _normalized_words(chunk.text or "")
-        if _is_near_duplicate(words, selected_words, resolved_threshold):
-            continue
-
-        is_short = len(words) <= short_word_threshold
-        if is_short and short_count >= resolved_max_short:
-            continue
-
-        selected.append(chunk)
-        selected_words.append(words)
-        if is_short:
-            short_count += 1
-
     return selected

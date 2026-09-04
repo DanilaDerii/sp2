@@ -11,8 +11,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PDF = Path.home() / "Desktop" / "ml.pdf"
 OUTPUT_PATH = REPO_ROOT / "evaluation" / "ml_pdf_eval_200.jsonl"
 
-# Each topic is kept in exactly one split to prevent paraphrases of the same
-# slide fact appearing in both tuning and held-out evaluation data.
+# Each topic stays in one split to prevent paraphrases of the same slide fact
+# appearing in both validation and held-out evaluation data.
 TOPICS = [
     ("samuel_definition", "train", [4], "Arthur Samuel's definition of machine learning", "Machine learning is the field of study that gives computers the ability to learn without being explicitly programmed."),
     ("mitchell_learning_problem", "train", [5], "Tom Mitchell's well-posed learning problem", "A well-posed learning problem has a clear task, a defined performance measure, and available experience. A program learns when its performance on task T, measured by P, improves with experience E."),
@@ -98,14 +98,24 @@ def build_samples() -> list[dict[str, object]]:
 
     if len(samples) != 205:
         raise ValueError(f"Expected 205 samples, found {len(samples)}")
-    # Keep exactly 200 cases while retaining all topic groups and all splits.
-    return [sample for sample in samples if sample["id"] not in {
+    samples = [sample for sample in samples if sample["id"] not in {
         "ml-samuel_definition-08",
         "ml-mitchell_learning_problem-08",
         "ml-spam_task-08",
         "ml-ml_uses-08",
         "ml-well_posed_examples-08",
     }]
+    test_groups = {
+        "samuel_definition",
+        "algorithm_choice",
+        "train_test_split",
+        "feature_engineering",
+        "fit_and_metrics",
+        "unanswerable_5",
+    }
+    for sample in samples:
+        sample["split"] = "test" if sample["topic_group"] in test_groups else "val"
+    return samples
 
 
 def main() -> None:
@@ -113,8 +123,8 @@ def main() -> None:
         raise FileNotFoundError(f"Source PDF not found: {SOURCE_PDF}")
 
     samples = build_samples()
-    counts = {split: sum(item["split"] == split for item in samples) for split in ("train", "val", "test")}
-    if len(samples) != 200 or counts != {"train": 134, "val": 33, "test": 33}:
+    counts = {split: sum(item["split"] == split for item in samples) for split in ("val", "test")}
+    if len(samples) != 200 or counts != {"val": 160, "test": 40}:
         raise ValueError(f"Unexpected split counts: total={len(samples)}, splits={counts}")
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
