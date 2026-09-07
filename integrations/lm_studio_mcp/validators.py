@@ -10,8 +10,13 @@ def without_none_values(data: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in data.items() if value is not None}
 
 
-def positive_int(value: int, field_name: str) -> int:
-    """Validate and normalize a positive integer tool argument."""
+def positive_int(value: int | str, field_name: str) -> int:
+    """Validate and normalize a positive integer tool argument.
+
+    Accepts a native int or a numeric string (e.g. "2"), since some models
+    emit tool-call arguments as quoted strings even for integer-typed
+    parameters. Non-numeric strings raise the same clear error either way.
+    """
     if isinstance(value, bool):
         raise ValueError(f"{field_name} must be a positive integer")
     try:

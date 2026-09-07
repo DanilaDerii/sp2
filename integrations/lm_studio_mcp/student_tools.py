@@ -40,11 +40,13 @@ def register_student_tools(mcp: Any) -> None:
         }
 
     @mcp.tool()
-    def sp2_get_pack(installed_pack_id: int) -> dict[str, Any]:
+    def sp2_get_pack(installed_pack_id: int | str) -> dict[str, Any]:
         """Return one installed course pack by local SP2 installed pack id.
 
         Args:
-            installed_pack_id: Local SQLite installed_packs.id value.
+            installed_pack_id: Local SQLite installed_packs.id value. Accepts
+                a number or a numeric string, since some models emit a
+                quoted value here (e.g. "2") instead of a bare integer.
         """
         resolved_installed_pack_id = positive_int(installed_pack_id, "installed_pack_id")
 
@@ -61,13 +63,15 @@ def register_student_tools(mcp: Any) -> None:
 
     @mcp.tool()
     def sp2_get_course_context(
-        pack: int,
+        pack: int | str,
         question: str,
     ) -> dict[str, Any]:
         """Return course-pack retrieval context for one student question.
 
         Args:
             pack: Local SP2 installed pack id returned by SP2 pack tools.
+                Accepts a number or a numeric string, since some models emit
+                a quoted value here (e.g. "2") instead of a bare integer.
             question: Student question to retrieve course context for.
         """
         resolved_installed_pack_id = positive_int(pack, "pack")
@@ -117,11 +121,13 @@ def register_student_tools(mcp: Any) -> None:
         }
 
     @mcp.tool()
-    def sp2_delete_pack(pack: int) -> dict[str, Any]:
+    def sp2_delete_pack(pack: int | str) -> dict[str, Any]:
         """Delete one installed SP2 course pack by local installed pack id.
 
         Args:
             pack: Local SP2 installed pack id returned by SP2 pack tools.
+                Accepts a number or a numeric string, since some models emit
+                a quoted value here (e.g. "2") instead of a bare integer.
         """
         resolved_installed_pack_id = positive_int(pack, "pack")
 

@@ -1,0 +1,117 @@
+MCP Tool Argument Type Coercion (int-or-string pack IDs)
+============================================================
+
+Branch: mcp-tool-type-coercion (based on Updated_Branch)
+Date: 2026-09-07
+
+
+The Idea
+--------
+Teammates (Dan, Kanat) reported that llama-3.2-3b-instruct would fail to
+call sp2_get_course_context inside LM Studio's real chat UI, even when
+explicitly told the exact tool name and arguments to use. Dan sent a
+screenshot showing the actual failure:
+
+  Failed to parse arguments for tool "sp2_get_course_context":
+  params.pack is not of a type(s) integer
+  {"pack": "2", "question": "What are the goals in music therapy?"}
+
+The model was passing pack as a quoted JSON string ("2") instead of a bare
+JSON number (2). sp2_get_course_context's Python signature was
+`pack: int`, which the MCP framework (FastMCP) turns into a strict
+{"type": "integer"} JSON schema. LM Studio validates tool-call arguments
+against that schema on its own side, before our server code ever runs -
+so a stringified value gets rejected outright, and our own validator
+(positive_int, which already coerces "2" -> 2 just fine) never even gets a
+chance to run.
+
+Reproduced this independently and directly, twice:
+
+1. Ingested the exact same lecture Dan used (music.pdf, "Music therapy for
+   children & Adolescents") as a fresh local pack (installed_pack_id=5) to
+   replicate his test as closely as possible.
+2. Called LM Studio's raw /v1/chat/completions endpoint with the tool
+   schema and question, and got the identical failure mode independently -
+   confirming this is not something specific to Dan's machine, an outdated
+   branch, or bad luck: `integrations/lm_studio_mcp/` is byte-identical
+   (confirmed via sha256sum) across main, dan_branch, and Updated_Branch, so
+   whatever caused it there is present everywhere.
+3. Tested live in the real LM Studio chat UI as a student would: this time
+   LM Studio's built-in retry-on-failed-tool-call logic happened to
+   succeed on a second attempt (model emitted an unquoted 5 the second
+   time), producing a correct, well-grounded answer. This showed the bug is
+   probabilistic, not constant - a real fix shouldn't depend on the model
+   getting lucky on a retry.
+
+
+The Fix
+--------
+Widened the type of every affected tool parameter from `int` to `int | str`
+in integrations/lm_studio_mcp/student_tools.py:
+
+  - sp2_get_pack(installed_pack_id: int | str)
+  - sp2_get_course_context(pack: int | str, question: str)
+  - sp2_delete_pack(pack: int | str)
+
+This changes the FastMCP-generated JSON schema for these parameters from
+a strict `{"type": "integer"}` to `{"anyOf": [{"type": "integer"},
+{"type": "string"}]}` - confirmed directly by introspecting the real
+running MCP server object (mcp.list_tools()), not just inferred from the
+type hint. LM Studio's schema validator now accepts either a bare number
+or a quoted numeric string, so the call reaches our code either way.
+
+Also updated integrations/lm_studio_mcp/validators.py's positive_int()
+type hint from `value: int` to `value: int | str` to match - its runtime
+behavior needed no change, since it already coerces via `int(value)` and
+already raises a clean ValueError for anything non-numeric. The hint was
+simply stale; the actual bug was entirely in the tool-parameter schema
+LM Studio validates against, not in our own coercion logic.
+
+sp2_list_packs's pack_id: str | None parameter is a different field (the
+logical pack_id string, not the installed_pack_id integer) and was not
+affected. sp2_ingest_file_from_path in teacher_tools.py has no integer
+input parameters and was not affected either - checked the whole file to
+confirm.
+
+
+Testing / Verification Performed
+----------------------------------
+  - Schema introspection: called mcp.list_tools() on the real, in-process
+    FastMCP server object (integrations/lm_studio_mcp/server.py's `mcp`)
+    and confirmed all three parameters now show
+    {"anyOf": [{"type": "integer"}, {"type": "string"}]} - this is the
+    actual schema that gets served to LM Studio, not a guess about what
+    the type hint "should" produce.
+  - End-to-end tool call with a string argument: called
+    mcp.call_tool("sp2_get_course_context", {"pack": "5", "question": ...})
+    against the real installed music pack - succeeded fully, correct pack,
+    correct chunks retrieved (page 3, "Goals in music therapy").
+  - End-to-end tool call with a native int argument (regression check):
+    same call with {"pack": 5, ...} - still succeeds, no regression to the
+    normal case.
+  - Garbage value handling: called
+    mcp.call_tool("sp2_get_pack", {"installed_pack_id": "music"}) (matching
+    a hallucinated value seen in the team's testing) - correctly raises a
+    clean error ("installed_pack_id must be a positive integer") from our
+    own validator, instead of the confusing generic schema-rejection
+    message LM Studio previously gave with no chance for our code to
+    explain what went wrong.
+
+
+Known Gap - Not Verified
+---------------------------
+Could not confirm live, inside LM Studio's actual chat UI, that its
+internal tool-argument validator accepts the relaxed schema and stops
+rejecting a stringified pack value - that validation logic lives inside
+LM Studio itself, which cannot be driven from this environment (no way to
+click through the GUI here). Every layer that could be tested directly
+(the real schema the server exposes, real tool execution with both value
+types, real error handling for garbage input) was tested and passes. The
+remaining question is specifically whether LM Studio's own client-side
+schema check, which is what produced the original error message, treats
+an `anyOf` schema the way standard JSON Schema validators do (accept if
+any branch matches) - this is extremely standard behavior for any
+JSON-schema-compliant validator, but "should work per the spec" is not
+the same as "confirmed working in this specific app," so a live retest in
+the real chat UI is the recommended final check before considering this
+fully closed.
