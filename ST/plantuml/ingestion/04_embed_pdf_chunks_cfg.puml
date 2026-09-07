@@ -1,0 +1,62 @@
+@startuml
+
+title Ingestion CFG 04 - _embed_pdf_chunks()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+
+start
+
+:document_inputs: list[str] = [];
+
+while (for chunk in chunks) is (T)
+  :document_inputs.append(\nf"search_document: {chunk.text}");
+endwhile (F)
+
+:vectors = embedder(\ndocument_inputs, model=embedding_model);
+
+if (len(vectors) == len(chunks)) then (T)
+  :embedding_dimension = len(vectors[0]);
+else (F)
+  :raise ValueError(\n"embedding count must equal chunk count");
+  stop
+endif
+
+if (embedding_dimension ==\nEMBEDDING_DIMENSION) then (T)
+  while (for vector in vectors) is (T)
+    if (len(vector) == embedding_dimension) is (F) then
+      :raise ValueError(\n"all embeddings must have the same dimension");
+      stop
+    else (T)
+      :continue;
+    endif
+  endwhile (F)
+else (F)
+  :raise ValueError(\nf"embedding dimension must be {EMBEDDING_DIMENSION}");
+  stop
+endif
+
+:embedded_chunks: list[MiniEmbeddedChunk] = [];
+
+while (for index in range(len(chunks))) is (T)
+  :embedded_chunks.append(MiniEmbeddedChunk(\nchunk=chunks[index], vector=vectors[index]));
+endwhile (F)
+
+:return embedded_chunks, embedding_dimension;
+stop
+
+@enduml

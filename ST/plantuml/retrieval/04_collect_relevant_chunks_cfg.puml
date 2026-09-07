@@ -1,0 +1,69 @@
+@startuml
+
+' Control-flow graph (CFG) for:
+' ST/mini/mini_retrieval.py::_collect_relevant_chunks
+
+title Retrieval CFG 04 - _collect_relevant_chunks()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam nodesep 10
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    MinimumWidth 250
+    Padding 6
+    Margin 0
+  }
+  diamond {
+    Padding 4
+    Margin 0
+  }
+}
+</style>
+
+start
+
+:relevant_chunks: list[MiniRetrievedChunk] = [];
+
+while (for row in candidate_rows) is (T)
+  :raw_distance = row.get("_distance");
+
+  if (raw_distance is None) then (T)
+    :distance = None;
+  else (F)
+    :distance = float(raw_distance);
+  endif
+
+  if (distance is None or distance < 0) then (T)
+    :score = None;
+  else (F)
+    :score = 1.0 / (1.0 + distance);
+  endif
+
+  :page = row.get("page")\nsection = row.get("section")\nchunk = MiniRetrievedChunk(\nchunk_id=row["chunk_id"], installed_pack_id=int(row["installed_pack_id"]),\npack_id=row["pack_id"], source_id=row["source_id"],\nsource_type=row["source_type"], source_title=row["source_title"],\ntext=row["text"], chunk_index=int(row["chunk_index"]),\npage=int(page) if page is not None else None,\nsection=str(section) if section is not None else None,\ndistance=distance, score=score);
+
+  if (chunk.distance is not None and\nchunk.distance <= max_distance) then (T)
+    :relevant_chunks.append(chunk);
+  else (F)
+  endif
+endwhile (F)
+
+:return relevant_chunks;
+stop
+
+@enduml

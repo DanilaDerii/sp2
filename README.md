@@ -15,7 +15,8 @@ searches the course material; LM Studio provides the chat and final answer.
 No models or document tools need to be installed manually. The setup script
 handles them.
 
-## Install
+## Install 
+
 
 Linux or macOS:
 

@@ -1,0 +1,41 @@
+@startuml
+
+title Ingestion CFG 05 - _build_pack_data()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+
+start
+
+:created_at = datetime.now(timezone.utc)\n.replace(microsecond=0).isoformat();
+
+:metadata = {\n"pack_id": pack_id, "title": title, "version": version, "description": "",\n"embedding_model": embedding_model, "embedding_dim": embedding_dimension,\n"default_top_k": DEFAULT_TOP_K, "created_at": created_at,\n"builder_version": "mini-v1"};
+
+:chunk_records: list[dict[str, object]] = []\nvector_rows: list[list[float]] = [];
+
+while (for embedded_chunk in embedded_chunks) is (T)
+  :chunk = embedded_chunk.chunk;
+
+  :chunk_records.append({\n"chunk_id": chunk.chunk_id, "source_id": chunk.source_id,\n"source_type": chunk.source_type, "source_title": chunk.source_title,\n"text": chunk.text, "chunk_index": chunk.chunk_index,\n"page": chunk.page, "section": chunk.section});
+
+  :vector_rows.append(embedded_chunk.vector);
+endwhile (F)
+
+:return metadata, chunk_records, vector_rows;
+stop
+
+@enduml

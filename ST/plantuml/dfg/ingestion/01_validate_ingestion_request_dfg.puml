@@ -1,0 +1,107 @@
+@startuml
+
+title Ingestion DFG 01 - _validate_ingestion_request()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam nodesep 10
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    Padding 6
+    Margin 0
+  }
+  diamond {
+    Padding 4
+    Margin 0
+  }
+}
+</style>
+
+start
+
+:**N1**\nsource, pack_id, title, version, embedding_model, chunk_size, overlap\nINSTALLED_PACKS_DIR, ARTIFACTS_DIR, SQLITE_DB_PATH;
+
+if (**N2**\nnot source.is_file() or\nsource.suffix.lower() != ".pdf") then (T)
+  :**N3**\nraise ValueError(\n"pdf_path must point to an existing PDF file");
+  detach
+else (F)
+  if (**N4**\nnot pack_id or not title or\nnot version or not embedding_model) then (T)
+    :**N5**\nraise ValueError(\n"pack_id, title, version, and embedding_model are required");
+    detach
+  else (F)
+    if (**N6**\nchunk_size <= 0 or overlap < 0 or\noverlap >= chunk_size) then (T)
+      :**N7**\nraise ValueError(\n"require chunk_size > 0 and 0 <= overlap < chunk_size");
+      detach
+    else (F)
+      :**N8**\nsafe_name_characters: list[str] = [];
+    endif
+  endif
+endif
+
+while (**N9**\nfor character in\nf"{pack_id}-{version}") is (T)
+  if (**N10**\ncharacter.isalnum() or\ncharacter in {"-", "_"}) then (T)
+    :**N11**\nsafe_name_characters.append(character);
+  else (F)
+    :**N12**\nsafe_name_characters.append("-");
+  endif
+
+endwhile (F)
+
+:**N13**\ninstall_name = "".join(safe_name_characters).strip("-_");
+
+if (**N14**\nnot install_name) then (T)
+  :**N15**\nraise ValueError(\n"pack_id and version must contain a usable name");
+  detach
+else (F)
+  :**N16**\ninstall_path = INSTALLED_PACKS_DIR / install_name\nzip_path = ARTIFACTS_DIR / f"{install_name}.zip"\nconnection = sqlite3.connect(SQLITE_DB_PATH);
+endif
+
+:**N17**\ntry:\ndatabase_match = connection.execute(\n"SELECT 1 FROM installed_packs WHERE pack_id = ? AND version = ?",\n(pack_id, version)).fetchone();
+
+:**N18**\nfinally:\nconnection.close();
+
+if (**N19**\ndatabase_match is not None or\ninstall_path.exists()) then (T)
+  :**N20**\nraise FileExistsError(\nf"pack is already installed: {pack_id} {version}");
+  detach
+else (F)
+  :**N21**\nreturn install_path, zip_path;
+  stop
+endif
+
+' Data-flow sets used to derive DU paths:
+' N1  def(source, pack_id, title, version, embedding_model, chunk_size, overlap,
+'         INSTALLED_PACKS_DIR, ARTIFACTS_DIR, SQLITE_DB_PATH)
+' N2  p-use(source)
+' N4  p-use(pack_id, title, version, embedding_model)
+' N6  p-use(chunk_size, overlap)
+' N8  def(safe_name_characters)
+' N9  def(character), c-use(pack_id, version)
+' N10 p-use(character)
+' N11 def(safe_name_characters), c-use(safe_name_characters, character)
+' N12 def(safe_name_characters), c-use(safe_name_characters)
+' N13 def(install_name), c-use(safe_name_characters)
+' N14 p-use(install_name)
+' N16 def(install_path, zip_path, connection),
+'     c-use(INSTALLED_PACKS_DIR, ARTIFACTS_DIR, SQLITE_DB_PATH, install_name)
+' N17 def(database_match), c-use(connection, pack_id, version)
+' N18 c-use(connection)
+' N19 p-use(database_match, install_path)
+' N20 c-use(pack_id, version)
+' N21 c-use(install_path, zip_path)
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+
+title Ingestion CFG 02 - _extract_pdf_pages()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+
+start
+
+:import pymupdf;
+:pages: list[tuple[int, str]] = []\npdf = pymupdf.open(str(source));
+:enter try block;
+
+while (for page_number, page in\nenumerate(pdf, start=1)) is (T)
+  :page_text = page.get_text("text", sort=True).strip()\npages.append((page_number, page_text));
+endwhile (F)
+
+:finally runs pdf.close();
+:return pages;
+stop
+
+@enduml

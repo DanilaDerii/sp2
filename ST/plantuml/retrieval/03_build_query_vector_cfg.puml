@@ -1,0 +1,68 @@
+@startuml
+
+' Control-flow graph (CFG) for:
+' ST/mini/mini_retrieval.py::_build_query_vector
+
+title Retrieval CFG 03 - _build_query_vector()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 17
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam nodesep 10
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    MinimumWidth 240
+    Padding 6
+    Margin 0
+  }
+  diamond {
+    Padding 4
+    Margin 0
+  }
+}
+</style>
+
+start
+
+:query_input = f"search_query: {normalized_question}"\nvectors = embedder([query_input],\nmodel=installed_pack.embedding_model);
+
+if (len(vectors) != 1) then (T)
+  :raise ValueError(\n"embedder must return exactly one query vector");
+  kill
+else (F)
+  :query_vector: list[float] = [];
+
+  while (for value in vectors[0]) is (T)
+    :try:\nquery_vector.append(float(value));
+
+    if (except (TypeError, ValueError) as error) then (T)
+      :raise ValueError(\n"query vector must contain only numeric values")\nfrom error;
+      kill
+    else (F)
+    endif
+  endwhile (F)
+
+  if (not query_vector or\nlen(query_vector) != installed_pack.embedding_dimension) then (T)
+    :raise ValueError(\n"query vector dimension must match the installed pack");
+    kill
+  else (F)
+    :return query_vector;
+    stop
+  endif
+endif
+
+@enduml

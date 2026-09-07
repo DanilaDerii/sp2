@@ -1,0 +1,66 @@
+@startuml
+
+title Ingestion CFG 03 - _create_pdf_chunks()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+start
+
+:chunks: list[MiniChunk] = []\nchunk_index = 0;
+
+while (for page_number, page_text\nin pages) is (T)
+  :normalized_text =\n" ".join(page_text.split()).strip();
+
+  if (not normalized_text) then (T)
+    :continue;
+  else (F)
+    :section = None;
+
+    while (for line in\npage_text.splitlines()) is (T)
+      :normalized_line =\n" ".join(line.split()).strip();
+
+      if (normalized_line) then (T)
+        :section = normalized_line[:160];
+        break
+      else (F)
+      endif
+    endwhile (F)
+
+    :start = 0;
+
+    while (start < len(normalized_text)) is (T)
+      :end = min(start + chunk_size, len(normalized_text))\nchunks.append(MiniChunk(\nchunk_id=f"{source.name}::chunk::{chunk_index}", source_id=source.name,\nsource_type="pdf", source_title=source.name, text=normalized_text[start:end],\nchunk_index=chunk_index, page=page_number, section=section))\nchunk_index += 1;
+
+      if (end == len(normalized_text)) then (T)
+        break
+      else (F)
+        :start = end - overlap;
+      endif
+    endwhile (F)
+
+  endif
+endwhile (F)
+
+if (not chunks) then (T)
+  :raise ValueError(\n"PDF produced no searchable chunks");
+  stop
+else (F)
+  :return chunks;
+  stop
+endif
+
+@enduml

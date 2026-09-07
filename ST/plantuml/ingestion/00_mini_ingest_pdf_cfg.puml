@@ -1,0 +1,72 @@
+@startuml
+
+' Control-flow graph (CFG) for:
+' ST/mini/mini_ingestion.py::mini_ingest_pdf
+
+title Ingestion CFG 00 - mini_ingest_pdf()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    MinimumWidth 420
+    Padding 10
+  }
+}
+</style>
+
+start
+
+:source = Path(pdf_path).expanduser().resolve();
+
+:pack_id = pack_id.strip();
+
+:title = title.strip();
+
+:version = version.strip();
+
+:embedding_model = embedding_model.strip();
+
+:install_path, zip_path = _validate_ingestion_request(source, pack_id, title, version, embedding_model, chunk_size, overlap);
+
+:pages = _extract_pdf_pages(source);
+
+:chunks = _create_pdf_chunks(source, pages, chunk_size, overlap);
+
+:embedded_chunks, embedding_dimension = _embed_pdf_chunks(chunks, embedder, embedding_model);
+
+:metadata, chunk_records, vector_rows = _build_pack_data(embedded_chunks, pack_id, title, version, embedding_model, embedding_dimension);
+
+:_export_pack_zip(metadata, chunk_records, vector_rows, zip_path);
+
+:_install_pack_files(zip_path, install_path);
+
+:installed_pack_id = _insert_sqlite_metadata(metadata, install_path);
+
+:stored_chunk_count = _insert_lancedb_chunks(embedded_chunks, installed_pack_id, pack_id);
+
+if (**stored_chunk_count != len(chunks)**) then (T)
+  :raise ValueError(
+  "LanceDB stored a different number of chunks");
+  stop
+else (F)
+  :return MiniIngestionResult(...);
+  stop
+endif
+
+@enduml

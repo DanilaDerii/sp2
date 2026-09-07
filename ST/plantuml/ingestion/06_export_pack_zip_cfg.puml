@@ -1,0 +1,67 @@
+@startuml
+
+title Ingestion CFG 06 - _export_pack_zip()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+
+start
+
+:import numpy as np;
+:zip_path.parent.mkdir(\nparents=True, exist_ok=True);
+:vector_matrix = np.asarray(vector_rows, dtype=np.float32)\ntemporary_directory = TemporaryDirectory(prefix="sp2-mini-pack-")\npack_path = Path(temporary_directory.name);
+
+:enter outer try block;
+
+:pack_json_path = pack_path / "pack.json"\nchunks_json_path = pack_path / "chunks.json"\nvectors_path = pack_path / "vectors.npy";
+
+:pack_json_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")\nchunks_json_path.write_text(json.dumps(chunk_records, indent=2), encoding="utf-8")\nnp.save(vectors_path, vector_matrix);
+
+while (for required_file in REQUIRED_PACK_FILES) is (T)
+  if (not (pack_path / required_file).is_file()) then (T)
+    :raise ValueError(f"pack is missing {required_file}")\nfinally runs temporary_directory.cleanup();
+    kill
+  endif
+  ->F;
+endwhile (F)
+
+:stored_metadata = json.loads(pack_json_path.read_text(encoding="utf-8"))\nstored_chunks = json.loads(chunks_json_path.read_text(encoding="utf-8"))\nstored_vectors = np.load(vectors_path, allow_pickle=False)\nexpected_shape = (len(chunk_records), metadata["embedding_dim"]);
+
+if (stored_metadata.get("embedding_dim")\n!= metadata["embedding_dim"]) then (T)
+  :raise ValueError("pack metadata has the wrong embedding dimension")\nfinally runs temporary_directory.cleanup();
+  kill
+endif
+->F;
+
+if (len(stored_chunks) != len(chunk_records) or\nstored_vectors.shape != expected_shape) then (T)
+  :raise ValueError("pack chunk and vector counts do not match")\nfinally runs temporary_directory.cleanup();
+  kill
+endif
+->F;
+
+:archive = ZipFile(zip_path, "w",\ncompression=ZIP_DEFLATED);
+:enter archive try block;
+
+while (for required_file in REQUIRED_PACK_FILES) is (T)
+  :archive.write(\npack_path / required_file, arcname=required_file);
+endwhile (F)
+
+:finally runs archive.close();
+:outer finally runs temporary_directory.cleanup();
+stop
+
+@enduml

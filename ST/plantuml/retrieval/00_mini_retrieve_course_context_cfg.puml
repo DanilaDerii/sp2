@@ -1,0 +1,85 @@
+@startuml
+
+' Control-flow graph (CFG) for:
+' ST/mini/mini_retrieval.py::mini_retrieve_course_context
+
+title Retrieval CFG 00 - mini_retrieve_course_context()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam nodesep 10
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    MinimumWidth 260
+    Padding 6
+    Margin 0
+  }
+  diamond {
+    Padding 4
+    Margin 0
+  }
+}
+</style>
+
+start
+
+if (isinstance(installed_pack_id, bool) or\nnot isinstance(installed_pack_id, int) or\ninstalled_pack_id <= 0) then (T)
+  :raise ValueError(\n"installed_pack_id must be\na positive integer");
+  kill
+else (F)
+endif
+
+:normalized_question =\n" ".join(question.split()).strip();
+
+if (not normalized_question) then (T)
+  :raise ValueError(\n"question must not be empty");
+  kill
+else (F)
+endif
+
+:installed_pack =\n_find_installed_pack(installed_pack_id);
+
+if (installed_pack is None) then (T)
+  :raise LookupError(\nf"installed pack not found:\n{installed_pack_id}");
+  kill
+else (F)
+endif
+
+if (not installed_pack.is_active) then (T)
+  :raise ValueError(\nf"installed pack is not active:\n{installed_pack_id}");
+  kill
+else (F)
+endif
+
+if (installed_pack.embedding_model !=\nSUPPORTED_EMBEDDING_MODEL) then (T)
+  :raise ValueError(\n"installed pack uses an\nunsupported embedding model");
+  kill
+else (F)
+endif
+
+:resolved_top_k, resolved_max_distance =\n_resolve_search_controls(installed_pack, top_k, max_distance)\nquery_vector = _build_query_vector(\nnormalized_question, installed_pack, embedder)\ncandidate_rows = _search_candidate_rows(\nquery_vector, installed_pack.installed_pack_id,\nresolved_top_k)\nretrieved_chunks = _collect_relevant_chunks(\ncandidate_rows, resolved_max_distance);
+
+if (retrieved_chunks) then (T)
+  :return MiniCourseContextPacket(\nmode="course_context",\ninstalled_pack_id=installed_pack.installed_pack_id,\npack_id=installed_pack.pack_id,\nembedding_model=installed_pack.embedding_model,\nchunks=retrieved_chunks,\nmessage=f"Found {len(retrieved_chunks)} relevant course-pack chunk(s).");
+  stop
+else (F)
+  :return MiniCourseContextPacket(\nmode="no_course_context",\ninstalled_pack_id=installed_pack.installed_pack_id,\npack_id=installed_pack.pack_id,\nembedding_model=installed_pack.embedding_model,\nchunks=[],\nmessage="No relevant course-pack chunks found.");
+  stop
+endif
+
+@enduml

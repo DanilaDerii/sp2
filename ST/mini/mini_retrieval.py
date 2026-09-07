@@ -5,7 +5,6 @@ The normal SP2 setup/cleanup script is expected to initialize SQLite and LanceDB
 
 import sqlite3
 from collections.abc import Callable
-from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -60,17 +59,23 @@ class MiniCourseContextPacket:
 
 def _find_installed_pack(installed_pack_id: int) -> MiniInstalledPack | None:
     """Read one installed-pack record from the real SP2 SQLite store."""
-    with closing(sqlite3.connect(SQLITE_DB_PATH)) as connection:
+    connection = sqlite3.connect(SQLITE_DB_PATH)
+
+    try:
         connection.row_factory = sqlite3.Row
-        row = connection.execute(
-            """
-            SELECT id, pack_id, embedding_model, embedding_dim,
-                   default_top_k, is_active
-            FROM installed_packs
-            WHERE id = ?
-            """,
-            (installed_pack_id,),
-        ).fetchone()
+
+        query = """
+        SELECT id, pack_id, embedding_model, embedding_dim,
+               default_top_k, is_active
+        FROM installed_packs
+        WHERE id = :installed_pack_id
+        """
+        parameters = {"installed_pack_id": installed_pack_id}
+
+        cursor = connection.execute(query, parameters)
+        row = cursor.fetchone()
+    finally:
+        connection.close()
 
     if row is None:
         return None
@@ -84,55 +89,12 @@ def _find_installed_pack(installed_pack_id: int) -> MiniInstalledPack | None:
     )
 
 
-def _search_candidate_rows(
-    query_vector: list[float],
-    installed_pack_id: int,
-    top_k: int,
-) -> list[dict]:
-    """Run pack-prefiltered L2 search and return at most top_k candidates."""
-    import lancedb
-
-    database = lancedb.connect(LANCE_DB_PATH)
-    table = database.open_table("pack_chunks")
-    return (
-        table.search(query_vector)
-        .where(f"installed_pack_id = {installed_pack_id}", prefilter=True)
-        .limit(top_k)
-        .to_list()
-    )
-
-
-def mini_retrieve_course_context(
-    *,
-    installed_pack_id: int,
-    question: str,
-    embedder: Embedder,
-    top_k: int | None = None,
-    max_distance: float | None = None,
-) -> MiniCourseContextPacket:
-    """Embed one question and return relevant chunks from one installed pack."""
-    # 1. Validate the request domain.
-    if (
-        isinstance(installed_pack_id, bool)
-        or not isinstance(installed_pack_id, int)
-        or installed_pack_id <= 0
-    ):
-        raise ValueError("installed_pack_id must be a positive integer")
-
-    normalized_question = " ".join(question.split()).strip()
-    if not normalized_question:
-        raise ValueError("question must not be empty")
-
-    # 2. Read and validate the selected installed pack.
-    installed_pack = _find_installed_pack(installed_pack_id)
-    if installed_pack is None:
-        raise LookupError(f"installed pack not found: {installed_pack_id}")
-    if not installed_pack.is_active:
-        raise ValueError(f"installed pack is not active: {installed_pack_id}")
-    if installed_pack.embedding_model != SUPPORTED_EMBEDDING_MODEL:
-        raise ValueError("installed pack uses an unsupported embedding model")
-
-    # 3. Resolve and validate the search-control domains.
+def _resolve_search_controls(
+    installed_pack: MiniInstalledPack,
+    top_k: int | None,
+    max_distance: float | None,
+) -> tuple[int, float]:
+    """Resolve and validate the candidate limit and distance threshold."""
     resolved_top_k = top_k
     if resolved_top_k is None:
         resolved_top_k = installed_pack.default_top_k or DEFAULT_TOP_K
@@ -152,9 +114,15 @@ def mini_retrieve_course_context(
         or resolved_max_distance < 0
     ):
         raise ValueError("max_distance must be a non-negative number")
-    resolved_max_distance = float(resolved_max_distance)
+    return resolved_top_k, float(resolved_max_distance)
 
-    # 4. Build and validate the query embedding.
+
+def _build_query_vector(
+    normalized_question: str,
+    installed_pack: MiniInstalledPack,
+    embedder: Embedder,
+) -> list[float]:
+    """Embed one normalized question and validate its query vector."""
     query_input = f"search_query: {normalized_question}"
     vectors = embedder([query_input], model=installed_pack.embedding_model)
     if len(vectors) != 1:
@@ -172,48 +140,116 @@ def mini_retrieve_course_context(
         or len(query_vector) != installed_pack.embedding_dimension
     ):
         raise ValueError("query vector dimension must match the installed pack")
+    return query_vector
 
-    # 5. Search only this pack. top_k is applied before distance filtering.
-    candidate_rows = _search_candidate_rows(
-        query_vector,
-        installed_pack.installed_pack_id,
-        resolved_top_k,
-    )
 
-    # 6. Filter candidates and map storage rows into context records.
-    retrieved_chunks: list[MiniRetrievedChunk] = []
+def _search_candidate_rows(
+    query_vector: list[float],
+    installed_pack_id: int,
+    top_k: int,
+) -> list[dict]:
+    """Run pack-prefiltered L2 search and return at most top_k candidates."""
+    import lancedb
+
+    database = lancedb.connect(LANCE_DB_PATH)
+    table = database.open_table("pack_chunks")
+    pack_filter = f"installed_pack_id = {installed_pack_id}"
+
+    vector_search = table.search(query_vector)
+    pack_search = vector_search.where(pack_filter, prefilter=True)
+    limited_search = pack_search.limit(top_k)
+    candidate_rows = limited_search.to_list()
+    return candidate_rows
+
+
+def _collect_relevant_chunks(
+    candidate_rows: list[dict],
+    max_distance: float,
+) -> list[MiniRetrievedChunk]:
+    """Normalize LanceDB candidates and retain those within the distance limit."""
+    relevant_chunks: list[MiniRetrievedChunk] = []
     for row in candidate_rows:
         raw_distance = row.get("_distance")
-        distance = float(raw_distance) if raw_distance is not None else None
+        if raw_distance is None:
+            distance = None
+        else:
+            distance = float(raw_distance)
 
         if distance is None or distance < 0:
             score = None
         else:
             score = 1.0 / (1.0 + distance)
 
-        if distance is None or distance > resolved_max_distance:
-            continue
-
         page = row.get("page")
         section = row.get("section")
-        retrieved_chunks.append(
-            MiniRetrievedChunk(
-                chunk_id=row["chunk_id"],
-                installed_pack_id=int(row["installed_pack_id"]),
-                pack_id=row["pack_id"],
-                source_id=row["source_id"],
-                source_type=row["source_type"],
-                source_title=row["source_title"],
-                text=row["text"],
-                chunk_index=int(row["chunk_index"]),
-                page=int(page) if page is not None else None,
-                section=str(section) if section is not None else None,
-                distance=distance,
-                score=score,
-            )
+        chunk = MiniRetrievedChunk(
+            chunk_id=row["chunk_id"],
+            installed_pack_id=int(row["installed_pack_id"]),
+            pack_id=row["pack_id"],
+            source_id=row["source_id"],
+            source_type=row["source_type"],
+            source_title=row["source_title"],
+            text=row["text"],
+            chunk_index=int(row["chunk_index"]),
+            page=int(page) if page is not None else None,
+            section=str(section) if section is not None else None,
+            distance=distance,
+            score=score,
         )
 
-    # 7. Return one of the two observable retrieval outcomes.
+        if chunk.distance is not None and chunk.distance <= max_distance:
+            relevant_chunks.append(chunk)
+    return relevant_chunks
+
+
+def mini_retrieve_course_context(
+    *,
+    installed_pack_id: int,
+    question: str,
+    embedder: Embedder,
+    top_k: int | None = None,
+    max_distance: float | None = None,
+) -> MiniCourseContextPacket:
+    """Embed one question and return relevant chunks from one installed pack."""
+    if (
+        isinstance(installed_pack_id, bool)
+        or not isinstance(installed_pack_id, int)
+        or installed_pack_id <= 0
+    ):
+        raise ValueError("installed_pack_id must be a positive integer")
+
+    normalized_question = " ".join(question.split()).strip()
+    if not normalized_question:
+        raise ValueError("question must not be empty")
+
+    installed_pack = _find_installed_pack(installed_pack_id)
+    if installed_pack is None:
+        raise LookupError(f"installed pack not found: {installed_pack_id}")
+    if not installed_pack.is_active:
+        raise ValueError(f"installed pack is not active: {installed_pack_id}")
+    if installed_pack.embedding_model != SUPPORTED_EMBEDDING_MODEL:
+        raise ValueError("installed pack uses an unsupported embedding model")
+
+    resolved_top_k, resolved_max_distance = _resolve_search_controls(
+        installed_pack,
+        top_k,
+        max_distance,
+    )
+    query_vector = _build_query_vector(
+        normalized_question,
+        installed_pack,
+        embedder,
+    )
+    candidate_rows = _search_candidate_rows(
+        query_vector,
+        installed_pack.installed_pack_id,
+        resolved_top_k,
+    )
+    retrieved_chunks = _collect_relevant_chunks(
+        candidate_rows,
+        resolved_max_distance,
+    )
+
     if retrieved_chunks:
         return MiniCourseContextPacket(
             mode="course_context",

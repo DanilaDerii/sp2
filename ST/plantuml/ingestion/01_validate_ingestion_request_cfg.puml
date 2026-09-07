@@ -1,0 +1,76 @@
+@startuml
+
+title Ingestion CFG 01 - _validate_ingestion_request()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+start
+
+if (not source.is_file() or\nsource.suffix.lower() != ".pdf") then (T)
+  :raise ValueError(\n"pdf_path must point to an\nexisting PDF file");
+  stop
+else (F)
+  if (not pack_id or not title or\nnot version or not embedding_model) then (T)
+    :raise ValueError(\n"pack_id, title, version, and\nembedding_model are required");
+    stop
+  else (F)
+    if (chunk_size <= 0 or overlap < 0 or\noverlap >= chunk_size) then (T)
+      :raise ValueError(\n"require chunk_size > 0 and\n0 <= overlap < chunk_size");
+      stop
+    else (F)
+      :safe_name_characters: list[str] = [];
+    endif
+  endif
+endif
+
+while (for character in\nf"{pack_id}-{version}") is (T)
+  if (character.isalnum() or\ncharacter in {"-", "_"}) then (T)
+    :safe_name_characters.append(character);
+  else (F)
+    :safe_name_characters.append("-");
+  endif
+endwhile (F)
+
+:install_name = "".join(safe_name_characters).strip("-_");
+
+if (not install_name) then (T)
+  :raise ValueError(\n"pack_id and version must\ncontain a usable name");
+  stop
+else (F)
+  :install_path = INSTALLED_PACKS_DIR / install_name\nzip_path = ARTIFACTS_DIR / f"{install_name}.zip";
+endif
+
+:connection = sqlite3.connect(SQLITE_DB_PATH);
+
+:database_match = connection.execute(\n"SELECT 1 FROM installed_packs WHERE pack_id = ? AND version = ?",\n(pack_id, version)).fetchone();
+
+if (SQLite query raised an exception) then (T)
+  :finally runs connection.close();
+  stop
+else (F)
+  :finally runs connection.close();
+
+  if (database_match is not None or\ninstall_path.exists()) then (T)
+    :raise FileExistsError(\nf"pack is already installed:\n{pack_id} {version}");
+    stop
+  else (F)
+    :return install_path, zip_path;
+    stop
+  endif
+endif
+
+@enduml

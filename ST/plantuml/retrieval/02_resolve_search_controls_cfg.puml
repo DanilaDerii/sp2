@@ -1,0 +1,69 @@
+@startuml
+
+' Control-flow graph (CFG) for:
+' ST/mini/mini_retrieval.py::_resolve_search_controls
+
+title Retrieval CFG 02 - _resolve_search_controls()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam nodesep 10
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    MinimumWidth 240
+    Padding 6
+    Margin 0
+  }
+  diamond {
+    Padding 4
+    Margin 0
+  }
+}
+</style>
+
+start
+
+:resolved_top_k = top_k;
+
+if (resolved_top_k is None) then (T)
+  :resolved_top_k =\ninstalled_pack.default_top_k or DEFAULT_TOP_K;
+else (F)
+endif
+
+if (isinstance(resolved_top_k, bool) or\nnot isinstance(resolved_top_k, int) or\nresolved_top_k <= 0) then (T)
+  :raise ValueError(\n"top_k must be a positive integer");
+  kill
+else (F)
+  :resolved_max_distance = max_distance;
+
+  if (resolved_max_distance is None) then (T)
+    :resolved_max_distance = DEFAULT_MAX_DISTANCE;
+  else (F)
+  endif
+
+  if (isinstance(resolved_max_distance, bool) or\nnot isinstance(resolved_max_distance, (int, float)) or\nresolved_max_distance < 0) then (T)
+    :raise ValueError(\n"max_distance must be a non-negative number");
+    kill
+  else (F)
+    :return resolved_top_k, float(resolved_max_distance);
+    stop
+  endif
+endif
+
+
+@enduml

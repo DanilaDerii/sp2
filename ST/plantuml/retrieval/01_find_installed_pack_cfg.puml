@@ -1,0 +1,57 @@
+@startuml
+
+' Control-flow graph (CFG) for:
+' ST/mini/mini_retrieval.py::_find_installed_pack
+
+title Retrieval CFG 01 - _find_installed_pack()
+
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam roundCorner 12
+skinparam nodesep 10
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #334155
+skinparam activity {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+  FontColor #0F172A
+  DiamondBackgroundColor #FEF3C7
+  DiamondBorderColor #D97706
+  DiamondFontColor #78350F
+  StartColor #047857
+  EndColor #B91C1C
+}
+<style>
+activityDiagram {
+  activity {
+    MinimumWidth 230
+    Padding 6
+    Margin 0
+  }
+  diamond {
+    Padding 4
+    Margin 0
+  }
+}
+</style>
+
+start
+
+:connection = sqlite3.connect(SQLITE_DB_PATH);
+
+:try:\nconnection.row_factory = sqlite3.Row\nquery = """SELECT id, pack_id, embedding_model, embedding_dim,\ndefault_top_k, is_active FROM installed_packs\nWHERE id = :installed_pack_id"""\nparameters = {"installed_pack_id": installed_pack_id};
+
+:cursor = connection.execute(query, parameters)\nrow = cursor.fetchone();
+
+:finally:\nconnection.close();
+
+if (row is None) then (T)
+  :return None;
+  stop
+else (F)
+  :return MiniInstalledPack(\ninstalled_pack_id=int(row["id"]),\npack_id=row["pack_id"],\nembedding_model=row["embedding_model"],\nembedding_dimension=int(row["embedding_dim"]),\ndefault_top_k=int(row["default_top_k"]),\nis_active=bool(row["is_active"]));
+  stop
+endif
+
+@enduml
