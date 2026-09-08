@@ -172,6 +172,35 @@ After the tool returns, answer using the returned course chunks.
 If the chunks do not contain the answer, say so.
 ```
 
+### Summarize a file or complete pack
+
+Tools: `sp2_get_file_summary_context` and `sp2_get_pack_summary_context`
+
+For one file:
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_get_file_summary_context with:
+pack: 1
+source_id: lecture.pdf
+
+Then summarize all returned chunks.
+```
+
+For the complete pack:
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_get_pack_summary_context with:
+pack: 1
+
+Then summarize all returned chunks.
+```
+
+These tools return every stored chunk in source and document order. LM Studio
+writes the summary. Large packs may use a substantial part of the model's
+context window.
+
 ### Delete an installed pack
 
 Tool: `sp2_delete_pack`

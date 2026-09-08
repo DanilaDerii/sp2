@@ -129,6 +129,74 @@ def register_student_tools(mcp: Any) -> None:
         }
 
     @mcp.tool()
+    def sp2_get_file_summary_context(
+        pack: int | str,
+        source_id: str,
+    ) -> dict[str, Any]:
+        """Return every chunk from one source file for LM Studio to summarize.
+
+        Args:
+            pack: Local SP2 installed pack id returned by SP2 pack tools.
+                Also accepts a numeric string or logical pack_id name.
+            source_id: Exact source_id stored for the file inside the pack.
+        """
+        resolved_installed_pack_id = _resolve_pack(pack, "pack")
+        normalized_source_id = required_text(source_id, "source_id")
+
+        packet = request_backend_json(
+            "POST",
+            "/summaries/file-context",
+            json_body={
+                "installed_pack_id": resolved_installed_pack_id,
+                "source_id": normalized_source_id,
+            },
+        )
+        if not isinstance(packet, dict):
+            raise RuntimeError(
+                "SP2 backend API /summaries/file-context response was not an object"
+            )
+
+        return {
+            "sp2_tool": "sp2_get_file_summary_context",
+            "tool_role": "summary_context_only",
+            "summary_scope": "file",
+            "final_answer_owner": "LM Studio",
+            "instruction": "Read every returned chunk and write the requested file summary.",
+            "packet": packet,
+        }
+
+    @mcp.tool()
+    def sp2_get_pack_summary_context(
+        pack: int | str,
+    ) -> dict[str, Any]:
+        """Return every chunk from an installed pack for LM Studio to summarize.
+
+        Args:
+            pack: Local SP2 installed pack id returned by SP2 pack tools.
+                Also accepts a numeric string or logical pack_id name.
+        """
+        resolved_installed_pack_id = _resolve_pack(pack, "pack")
+
+        packet = request_backend_json(
+            "POST",
+            "/summaries/pack-context",
+            json_body={"installed_pack_id": resolved_installed_pack_id},
+        )
+        if not isinstance(packet, dict):
+            raise RuntimeError(
+                "SP2 backend API /summaries/pack-context response was not an object"
+            )
+
+        return {
+            "sp2_tool": "sp2_get_pack_summary_context",
+            "tool_role": "summary_context_only",
+            "summary_scope": "pack",
+            "final_answer_owner": "LM Studio",
+            "instruction": "Read every returned chunk and write the requested pack summary.",
+            "packet": packet,
+        }
+
+    @mcp.tool()
     def sp2_import_pack_from_path(pack_zip_path: str) -> dict[str, Any]:
         """Import a teacher-exported SP2 pack zip from a local filesystem path.
 

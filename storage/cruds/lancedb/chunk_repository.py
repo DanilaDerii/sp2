@@ -73,10 +73,10 @@ def add_pack_chunks(chunks: Iterable[PackChunk]) -> int:
 
 
 def list_chunks_for_installed_pack(installed_pack_id: int) -> list[PackChunk]:
-    """List chunk rows for one local installed pack.
+    """List every chunk row for one local installed pack.
 
-    This is an admin/debug read helper. Retrieval search belongs in a separate
-    retrieval module.
+    Full-context workflows use this helper when every stored chunk is required.
+    Semantic vector search belongs in the retrieval module.
     """
     table = get_pack_chunks_table()
     rows = table.to_arrow().to_pylist()

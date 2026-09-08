@@ -32,8 +32,9 @@ mcp = FastMCP(
     MCP_SERVER_NAME,
     instructions=(
         "Expose SP2 tools to LM Studio. Tools can build teacher packs, import "
-        "packs, return installed pack metadata, and return retrieval context. "
-        "LM Studio writes final answers."
+        "packs, return installed pack metadata, return retrieval context, and "
+        "return complete file or pack context for summaries. LM Studio writes "
+        "final answers and summaries."
     ),
 )
 
