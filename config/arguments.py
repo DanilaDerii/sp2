@@ -47,11 +47,16 @@ DEFAULT_EMBEDDING_MODEL_DOWNLOAD = (
 DEFAULT_HTTP_TIMEOUT = 120.0
 
 # Chat model
-DEFAULT_LLM_MODEL = "llama-3.2-3b-instruct"
+# Chosen for tool-call reliability, which the MCP retrieval flow depends on:
+# llama-3.2-3b emitted a quoted string for the integer pack argument in every
+# trial, while this model got it right in every trial. The non-thinking
+# variant is deliberate - the thinking variant answers just as well but spends
+# 260-352 words of hidden reasoning per response, making it 3-7x slower here.
+DEFAULT_LLM_MODEL = "qwen3-4b-instruct-2507"
 DEFAULT_LLM_MODEL_KEY = DEFAULT_LLM_MODEL
 DEFAULT_LLM_MODEL_DOWNLOAD = (
     "https://huggingface.co/"
-    "lmstudio-community/Llama-3.2-3B-Instruct-GGUF@q4_k_m"
+    "lmstudio-community/Qwen3-4B-Instruct-2507-GGUF@q4_k_m"
 )
 
 # Teacher ingestion and pack export
