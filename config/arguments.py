@@ -19,6 +19,17 @@ MAX_SECTION_LENGTH = 160
 # Retrieval
 DEFAULT_TOP_K = 5
 
+# Returned to LM Studio alongside retrieved chunks. Without it, small models
+# pad answers with invented background detail and run long; measured on
+# qwen3-4b-instruct this cut answers from 185 to 31 words and 32.5s to 6.9s
+# while removing elaboration that was not in the course material.
+COURSE_ANSWER_GUIDANCE = (
+    "Answer using ONLY the course material in packet.chunks. Be concise: "
+    "at most 120 words, prefer a short bulleted list. Cite page numbers. "
+    "Do not add background knowledge that is not in the chunks. If the "
+    "chunks do not answer the question, say so plainly."
+)
+
 # Chunk selection
 CHUNK_CANDIDATE_MULTIPLIER = 4  # over-fetch: candidate_limit = top_k * this
 SHORT_CHUNK_WORD_THRESHOLD = 12  # <=12 normalized words counts as "short"

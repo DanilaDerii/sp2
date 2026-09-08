@@ -1,0 +1,116 @@
+Answer Guidance + pack_id Resolution for MCP Retrieval
+=========================================================
+
+Branch: mcp-guidance-and-pack-resolution (based on Updated_Branch)
+Date: 2026-09-07
+
+
+The Idea
+--------
+Two problems surfaced while testing models against the real MCP flow.
+
+1. Answers were long, slow, and padded with material that was not in the
+   course pack. Asked "What are the goals in music therapy?",
+   qwen3-4b-instruct produced 185 words in 32.5s, and each correct goal was
+   padded with invented explanation - "Support overall well-being and mental
+   health", "especially in medical settings", "individuals with
+   developmental challenges". None of that is in the PDF. The tool handed
+   the model chunks with no instruction about how to use them, so the model
+   defaulted to essay mode.
+
+2. Models kept passing the pack_id name where a numeric id was required.
+   sp2_list_packs returns BOTH `id: 1` and `pack_id: "music"`, while the
+   parameter is called `pack` and wanted the number. Every model tested made
+   this same mistake - it is an API design trap, not a model weakness. Dan's
+   original screenshot showed exactly this ({"pack": "music"}), and in a full
+   agentic loop both qwen3-thinking and qwen3-instruct listed the packs
+   correctly and then passed "music" straight into the failing parameter.
+
+
+What Was Added
+---------------
+
+config/arguments.py
+  COURSE_ANSWER_GUIDANCE - the instruction returned to LM Studio alongside
+  retrieved chunks: use only packet.chunks, at most 120 words, prefer a
+  bulleted list, cite page numbers, say plainly when the chunks do not
+  answer the question.
+
+integrations/lm_studio_mcp/student_tools.py
+  _resolve_pack(pack, field_name) -> int
+    Accepts the numeric installed pack id (as int or numeric string) and
+    also the logical pack_id string. A name is resolved through
+    GET /packs?pack_id=<name>, which the backend already supported. When
+    several installs share a pack_id (re-imported versions), an active pack
+    is preferred, then the highest id (most recently installed). An
+    unmatched name raises a message that points at sp2_list_packs rather
+    than a bare type error.
+
+  sp2_get_course_context now resolves via _resolve_pack and returns an
+  additional "answer_guidance" field alongside the existing packet.
+  sp2_get_pack also resolves via _resolve_pack.
+
+  sp2_delete_pack deliberately does NOT accept a pack_id name and still
+  requires a numeric id. Resolving a name for a destructive operation is a
+  different risk profile, and if two installs share a pack_id the "right"
+  one to delete is genuinely ambiguous. The docstring states this
+  explicitly so the asymmetry reads as a decision rather than an oversight.
+
+  Docstrings for pack / installed_pack_id updated to state that a pack_id
+  name is accepted, since the docstring is what becomes the tool
+  description the model actually reads.
+
+
+Measured Results
+------------------
+Answer guidance, identical retrieved chunks, qwen3-4b-instruct-2507:
+
+  "What are the goals in music therapy?"
+     before: 32.5s, 245 tokens, 185 words, invented elaboration, no citations
+     after:   6.9s,  51 tokens,  31 words, source groupings, cites pages 3/10/13
+
+  "Explain music therapy for different age groups in detail"
+     before: 148.4s, 1453 tokens, 1023 words
+     after:   17.3s,  157 tokens,   76 words, per-age-group with p.10-p.15 cites
+
+Same test on qwen3-4b-thinking-2507: 101.9s -> 48.4s and 252.2s -> 59.1s.
+Guidance shrinks the answer for both models but cannot shrink the thinking
+model's hidden reasoning, which still costs 260-352 words per response
+regardless - which is why the instruct variant ends up 3-7x faster once
+guidance is applied.
+
+pack_id resolution, exercised against the real MCP tools (not a stub):
+
+  pack=1                -> ok (numeric path unchanged)
+  pack="1"              -> ok (the llama quoted-string failure mode)
+  pack="music"          -> ok (the trap; previously a hard error)
+  installed_pack_id="not-a-real-pack" -> correctly rejected with
+      "No installed pack matches ... Call sp2_list_packs and use a listed
+       id or pack_id."
+
+Full agentic loop against the real tools, qwen3-4b-instruct-2507:
+
+  "What does my course material say about music therapy goals?"
+     before: 2 tool calls, pack="music" errored, model gave up with no answer
+     after:  1 tool call, pack="music" resolved, concise cited answer
+
+  "What are the goals in music therapy?"
+     before: 0 tool calls - model declined, said it had no information
+     after:  2 tool calls (list_packs, then pack="music"), concise cited
+             answer, 38s end to end
+
+
+Known Limits
+--------------
+- Answer guidance is advisory. It is a field in the tool response, not an
+  enforced constraint, so a model is free to ignore it. Every model tested
+  respected it, but that is not a guarantee.
+- The 120-word cap is a blunt instrument. A question that legitimately
+  needs a longer answer will also be cut short. Worth revisiting if
+  students hit it.
+- Guidance was tested on two models and two questions on one pack. The
+  effect size is large and consistent, but the sample is small.
+- The natural-question improvement partly depends on the richer tool
+  description (mentioning that a pack_id name is accepted), not only on the
+  resolution logic. Both ship together here, so their individual
+  contributions were not separated.

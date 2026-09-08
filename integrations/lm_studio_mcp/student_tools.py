@@ -4,12 +4,41 @@ from __future__ import annotations
 
 from typing import Any
 
+from config.arguments import COURSE_ANSWER_GUIDANCE
 from integrations.lm_studio_mcp.client import request_backend_json
 from integrations.lm_studio_mcp.validators import (
     positive_int,
     required_text,
     without_none_values,
 )
+
+
+def _resolve_pack(pack: int | str, field_name: str) -> int:
+    """Resolve a pack argument to a local installed pack id.
+
+    Accepts the numeric installed pack id, and also the logical pack_id
+    string (e.g. "music"). Models routinely reach for the latter, because
+    sp2_list_packs returns both `id` and `pack_id` and the parameter is
+    named "pack" - so accepting only the number turns a reasonable guess
+    into a dead end.
+    """
+    text = str(pack).strip()
+    if text.lstrip("+-").isdigit():
+        return positive_int(text, field_name)
+
+    name = required_text(text, field_name)
+    matches = request_backend_json("GET", "/packs", params={"pack_id": name})
+    if not isinstance(matches, list) or not matches:
+        raise ValueError(
+            f"No installed pack matches {field_name}={name!r}. "
+            "Call sp2_list_packs and use a listed id or pack_id."
+        )
+
+    # Several installs can share one pack_id (e.g. re-imported versions).
+    # Prefer an active pack, then the most recently installed.
+    active = [pack_row for pack_row in matches if pack_row.get("is_active")]
+    chosen = max(active or matches, key=lambda pack_row: int(pack_row.get("id", 0)))
+    return positive_int(chosen["id"], field_name)
 
 
 def register_student_tools(mcp: Any) -> None:
@@ -44,11 +73,11 @@ def register_student_tools(mcp: Any) -> None:
         """Return one installed course pack by local SP2 installed pack id.
 
         Args:
-            installed_pack_id: Local SQLite installed_packs.id value. Accepts
-                a number or a numeric string, since some models emit a
-                quoted value here (e.g. "2") instead of a bare integer.
+            installed_pack_id: Local SQLite installed_packs.id value (e.g. 1).
+                Also accepts a numeric string ("1") or the logical pack_id
+                string shown by sp2_list_packs (e.g. "music").
         """
-        resolved_installed_pack_id = positive_int(installed_pack_id, "installed_pack_id")
+        resolved_installed_pack_id = _resolve_pack(installed_pack_id, "installed_pack_id")
 
         pack = request_backend_json("GET", f"/packs/{resolved_installed_pack_id}")
         if not isinstance(pack, dict):
@@ -69,12 +98,12 @@ def register_student_tools(mcp: Any) -> None:
         """Return course-pack retrieval context for one student question.
 
         Args:
-            pack: Local SP2 installed pack id returned by SP2 pack tools.
-                Accepts a number or a numeric string, since some models emit
-                a quoted value here (e.g. "2") instead of a bare integer.
+            pack: Local SP2 installed pack id returned by SP2 pack tools
+                (e.g. 1). Also accepts a numeric string ("1") or the
+                logical pack_id string shown by sp2_list_packs ("music").
             question: Student question to retrieve course context for.
         """
-        resolved_installed_pack_id = positive_int(pack, "pack")
+        resolved_installed_pack_id = _resolve_pack(pack, "pack")
         normalized_question = required_text(
             question,
             "question",
@@ -95,6 +124,7 @@ def register_student_tools(mcp: Any) -> None:
             "sp2_tool": "sp2_get_course_context",
             "tool_role": "retrieval_context_only",
             "final_answer_owner": "LM Studio",
+            "answer_guidance": COURSE_ANSWER_GUIDANCE,
             "packet": packet,
         }
 
@@ -125,9 +155,10 @@ def register_student_tools(mcp: Any) -> None:
         """Delete one installed SP2 course pack by local installed pack id.
 
         Args:
-            pack: Local SP2 installed pack id returned by SP2 pack tools.
-                Accepts a number or a numeric string, since some models emit
-                a quoted value here (e.g. "2") instead of a bare integer.
+            pack: Local SP2 installed pack id, as a number or numeric
+                string. Unlike the read-only tools this does NOT accept a
+                pack_id name, so a deletion always names exactly one
+                installed pack.
         """
         resolved_installed_pack_id = positive_int(pack, "pack")
 
