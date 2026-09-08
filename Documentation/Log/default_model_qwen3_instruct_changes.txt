@@ -1,0 +1,141 @@
+Default Chat Model: Llama-3.2-3B -> Qwen3-4B-Instruct-2507
+============================================================
+
+Branch: default-model-qwen3-instruct (based on
+        mcp-guidance-and-pack-resolution, which is based on Updated_Branch)
+Date: 2026-09-08
+
+
+The Idea
+--------
+An earlier pass on branch default-model-qwen3 switched the default to
+Qwen3-4B-THINKING-2507, on the strength of its tool-call reliability. That
+branch is superseded by this one, which picks the INSTRUCT variant of the
+same model instead. This log records why the choice moved, and should be
+read alongside default_model_qwen3_changes.txt, which holds the original
+llama-vs-qwen3 comparison and is not repeated here.
+
+The short version: the thinking variant won on tool calls but lost badly
+on speed, and once COURSE_ANSWER_GUIDANCE landed (see
+mcp_guidance_and_pack_resolution_changes.txt) the reason to tolerate that
+slowness went away.
+
+
+Why the Instruct Variant Instead
+----------------------------------
+Both qwen3 variants call tools reliably, which was the whole reason for
+leaving llama. They are not close on cost.
+
+The thinking variant spends 260-352 words of hidden reasoning per
+response. Those tokens cost time and never appear in the answer, and
+crucially they are NOT reduced by answer guidance - guidance shrinks the
+visible answer only. Measured on the same two questions, same pack, same
+retrieved chunks:
+
+  guidance applied, qwen3-4b-INSTRUCT
+    "What are the goals in music therapy?"        32.5s -> 6.9s
+    "Explain music therapy ... in detail"        148.4s -> 17.3s
+
+  guidance applied, qwen3-4b-THINKING
+    "What are the goals in music therapy?"       101.9s -> 48.4s
+    "Explain music therapy ... in detail"        252.2s -> 59.1s
+
+So guidance helps both, but the floor for the thinking variant stays
+3-7x higher because the reasoning cost is fixed. On SP2's target hardware
+- constrained student laptops - a ~50s floor per question is a real
+usability cost with nothing to show for it, since answer quality between
+the two variants was not meaningfully different once both were grounded
+in the same chunks.
+
+The instruct variant keeps the tool-call reliability that motivated the
+move off llama (llama emitted a quoted string for the integer pack
+argument in 0/3 trials at temperature 0; qwen3 got it right in every
+trial) while dropping the reasoning overhead.
+
+
+What Was Changed
+------------------
+config/arguments.py
+  DEFAULT_LLM_MODEL:          llama-3.2-3b-instruct -> qwen3-4b-instruct-2507
+  DEFAULT_LLM_MODEL_DOWNLOAD: .../Llama-3.2-3B-Instruct-GGUF@q4_k_m
+                           -> .../Qwen3-4B-Instruct-2507-GGUF@q4_k_m
+  Comment records that the non-thinking variant is deliberate, and why.
+
+installation/lm_studio_setup.py
+  Download size message: "approximately 2 GB" -> "approximately 2.5 GB".
+
+README.md
+  Two mentions of the Llama chat model updated to Qwen.
+
+
+Verification
+--------------
+  - DEFAULT_LLM_MODEL_KEY ("qwen3-4b-instruct-2507") confirmed against the
+    modelKey LM Studio actually assigns after downloading from the new
+    URL. `lms ps` shows it loaded under exactly that identifier, so there
+    is no load/identifier mismatch.
+  - Actual footprint on this machine: 2.50 GB on disk, 2.50 GB loaded, at
+    8192 context. Consistent with the "approximately 2.5 GB" message.
+  - Full `python3 installation/script.py` run end to end from a wiped
+    machine (LM Studio, models, venv, and databases all removed first):
+    downloads resolve, chat model loads under the expected identifier,
+    embedding model verifies at 768 dims, backend starts, MCP prompt
+    opens.
+  - All five MCP tools exercised against the live backend after the
+    switch: list_packs, get_pack, get_course_context (returns guidance and
+    correctly-paged chunks), plus _resolve_pack accepting 1 / "1" /
+    "music" and rejecting unknown names, empty strings, and non-positive
+    ids.
+
+
+Known Tradeoffs
+-----------------
+  - Larger on disk than llama: 2.50 GB vs 1.88 GB. Still within the 8 GB
+    RAM guidance in README, but with less headroom on a low-RAM machine.
+  - Answer-quality comparison between the two qwen3 variants was
+    qualitative, not scored. They were judged comparable once both were
+    grounded in the same chunks; that judgement was not blind and rests on
+    a small number of questions on one pack.
+  - Timing figures come from one dev machine and were not re-measured on
+    weaker hardware, which is the hardware that actually matters here.
+
+
+Still Broken After This Change
+---------------------------------
+The model reliably calls the retrieval tool only when the question
+signals that course material is involved. Measured on this branch,
+temperature 0, with the MCP tools available:
+
+  "What does my course material say about music therapy goals?"   4/4
+  "How many course packs are loaded?"                             4/4
+  "What are the goals in music therapy?"                          0/8
+
+A bare topical question is answered from the model's own priors instead,
+and the confabulation is confident and specific - one such answer invented
+"reduces cortisol by up to 30%" and "reduce suicidal ideation by up to
+40%", neither of which appears anywhere in the pack. The failure is
+silent: nothing in the reply indicates that retrieval was skipped, which
+makes it worse than a visibly wrong answer.
+
+Two mitigations were tested and are recorded here so they are not
+re-tried blindly:
+
+  - Strengthening the tool DESCRIPTION ("ALWAYS call this first, even if
+    you already know the answer") changed nothing: still 0/4. The model is
+    not weighing a weak description; it does not classify the question as
+    tool-worthy at all.
+  - A strict SYSTEM PROMPT ("never answer a course question from your own
+    knowledge") fixed most questions - "Explain music therapy for
+    children" and "What is gradient descent?" both went 0/4 -> 4/4 - but
+    the music-therapy-goals question stayed at 1/8. Questions the model is
+    confident it already knows resist hardest.
+
+Caveat on all the counts above: temperature 0 through LM Studio is not
+perfectly reproducible, most likely from KV-cache reuse. In one 8-trial
+run the first call hit the tool and the next seven did not. The direction
+is consistent and repeatable; read "0/8" as "almost never", not as proof.
+
+This is a pre-existing problem inherited from Updated_Branch, not
+introduced by the model switch, and it is not specific to this model.
+Fixing it properly is a separate change and was deliberately not bundled
+here.
