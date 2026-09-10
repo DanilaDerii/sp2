@@ -115,8 +115,25 @@ The script:
 
 ## Approve the LM Studio Tool
 
-When LM Studio asks to add `lecture_sense_rag`, approve it. LM Studio displays
-the tool in chat as:
+At the end of setup, LM Studio opens an **Add MCP Server** dialog for
+`lecture_sense_rag`. Check that the paths point at your copy of the repository,
+then confirm.
+
+![The Add MCP Server dialog for lecture_sense_rag](Documentation/screenshots/mcp-approve-prompt.jpg)
+
+The caution about MCP servers running code is LM Studio's standard warning for
+any MCP server. In this case the code being run is SP2's own `server.py`, from
+the repository you cloned.
+
+If you have installed SP2 before, the dialog warns that a server of the same
+name already exists and the button reads **Override lecture_sense_rag** instead
+of Add. That is expected - it is replacing the old entry with current paths.
+
+A confirmation appears once it is added:
+
+![Confirmation that lecture_sense_rag was added](Documentation/screenshots/mcp-server-added.jpg)
+
+LM Studio displays the tool in chat as:
 
 ```text
 mcp/lecture-sense-rag
