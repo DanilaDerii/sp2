@@ -327,7 +327,7 @@ Every new chat has its own tool toggles, and a chat with the tool switched off
 will answer from the model's own knowledge without ever touching your course
 material.
 
-![Enabling the tool in a chat](Documentation/screenshots/enable-tool-in-chat.png)
+![The Integrations panel with mcp/lecture-sense-rag enabled, and a tool call in the chat](Documentation/screenshots/enable-tool-in-chat.jpg)
 
 ## Known Limitations
 

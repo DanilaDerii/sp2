@@ -1,15 +1,25 @@
 # README screenshots
 
-These images are referenced from the repository README. They are **not captured
-yet** - the README links to them by filename so the slots are ready to fill.
+Images referenced from the repository README.
 
-Capture each on a clean LM Studio window, crop to the relevant panel, and save
-as PNG with the exact filename below.
+| Filename | Status | What it shows / should show |
+|---|---|---|
+| `enable-tool-in-chat.jpg` | **captured** | The Integrations panel (hammer icon) with `mcp/lecture-sense-rag` toggled on, plus a real `sp2_list_packs` call and its grounded answer. |
+| `lm-studio-developer-mode.png` | not captured | The LM Studio mode selector with Developer selected. |
+| `mcp-json-location.png` | not captured | LM Studio's MCP/integrations settings screen - the one with the "Edit mcp.json" button. A screenshot of the raw file adds nothing over the JSON block already in the README. |
 
-| Filename | What it should show |
-|---|---|
-| `mcp-json-location.png` | A file manager or editor open at `~/.lmstudio/mcp.json`, with the `lecture_sense_rag` entry visible. Blur or edit out absolute paths containing a personal username. |
-| `lm-studio-developer-mode.png` | The LM Studio mode selector at the bottom of the window, with Developer selected. |
-| `enable-tool-in-chat.png` | A chat window with the `mcp/lecture-sense-rag` tool toggle switched on. |
+The README currently shows broken image icons for the two that are missing.
+Either capture them, or remove those two `![...]` lines until they exist.
 
-Until these exist, the README shows broken image icons at those three points.
+## Capturing
+
+On the dev machine (Hyprland), `Alt+S` is bound to `grimblast save area`, or
+capture straight into place:
+
+```bash
+grimblast save area Documentation/screenshots/<filename>
+```
+
+Crop to the relevant panel rather than the whole screen, and check the visible
+chat content before committing - an answer that was not grounded in a course
+pack should not be presented as an example of SP2 working.
