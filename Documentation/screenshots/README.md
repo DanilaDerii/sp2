@@ -1,17 +1,15 @@
 # README screenshots
 
-Images referenced from the repository README.
+Images referenced from the repository README. All three slots are filled; the
+README has no broken image references.
 
-| Filename | Status | What it shows / should show |
-|---|---|---|
-| `enable-tool-in-chat.jpg` | **captured** | The Integrations panel (hammer icon) with `mcp/lecture-sense-rag` toggled on, plus a real `sp2_list_packs` call and its grounded answer. |
-| `lm-studio-developer-mode.png` | not captured | The LM Studio mode selector with Developer selected. |
-| `mcp-json-location.png` | not captured | LM Studio's MCP/integrations settings screen - the one with the "Edit mcp.json" button. A screenshot of the raw file adds nothing over the JSON block already in the README. |
+| Filename | What it shows |
+|---|---|
+| `mcp-json-step1.jpg` | The Developer tab (terminal icon, far-left sidebar) and Local Server panel, with the `mcp.json` button circled. |
+| `mcp-json-step2.jpg` | The Edit mcp.json dialog with the SP2 `lecture_sense_rag` entry. |
+| `enable-tool-in-chat.jpg` | The Integrations panel (hammer icon) with `mcp/lecture-sense-rag` toggled on, plus a real `sp2_list_packs` call and its grounded answer. |
 
-The README currently shows broken image icons for the two that are missing.
-Either capture them, or remove those two `![...]` lines until they exist.
-
-## Capturing
+## If you replace or add one
 
 On the dev machine (Hyprland), `Alt+S` is bound to `grimblast save area`, or
 capture straight into place:
@@ -20,6 +18,13 @@ capture straight into place:
 grimblast save area Documentation/screenshots/<filename>
 ```
 
-Crop to the relevant panel rather than the whole screen, and check the visible
-chat content before committing - an answer that was not grounded in a course
-pack should not be presented as an example of SP2 working.
+Two things to check before committing a screenshot:
+
+- **Visible chat content.** An answer that was not grounded in a course pack
+  should never be presented as an example of SP2 working. An earlier capture
+  had to be retaken because the model had invented statistics that appear
+  nowhere in the pack.
+- **Absolute paths.** `mcp-json-step2.jpg` shows real home-directory paths
+  including a local username. That is intentional - it makes the example
+  concrete - but crop or edit if a future capture would expose something
+  more identifying.

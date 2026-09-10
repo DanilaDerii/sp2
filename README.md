@@ -282,19 +282,25 @@ This removes installed packs and recreates SQLite and LanceDB. ZIP files in
 
 ## Where to Find Things in LM Studio
 
-### The MCP config file (`mcp.json`)
+### Finding `mcp.json` in LM Studio
 
-SP2 writes its entry here. If the approval prompt never appeared, or the tool
-vanished after moving the repository, this is the file to check.
+SP2 writes its entry into LM Studio's `mcp.json`. If the approval prompt never
+appeared, or the tool stopped working after you moved the repository, this is
+the file to check.
 
-| OS | Path |
-|---|---|
-| Linux | `~/.lmstudio/mcp.json` |
-| macOS | `~/.lmstudio/mcp.json` |
-| Windows | `%USERPROFILE%\.lmstudio\mcp.json` |
+**Step 1 - open the Developer tab, then Local Server.** The Developer tab is
+the terminal icon in the far-left sidebar. The `mcp.json` button sits along the
+top of that panel, next to Server Settings.
 
-A correct SP2 entry looks like this. Both paths must point at **your** copy of
-the repository:
+![Opening the Developer tab and the mcp.json button](Documentation/screenshots/mcp-json-step1.jpg)
+
+**Step 2 - check the entry.** The editor opens with the current config. Saving
+reloads the MCP servers, so you can fix a wrong path here without restarting
+LM Studio.
+
+![The Edit mcp.json dialog showing the SP2 entry](Documentation/screenshots/mcp-json-step2.jpg)
+
+Both paths must point at **your** copy of the repository:
 
 ```json
 {
@@ -310,15 +316,8 @@ the repository:
 
 On Windows, `command` ends with `environment\.venv\Scripts\python.exe` instead.
 
-![Where to find mcp.json](Documentation/screenshots/mcp-json-location.png)
-
-### Enabling developer mode
-
-Some MCP controls are only visible once LM Studio is out of its simplest
-interface mode. The mode selector sits at the bottom of the LM Studio window;
-switching from **User** to **Developer** reveals the tool and plugin settings.
-
-![Switching LM Studio to Developer mode](Documentation/screenshots/lm-studio-developer-mode.png)
+If you would rather edit the file directly, it lives at `~/.lmstudio/mcp.json`
+on Linux and macOS, and `%USERPROFILE%\.lmstudio\mcp.json` on Windows.
 
 ### Turning the tool on in a chat
 
