@@ -125,9 +125,9 @@ The caution about MCP servers running code is LM Studio's standard warning for
 any MCP server. In this case the code being run is SP2's own `server.py`, from
 the repository you cloned.
 
-If you have installed SP2 before, the dialog warns that a server of the same
-name already exists and the button reads **Override lecture_sense_rag** instead
-of Add. That is expected - it is replacing the old entry with current paths.
+If you have installed SP2 before, the dialog also warns that a server of that
+name already exists and the button reads **Override lecture_sense_rag** rather
+than Add. That is expected - it replaces the old entry with current paths.
 
 A confirmation appears once it is added:
 
