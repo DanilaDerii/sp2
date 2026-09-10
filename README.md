@@ -3,16 +3,37 @@
 SP2 turns local course files into searchable packs for LM Studio. SP2 stores and
 searches the course material; LM Studio provides the chat and final answer.
 
+## Before You Start: Hardware
+
+**SP2 needs a mid-range machine or better.** It keeps LM Studio, a 4B chat
+model, and an embedding model in memory at the same time, and that combination
+is genuinely demanding.
+
+| | RAM | What to expect |
+|---|---|---|
+| **Recommended** | 16 GB or more | Runs comfortably |
+| **Workable** | 8-16 GB | Fine, but close browsers and IDEs while using SP2 |
+| **Not recommended** | under 8 GB | Slow, and the operating system may kill LM Studio mid-use |
+
+That last row is not theoretical. On a 7.5 GB development machine, the Linux
+out-of-memory killer terminated LM Studio four separate times during testing,
+once taking the whole desktop session down with it. The installer prints an
+advisory warning if it detects under 8 GB, but it will not stop you.
+
+**Disk: plan for about 12 GB free, not 6 GB.** SP2's own models are modest
+(2.5 GB chat model, 84 MB embedding model), but LM Studio downloads a default
+model of its own on first launch, which was 6.3 GB in our testing. Total model
+storage on the development machine ended up at 8.3 GB, plus the Python
+environment and your course packs.
+
 ## Prerequisites
 
 - Python 3.10 or newer
 - pip
 - LM Studio installed and opened at least once
 - LM Studio local server authentication turned off
-- Internet access and about 6 GB of free space
-- 8 GB RAM recommended (4 GB minimum); SP2 keeps LM Studio and a chat model
-  loaded at the same time, so expect slower performance or occasional
-  instability below 8 GB
+- Internet access and about 12 GB of free disk space
+- 8 GB RAM minimum, 16 GB recommended (see the table above)
 - A local copy of this repository
 
 No models or document tools need to be installed manually. The setup script
@@ -99,45 +120,75 @@ recursively and its supported files are combined into one pack.
 
 Use absolute paths. Windows paths are supported.
 
-## MCP Prompt Examples
+## MCP Tool Reference
 
-Replace the example paths and pack numbers with your own values.
+SP2 registers eight tools. All of them appear in LM Studio under
+`mcp/lecture-sense-rag`.
 
-### Build and install a pack
+| Tool | What it does | Arguments |
+|---|---|---|
+| `sp2_ingest_file_from_path` | Build a pack from a file or folder, and install it | `file_path` |
+| `sp2_import_pack_from_path` | Install a pack ZIP built elsewhere | `pack_zip_path` |
+| `sp2_list_packs` | List installed packs | `pack_id`, `active_only` (both optional) |
+| `sp2_get_pack` | Show details for one pack | `installed_pack_id` |
+| `sp2_get_course_context` | Search a pack and return the most relevant chunks | `pack`, `question` |
+| `sp2_get_file_summary_context` | Return **every** chunk from one file, to summarize | `pack`, `source_id` |
+| `sp2_get_pack_summary_context` | Return **every** chunk from a pack, to summarize | `pack` |
+| `sp2_delete_pack` | Remove an installed pack | `pack` |
 
-Tool: `sp2_ingest_file_from_path`
+**Naming a pack.** Anywhere a tool takes `pack`, you can use either the number
+from `sp2_list_packs` or the pack's name, so `1`, `"1"`, and `"music"` all
+work. The one exception is `sp2_delete_pack`, which requires the number on
+purpose: a deletion should never be ambiguous about which pack it removes.
+
+## Talking to SP2
+
+You do not need to name tools or arguments. Ask in plain language and LM Studio
+picks the tool. The examples below show a natural phrasing first, with the
+literal tool call underneath for when you want to be exact.
+
+**One phrasing tip that matters more than it should.** Mention your course
+material in the question. "What are the goals in music therapy?" often gets
+answered from the model's general knowledge without ever searching your pack;
+"What does my course material say about music therapy goals?" reliably searches
+it. See *Known Limitations* at the end of this file.
+
+### Build a pack from your course files
+
+> Build a course pack from /home/me/lectures/psych101
+
+<details><summary>Explicit form</summary>
 
 ```text
 Use mcp/lecture-sense-rag.
 Call sp2_ingest_file_from_path with:
 file_path: /absolute/path/to/course-file-or-directory
 ```
+</details>
 
-This builds a portable ZIP, installs it, and returns its numeric installed pack
-ID.
+This builds a portable ZIP, installs it, and returns the pack's number. The ZIP
+is saved to `<sp2-repository>/artifacts/<pack-id>.zip`, and the response
+includes the exact `zip_path`. Copy that ZIP to another device to share the
+pack.
 
-The ZIP is saved in the repository's `artifacts/` directory:
+### Install a pack somebody sent you
 
-```text
-<sp2-repository>/artifacts/<pack-id>.zip
-```
+> Import the course pack at /home/me/Downloads/psych101.zip
 
-The tool response also returns its exact `zip_path`. Copy that ZIP to another
-device and import it there with `sp2_import_pack_from_path`.
-
-### Import an existing pack ZIP
-
-Tool: `sp2_import_pack_from_path`
+<details><summary>Explicit form</summary>
 
 ```text
 Use mcp/lecture-sense-rag.
 Call sp2_import_pack_from_path with:
 pack_zip_path: /absolute/path/to/course-pack.zip
 ```
+</details>
 
-### List installed packs
+### See what is installed
 
-Tool: `sp2_list_packs`
+> Which course packs do I have?
+
+<details><summary>Explicit form</summary>
 
 ```text
 Use mcp/lecture-sense-rag.
@@ -145,22 +196,17 @@ Call sp2_list_packs with:
 pack_id: null
 active_only: false
 ```
+</details>
 
-The returned numeric `id` is used by the next tools.
+For detail on a single pack:
 
-### Show one installed pack
+> Show me the details of pack 1
 
-Tool: `sp2_get_pack`
+### Ask a question about a course
 
-```text
-Use mcp/lecture-sense-rag.
-Call sp2_get_pack with:
-installed_pack_id: 1
-```
+> What does my course material say about the prerequisites for this course?
 
-### Ask a question
-
-Tool: `sp2_get_course_context`
+<details><summary>Explicit form</summary>
 
 ```text
 Use mcp/lecture-sense-rag.
@@ -171,12 +217,16 @@ question: What are the prerequisites for this course?
 After the tool returns, answer using the returned course chunks.
 If the chunks do not contain the answer, say so.
 ```
+</details>
 
-### Summarize a file or complete pack
+This searches the pack and returns the most relevant passages with their page
+numbers, so answers can cite where they came from.
 
-Tools: `sp2_get_file_summary_context` and `sp2_get_pack_summary_context`
+### Summarize a whole file or pack
 
-For one file:
+> Summarize lecture.pdf from my psych101 pack
+
+<details><summary>Explicit form</summary>
 
 ```text
 Use mcp/lecture-sense-rag.
@@ -187,31 +237,28 @@ source_id: lecture.pdf
 Then summarize all returned chunks.
 ```
 
-For the complete pack:
+For the complete pack, use `sp2_get_pack_summary_context` with just `pack`.
+</details>
 
-```text
-Use mcp/lecture-sense-rag.
-Call sp2_get_pack_summary_context with:
-pack: 1
+Unlike asking a question, these return **every** stored chunk in order rather
+than searching for relevant ones. `source_id` is the file's name as stored in
+the pack, for example `lecture.pdf`. Large packs can fill a big share of the
+model's context window.
 
-Then summarize all returned chunks.
-```
+### Delete a pack
 
-These tools return every stored chunk in source and document order. LM Studio
-writes the summary. Large packs may use a substantial part of the model's
-context window.
+> Delete pack 1
 
-### Delete an installed pack
-
-Tool: `sp2_delete_pack`
+<details><summary>Explicit form</summary>
 
 ```text
 Use mcp/lecture-sense-rag.
 Call sp2_delete_pack with:
 pack: 1
 ```
+</details>
 
-This deletes the installed files, database row, and vectors. ZIP files in
+This removes the installed files, database row, and vectors. ZIP files in
 `artifacts/` are kept.
 
 ## Clear Local Storage
@@ -232,3 +279,74 @@ Set-Location -LiteralPath 'C:\path\to\sp2'
 
 This removes installed packs and recreates SQLite and LanceDB. ZIP files in
 `artifacts/` are kept.
+
+## Where to Find Things in LM Studio
+
+### The MCP config file (`mcp.json`)
+
+SP2 writes its entry here. If the approval prompt never appeared, or the tool
+vanished after moving the repository, this is the file to check.
+
+| OS | Path |
+|---|---|
+| Linux | `~/.lmstudio/mcp.json` |
+| macOS | `~/.lmstudio/mcp.json` |
+| Windows | `%USERPROFILE%\.lmstudio\mcp.json` |
+
+A correct SP2 entry looks like this. Both paths must point at **your** copy of
+the repository:
+
+```json
+{
+  "mcpServers": {
+    "lecture_sense_rag": {
+      "command": "/path/to/sp2/environment/.venv/bin/python",
+      "args": ["/path/to/sp2/integrations/lm_studio_mcp/server.py"],
+      "env": { "SP2_BACKEND_API_BASE_URL": "http://127.0.0.1:8001" }
+    }
+  }
+}
+```
+
+On Windows, `command` ends with `environment\.venv\Scripts\python.exe` instead.
+
+![Where to find mcp.json](Documentation/screenshots/mcp-json-location.png)
+
+### Enabling developer mode
+
+Some MCP controls are only visible once LM Studio is out of its simplest
+interface mode. The mode selector sits at the bottom of the LM Studio window;
+switching from **User** to **Developer** reveals the tool and plugin settings.
+
+![Switching LM Studio to Developer mode](Documentation/screenshots/lm-studio-developer-mode.png)
+
+### Turning the tool on in a chat
+
+Approving `lecture_sense_rag` once is not the same as enabling it in a chat.
+Every new chat has its own tool toggles, and a chat with the tool switched off
+will answer from the model's own knowledge without ever touching your course
+material.
+
+![Enabling the tool in a chat](Documentation/screenshots/enable-tool-in-chat.png)
+
+## Known Limitations
+
+**The model decides whether to search your course material, and it does not
+always choose to.** SP2 gives LM Studio a retrieval tool, but LM Studio's chat
+decides when to call it. Measured on the default model at temperature 0:
+
+| Question | Searched the course pack |
+|---|---|
+| "What does my course material say about music therapy goals?" | 4 times out of 4 |
+| "How many course packs are loaded?" | 4 times out of 4 |
+| "What are the goals in music therapy?" | almost never |
+
+When it skips retrieval, it answers from general knowledge and **gives no sign
+that it did so**. One such answer invented specific-sounding statistics that
+appear nowhere in the course material. Until this is addressed, phrase
+questions so they mention your course material, and treat any answer without
+page citations as unverified.
+
+Strengthening the tool description and adding a strict system prompt were both
+tested as fixes; neither fully solved it. See
+`Documentation/Log/default_model_qwen3_instruct_changes.txt`.
