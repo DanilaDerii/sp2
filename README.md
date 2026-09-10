@@ -30,7 +30,7 @@ environment and your course packs.
 
 - Python 3.10 or newer
 - pip
-- LM Studio installed and opened at least once
+- LM Studio installed and opened at least once (see below)
 - LM Studio local server authentication turned off
 - Internet access and about 12 GB of free disk space
 - 8 GB RAM minimum, 16 GB recommended (see the table above)
@@ -39,7 +39,34 @@ environment and your course packs.
 No models or document tools need to be installed manually. The setup script
 handles them.
 
-## Install
+## Install LM Studio
+
+SP2 runs on top of LM Studio, so install it first. Download it from
+**https://lmstudio.ai/download**.
+
+The page detects your platform, but check the dropdowns before downloading -
+they select the operating system, the processor architecture, and the version.
+
+![The LM Studio download page](Documentation/screenshots/lm-studio-download.jpg)
+
+| Platform | What you get |
+|---|---|
+| Windows | An `.exe` installer - run it and follow the prompts |
+| macOS | A `.dmg` - open it and drag LM Studio to Applications. Pick the Apple Silicon or Intel build to match your Mac |
+| Linux | Either an `.AppImage` or a `.deb`. The `.deb` installs like any package; for the AppImage, make it executable with `chmod +x` and run it directly |
+
+**Then open LM Studio once before running SP2's setup script.** This is not
+optional. LM Studio creates its command-line tool (`lms`) on first launch, and
+SP2's installer needs it to download and load models. Running setup before that
+first launch fails with "LM Studio's 'lms' command was not found". If you hit
+that, open LM Studio, then restart your terminal before trying again - a shell
+opened earlier will not see the new command.
+
+First launch also downloads a default model of its own, which was 6.3 GB in our
+testing. Let that finish before starting SP2 setup, so the two are not competing
+for bandwidth and memory.
+
+## Install SP2
 
 Linux or macOS:
 

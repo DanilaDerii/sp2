@@ -1,10 +1,11 @@
 # README screenshots
 
-Images referenced from the repository README. All three slots are filled; the
+Images referenced from the repository README. All four slots are filled; the
 README has no broken image references.
 
 | Filename | What it shows |
 |---|---|
+| `lm-studio-download.jpg` | The lmstudio.ai download page, showing the OS, architecture and version selectors. |
 | `mcp-json-step1.jpg` | The Developer tab (terminal icon, far-left sidebar) and Local Server panel, with the `mcp.json` button circled. |
 | `mcp-json-step2.jpg` | The Edit mcp.json dialog with the SP2 `lecture_sense_rag` entry. |
 | `enable-tool-in-chat.jpg` | The Integrations panel (hammer icon) with `mcp/lecture-sense-rag` toggled on, plus a real `sp2_list_packs` call and its grounded answer. |
