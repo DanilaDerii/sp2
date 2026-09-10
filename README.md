@@ -212,16 +212,23 @@ purpose: a deletion should never be ambiguous about which pack it removes.
 
 ## Talking to SP2
 
-You do not need to name tools or arguments. Ask in plain language and LM Studio
-picks the tool. The examples below show a natural phrasing first, with the
-literal tool call underneath for when you want to be exact.
+You do not have to name tools or arguments - you can ask in plain language. But
+**say that you are asking about your course material**, or the model will often
+answer from its own general knowledge without searching your pack at all.
 
-**One phrasing tip that matters more than it should.** Mention your course
-material in the question. "What are the goals in music therapy?" often gets
-answered from the model's general knowledge without ever searching your pack;
-"What does my course material say about music therapy goals?" reliably searches
-it. Answers that cite page numbers came from your pack; answers without them
-may not have.
+```text
+"What are the goals in music therapy?"                      often not searched
+"What does my course material say about music therapy?"     searched
+```
+
+The difference is not subtle, and there is no warning when it goes wrong: an
+answer written from general knowledge looks just as confident as one taken from
+your slides. A reliable check is citations - answers drawn from a pack cite page
+numbers, so an answer with no page references may not have used your material.
+
+If you would rather remove the guesswork, name the tool and arguments directly.
+Each example below shows the plain-language phrasing first, with the exact tool
+call underneath.
 
 ### Build a pack from your course files
 
