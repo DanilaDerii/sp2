@@ -122,9 +122,23 @@ the tool in chat as:
 mcp/lecture-sense-rag
 ```
 
-Open a new chat and make sure this tool is enabled. If the approval prompt does
-not open, use the installation link or `mcp.json` content printed by the setup
-script.
+**Then turn it on in your chat - approving it once is not the same thing.**
+Every new chat has its own tool toggles, and a chat with the tool switched off
+will answer from the model's own knowledge without ever touching your course
+material.
+
+Open a chat, click the hammer icon to open **Integrations**, and switch
+`mcp/lecture-sense-rag` on:
+
+![The Integrations panel with mcp/lecture-sense-rag enabled, and a tool call in the chat](Documentation/screenshots/enable-tool-in-chat.jpg)
+
+The example above shows what a working setup looks like: the toggle is on, and
+the answer came back through an `sp2_list_packs` call rather than from the
+model's own knowledge.
+
+If the approval prompt never opened, use the installation link printed by the
+setup script, or check `mcp.json` directly - see
+[Troubleshooting: Finding mcp.json](#troubleshooting-finding-mcpjson).
 
 ## Start the Backend Later
 
@@ -319,9 +333,7 @@ Set-Location -LiteralPath 'C:\path\to\sp2'
 This removes installed packs and recreates SQLite and LanceDB. ZIP files in
 `artifacts/` are kept.
 
-## Where to Find Things in LM Studio
-
-### Finding `mcp.json` in LM Studio
+## Troubleshooting: Finding `mcp.json`
 
 SP2 writes its entry into LM Studio's `mcp.json`. If the approval prompt never
 appeared, or the tool stopped working after you moved the repository, this is
@@ -357,12 +369,3 @@ On Windows, `command` ends with `environment\.venv\Scripts\python.exe` instead.
 
 If you would rather edit the file directly, it lives at `~/.lmstudio/mcp.json`
 on Linux and macOS, and `%USERPROFILE%\.lmstudio\mcp.json` on Windows.
-
-### Turning the tool on in a chat
-
-Approving `lecture_sense_rag` once is not the same as enabling it in a chat.
-Every new chat has its own tool toggles, and a chat with the tool switched off
-will answer from the model's own knowledge without ever touching your course
-material.
-
-![The Integrations panel with mcp/lecture-sense-rag enabled, and a tool call in the chat](Documentation/screenshots/enable-tool-in-chat.jpg)
