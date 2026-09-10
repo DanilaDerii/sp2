@@ -20,11 +20,21 @@ out-of-memory killer terminated LM Studio four separate times during testing,
 once taking the whole desktop session down with it. The installer prints an
 advisory warning if it detects under 8 GB, but it will not stop you.
 
-**Disk: plan for about 12 GB free, not 6 GB.** SP2's own models are modest
-(2.5 GB chat model, 84 MB embedding model), but LM Studio downloads a default
-model of its own on first launch, which was 6.3 GB in our testing. Total model
-storage on the development machine ended up at 8.3 GB, plus the Python
-environment and your course packs.
+**Disk: about 6 GB free, or 12 GB if you accept LM Studio's starter model.**
+SP2's own models are modest - a 2.5 GB chat model and an 84 MB embedding model.
+
+On first launch, LM Studio offers a suggested starter model of its own. **SP2
+does not need it, and you can skip it.** Accepting it cost 5.9 GB of disk on the
+development machine, downloading in the background while SP2's own setup was
+running - which on a low-RAM machine is a good way to run into trouble. To
+decline it:
+
+- On the **Your first model** screen, click **Skip for now**, underneath the
+  Download button.
+- Do not click **Continue** and assume that declines it - the download keeps
+  going in the background.
+- If it has already started, open **Downloads** (the downward-arrow icon) and
+  cancel that model with the **x** beside it.
 
 ## Prerequisites
 
@@ -32,7 +42,7 @@ environment and your course packs.
 - pip
 - LM Studio installed and opened at least once (see below)
 - LM Studio local server authentication turned off
-- Internet access and about 12 GB of free disk space
+- Internet access and about 6 GB of free disk space
 - 8 GB RAM minimum, 16 GB recommended (see the table above)
 - A local copy of this repository
 
@@ -62,9 +72,10 @@ first launch fails with "LM Studio's 'lms' command was not found". If you hit
 that, open LM Studio, then restart your terminal before trying again - a shell
 opened earlier will not see the new command.
 
-First launch also downloads a default model of its own, which was 6.3 GB in our
-testing. Let that finish before starting SP2 setup, so the two are not competing
-for bandwidth and memory.
+First launch also offers you a starter model. Skip it - SP2 downloads the models
+it needs itself, and letting that 5.9 GB download run in the background while SP2
+setup is working competes for bandwidth and memory. See the disk note at the top
+of this file for how to decline or cancel it.
 
 ## Install SP2
 
