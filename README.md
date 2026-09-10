@@ -212,23 +212,14 @@ purpose: a deletion should never be ambiguous about which pack it removes.
 
 ## Talking to SP2
 
-You do not have to name tools or arguments - you can ask in plain language. But
-**say that you are asking about your course material**, or the model will often
-answer from its own general knowledge without searching your pack at all.
+Ask questions about your course material in plain language and SP2 will find the
+relevant parts and answer from them - just mention that you mean your course
+material, so it searches your pack instead of answering from general knowledge.
+Answers pulled from a pack cite page numbers.
 
-```text
-"What are the goals in music therapy?"                      often not searched
-"What does my course material say about music therapy?"     searched
-```
-
-The difference is not subtle, and there is no warning when it goes wrong: an
-answer written from general knowledge looks just as confident as one taken from
-your slides. A reliable check is citations - answers drawn from a pack cite page
-numbers, so an answer with no page references may not have used your material.
-
-If you would rather remove the guesswork, name the tool and arguments directly.
-Each example below shows the plain-language phrasing first, with the exact tool
-call underneath.
+For actions - building a pack, importing one, deleting one - you can name the
+tool and arguments directly. Each example below shows the plain-language version
+first, with the exact tool call underneath.
 
 ### Build a pack from your course files
 
