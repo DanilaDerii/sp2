@@ -151,7 +151,8 @@ literal tool call underneath for when you want to be exact.
 material in the question. "What are the goals in music therapy?" often gets
 answered from the model's general knowledge without ever searching your pack;
 "What does my course material say about music therapy goals?" reliably searches
-it. See *Known Limitations* at the end of this file.
+it. Answers that cite page numbers came from your pack; answers without them
+may not have.
 
 ### Build a pack from your course files
 
@@ -327,25 +328,3 @@ will answer from the model's own knowledge without ever touching your course
 material.
 
 ![The Integrations panel with mcp/lecture-sense-rag enabled, and a tool call in the chat](Documentation/screenshots/enable-tool-in-chat.jpg)
-
-## Known Limitations
-
-**The model decides whether to search your course material, and it does not
-always choose to.** SP2 gives LM Studio a retrieval tool, but LM Studio's chat
-decides when to call it. Measured on the default model at temperature 0:
-
-| Question | Searched the course pack |
-|---|---|
-| "What does my course material say about music therapy goals?" | 4 times out of 4 |
-| "How many course packs are loaded?" | 4 times out of 4 |
-| "What are the goals in music therapy?" | almost never |
-
-When it skips retrieval, it answers from general knowledge and **gives no sign
-that it did so**. One such answer invented specific-sounding statistics that
-appear nowhere in the course material. Until this is addressed, phrase
-questions so they mention your course material, and treat any answer without
-page citations as unverified.
-
-Strengthening the tool description and adding a strict system prompt were both
-tested as fixes; neither fully solved it. See
-`Documentation/Log/default_model_qwen3_instruct_changes.txt`.
