@@ -114,3 +114,31 @@ Known Limits
   description (mentioning that a pack_id name is accepted), not only on the
   resolution logic. Both ship together here, so their individual
   contributions were not separated.
+
+
+Follow-up: case-insensitive pack names (2026-09-15)
+-----------------------------------------------------
+The first pack built from files with capitals in the name exposed a gap.
+Pack ids are lowercased slugs, so a pack built from CSX4213_*.docx gets
+pack_id "csx4213" while its title stays "CSX4213". Asked "what does my
+CSX4213 course material say...", the model passed pack="CSX4213" - taken
+from the question - and the exact backend match returned nothing, so a
+correct tool call failed with a not-found error.
+
+This did not show up earlier because every pack until now had an
+already-lowercase name (music, ml).
+
+_resolve_pack now retries case-insensitively when the exact lookup finds
+nothing: it lists the packs and compares casefolded pack_ids. The exact
+match is still tried first, so the common path is unchanged and costs no
+extra request.
+
+Verified: CSX4213, csx4213, CsX4213 and " CSX4213 " all resolve to 4;
+MUSIC/music, ML/ml and 01-INTRODUCTION-TO-AI all resolve; numeric forms
+(1, "1", 4, "4") unchanged; not-a-pack, "", "0", "-3" and CSX9999 still
+rejected. End to end, the question that failed now returns the five
+topics from Lecture 10 with the source file cited.
+
+Still exact: a pack's title is not accepted, only its pack_id. Passing
+"01. Introduction to AI" rather than "01-introduction-to-ai" still fails,
+since that needs slug normalisation rather than case folding.

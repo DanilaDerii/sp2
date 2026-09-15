@@ -28,7 +28,24 @@ def _resolve_pack(pack: int | str, field_name: str) -> int:
 
     name = required_text(text, field_name)
     matches = request_backend_json("GET", "/packs", params={"pack_id": name})
-    if not isinstance(matches, list) or not matches:
+    if not isinstance(matches, list):
+        matches = []
+
+    if not matches:
+        # Pack ids are lowercase slugs derived from the filename, but a model
+        # naming the course from the question keeps the original capitalisation
+        # ("CSX4213" for pack_id "csx4213"). The backend match is exact, so
+        # retry case-insensitively before giving up.
+        folded = name.casefold()
+        all_packs = request_backend_json("GET", "/packs")
+        if isinstance(all_packs, list):
+            matches = [
+                pack_row
+                for pack_row in all_packs
+                if str(pack_row.get("pack_id", "")).casefold() == folded
+            ]
+
+    if not matches:
         raise ValueError(
             f"No installed pack matches {field_name}={name!r}. "
             "Call sp2_list_packs and use a listed id or pack_id."
