@@ -186,7 +186,11 @@ def register_student_tools(mcp: Any) -> None:
     def sp2_get_pack_summary_context(
         pack: int | str,
     ) -> dict[str, Any]:
-        """Return every chunk from an installed pack for LM Studio to summarize.
+        """Return an overview of an installed pack for LM Studio to summarize.
+
+        Returns only the opening chunks of each source file, not the full
+        content. For a specific question use sp2_get_course_context; for the
+        complete content of one file use sp2_get_file_summary_context.
 
         Args:
             pack: Local SP2 installed pack id returned by SP2 pack tools.
@@ -209,7 +213,7 @@ def register_student_tools(mcp: Any) -> None:
             "tool_role": "summary_context_only",
             "summary_scope": "pack",
             "final_answer_owner": "LM Studio",
-            "instruction": "Read every returned chunk and write the requested pack summary.",
+            "instruction": "These are the opening chunks of each file, not the full pack. Write an overview and say it is based on the start of each file.",
             "packet": packet,
         }
 

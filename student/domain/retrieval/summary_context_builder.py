@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from config.arguments import PACK_SUMMARY_CHUNKS_PER_SOURCE, SHORT_CHUNK_WORD_THRESHOLD
 from storage.cruds.lancedb.chunk_repository import (
     PackChunk,
     list_chunks_for_installed_pack,
@@ -98,11 +99,26 @@ def build_file_summary_context(
     )
 
 
+def _opening_chunks(source_chunks: list[PackChunk]) -> list[PackChunk]:
+    """Return the first substantive chunks of one source file.
+
+    Title pages are skipped by size rather than position: in a PDF the first
+    chunk is usually an 11-word title slide, but in a Word document it is the
+    lecture introduction, which is the most useful chunk of all.
+    """
+    substantive = [
+        chunk
+        for chunk in source_chunks
+        if len(chunk.text.split()) > SHORT_CHUNK_WORD_THRESHOLD
+    ]
+    return (substantive or source_chunks)[:PACK_SUMMARY_CHUNKS_PER_SOURCE]
+
+
 def build_pack_summary_context(
     *,
     installed_pack_id: int,
 ) -> SummaryContextPacket:
-    """Return every ordered chunk from every source in an installed pack."""
+    """Return an overview of an installed pack: the opening chunks of each source."""
     installed_pack = _get_active_installed_pack(installed_pack_id)
     pack_chunks = _ordered_pack_chunks(installed_pack.id)
     if not pack_chunks:
@@ -110,8 +126,17 @@ def build_pack_summary_context(
             f"No chunks found for installed pack: {installed_pack.id}"
         )
 
-    chunks = [_summary_chunk(chunk) for chunk in pack_chunks]
-    source_count = len({chunk.source_id for chunk in pack_chunks})
+    chunks_by_source: dict[str, list[PackChunk]] = {}
+    for chunk in pack_chunks:
+        chunks_by_source.setdefault(chunk.source_id, []).append(chunk)
+
+    chunks = [
+        _summary_chunk(chunk)
+        for source_chunks in chunks_by_source.values()
+        for chunk in _opening_chunks(source_chunks)
+    ]
+    source_count = len(chunks_by_source)
+    source_list = ", ".join(chunks_by_source)
     return SummaryContextPacket(
         mode="pack_summary_context",
         installed_pack_id=installed_pack.id,
@@ -122,7 +147,9 @@ def build_pack_summary_context(
         chunk_count=len(chunks),
         chunks=chunks,
         message=(
-            f"Returned all {len(chunks)} chunk(s) from {source_count} source file(s) "
-            "for LM Studio to summarize."
+            f"Overview only: returned the opening {len(chunks)} of {len(pack_chunks)} "
+            f"chunk(s) across {source_count} source file(s). For a specific question "
+            "use sp2_get_course_context; for the full content of one file use "
+            f"sp2_get_file_summary_context. Source files: {source_list}"
         ),
     )

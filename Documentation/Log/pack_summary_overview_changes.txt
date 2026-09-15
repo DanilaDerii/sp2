@@ -1,0 +1,91 @@
+Pack Summary Returns an Overview Instead of Every Chunk
+=========================================================
+
+Date: 2026-09-15
+Rule proposed by Dan; title-page handling adjusted after measuring real packs.
+
+
+The Problem
+-----------
+The first pack built from real course files (CSX4213, five Word lectures,
+42 chunks) could not answer "What does my CSX4213 course material say are
+the five major topics in computational photography?"
+
+The model did not call the search tool. It called sp2_list_packs, then
+sp2_get_pack_summary_context, which returned all 42 chunks. That response
+was 15,000-29,000 tokens against an 8192-token context. LM Studio rejected
+the request ("request (14564 tokens) exceeds the available context size"),
+then silently trimmed the conversation and retried at around 5,000 tokens.
+Lecture 10, which holds the answer, was lost in the trim, and the model
+answered confidently from Lectures 12-14 instead - listing depth estimation,
+3D reconstruction and image-based rendering as "the five topics".
+
+Rephrasing the question ("Search my course material: ...") did not help; the
+model chose the whole-pack summary both times. So the fix had to be in the
+tool, not in how students word questions.
+
+
+What Was Changed
+------------------
+config/arguments.py
+  PACK_SUMMARY_CHUNKS_PER_SOURCE = 2
+
+student/domain/retrieval/summary_context_builder.py
+  build_pack_summary_context now returns only the opening chunks of each
+  source file, via a new _opening_chunks helper.
+
+  Title pages are skipped by size, not by position. Dan's proposal was to
+  skip the first chunk to avoid title pages. Measuring the installed packs
+  showed that only works for PDFs:
+    music.pdf       chunk 1 = 11 words, title slide
+    ml.pdf          chunk 1 = 11 words, title slide
+    Lecture10.docx  chunk 1 = 172 words, the lecture introduction - and the
+                    chunk containing the five-topics answer
+  So chunks at or under SHORT_CHUNK_WORD_THRESHOLD (12) words are skipped,
+  reusing the existing chunk-selection threshold. If a file has only short
+  chunks, its first chunks are used anyway so every file is represented.
+
+  The packet message now says it is an overview and points the model at
+  sp2_get_course_context for questions and sp2_get_file_summary_context for
+  a full file, listing the source files.
+
+integrations/lm_studio_mcp/student_tools.py
+  sp2_get_pack_summary_context description and instruction updated to say
+  the result is the opening chunks of each file, not the full pack.
+
+build_file_summary_context is unchanged: summarizing one file still returns
+every chunk. All current single files fit (largest: ml.pdf, 42 chunks,
+~4,700 tokens).
+
+
+Measured Results
+------------------
+Pack summary size:
+  CSX4213  42 chunks, ~17,000 tokens  ->  10 chunks, ~4,400 tokens
+  music    15 chunks                  ->   2 chunks, title slide skipped
+  ml       42 chunks                  ->   2 chunks, title slide skipped
+
+The Lecture 10 five-topics list is included in the CSX4213 overview.
+
+End to end in LM Studio, fresh chat, same question: the model again chose
+sp2_list_packs then sp2_get_pack_summary_context, the request came to 5,642
+tokens with no context error and no trimming, and the answer listed all five
+topics correctly, attributed to Lecture 10.
+
+
+Known Limits
+--------------
+- An overview is size-bounded per file, not in total. At 2 chunks per file
+  and ~220 tokens per chunk, roughly 15+ files would approach the context
+  limit again. Lower PACK_SUMMARY_CHUNKS_PER_SOURCE to 1 if that happens.
+- A single-file pack's overview is 2 chunks. The model is told it is an
+  overview and where the full content is, but may still summarize from the
+  overview alone.
+- The underlying behaviour is unchanged: a small model will sometimes pick
+  a summary tool for a specific question. This change makes that choice
+  survivable, not less likely.
+- Related, but separate: on the development laptop the Intel Iris Xe GPU
+  hangs under Vulkan (i915 "GPU HANG", vk::ErrorDeviceLost), which unloads
+  the model and shows "This message contains no content". A mesa /
+  vulkan-intel / kernel update did not fix it; LM Studio is set to the CPU
+  runtime on that machine. Not an SP2 defect.

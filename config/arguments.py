@@ -36,6 +36,14 @@ SHORT_CHUNK_WORD_THRESHOLD = 12  # <=12 normalized words counts as "short"
 SHORT_CHUNK_RATIO = 0.5  # fraction of top_k that may be short chunks (floor 1)
 DUPLICATE_SIMILARITY_THRESHOLD = 0.85  # Jaccard threshold for near-duplicate text
 
+# Pack summaries
+# A whole-pack summary returns only the opening chunks of each source file, so
+# it stays inside the chat model's context window however many files a pack
+# holds. Returning every chunk overflowed an 8192-token context on a five-lecture
+# pack, and LM Studio silently dropped most of it. Chunks at or under
+# SHORT_CHUNK_WORD_THRESHOLD words (PDF title slides) are skipped.
+PACK_SUMMARY_CHUNKS_PER_SOURCE = 2
+
 # Embeddings
 DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
