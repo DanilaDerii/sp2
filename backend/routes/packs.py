@@ -18,7 +18,12 @@ from storage.cruds.sqlite.pack_repository import (
     get_installed_pack,
     list_installed_packs,
 )
-from storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
+from storage.importer.pack_importer import (
+    ImportedPack,
+    PackImportError,
+    import_pack_zip,
+    update_installed_pack_from_source,
+)
 from storage.importer.pack_validator import PackValidationError
 
 
@@ -151,6 +156,25 @@ def import_pack_from_path(request: ImportPackPathRequest) -> ImportedPackRespons
         ) from exc
     except (PackImportError, PackValidationError, ValueError) as exc:
         logger.warning("Failed to import pack from %s: %s", request.pack_zip_path, exc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return _imported_pack_response(imported_pack)
+
+
+@router.post("/{installed_pack_id}/update", response_model=ImportedPackResponse)
+def update_pack(installed_pack_id: int) -> ImportedPackResponse:
+    """Re-import an installed pack from wherever it was last imported from.
+
+    No path required: this looks for the newest matching export next to
+    the file this pack was originally imported from.
+    """
+    try:
+        imported_pack = update_installed_pack_from_source(installed_pack_id)
+    except (PackImportError, PackValidationError, ValueError) as exc:
+        logger.warning("Failed to auto-update pack %s: %s", installed_pack_id, exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),

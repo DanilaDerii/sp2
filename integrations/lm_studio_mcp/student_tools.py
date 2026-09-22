@@ -277,6 +277,46 @@ def register_student_tools(mcp: Any) -> None:
         }
 
     @mcp.tool()
+    def sp2_update_pack(pack: int | str) -> dict[str, Any]:
+        """Update an installed SP2 course pack - no file path needed.
+
+        Looks for the newest exported zip next to wherever this pack was
+        last imported from (every teacher/student has a different folder
+        layout, so this is learned from their own prior import, not
+        assumed) and re-imports it in place. Use this when a student asks
+        to update/refresh a course pack without giving a path.
+
+        If this fails (e.g. the pack was never imported with a path, or no
+        newer export can be found in that folder), fall back to
+        sp2_import_pack_from_path with an explicit path.
+
+        Args:
+            pack: Local SP2 installed pack id returned by SP2 pack tools
+                (e.g. 1). Also accepts a numeric string ("1") or the
+                logical pack_id string shown by sp2_list_packs ("music").
+        """
+        resolved_installed_pack_id = _resolve_pack(pack, "pack")
+
+        imported_pack = request_backend_json(
+            "POST", f"/packs/{resolved_installed_pack_id}/update"
+        )
+        if not isinstance(imported_pack, dict):
+            raise RuntimeError("SP2 backend API /packs/{id}/update response was not an object")
+
+        new_installed_pack_id = (imported_pack.get("installed_pack") or {}).get("id")
+        replaced_installed_pack_ids = imported_pack.get("replaced_installed_pack_ids") or []
+
+        return {
+            "mode": "pack_updated",
+            "imported_pack": imported_pack,
+            "message": (
+                f"Found a newer export automatically and updated the pack. "
+                f"New installed pack id: {new_installed_pack_id}. "
+                f"Replaced previous install(s): {replaced_installed_pack_ids}."
+            ),
+        }
+
+    @mcp.tool()
     def sp2_delete_pack(pack: int | str) -> dict[str, Any]:
         """Delete one installed SP2 course pack by local installed pack id.
 

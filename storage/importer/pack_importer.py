@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import shutil
 import uuid
@@ -22,6 +23,7 @@ from storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     create_installed_pack,
     delete_installed_pack,
+    get_installed_pack,
     list_installed_packs,
 )
 from storage.installed_pack_manager import uninstall_pack
@@ -37,6 +39,10 @@ INSTALLED_PACKS_DIR = STORAGE_DIR / "installed_packs"
 
 class PackImportError(RuntimeError):
     """Raised when a pack zip cannot be imported into student storage."""
+
+
+class PackUpdateSourceNotFoundError(PackImportError):
+    """Raised when an installed pack has no usable source to update from."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +108,37 @@ def _extract_pack_zip(zip_path: Path, destination: Path) -> None:
                     shutil.copyfileobj(source, target)
     except BadZipFile as exc:
         raise PackValidationError(f"Invalid zip file: {zip_path}") from exc
+
+
+def _peek_pack_id(zip_path: Path) -> str | None:
+    """Read pack_id out of a zip's pack.json without extracting it.
+
+    Used to find a matching re-export among unrelated zips (other
+    courses, stray downloads) sitting in the same folder. Returns None
+    for anything that isn't a readable SP2 pack zip.
+    """
+    try:
+        with ZipFile(zip_path) as zip_file:
+            with zip_file.open("pack.json") as pack_json_file:
+                return json.load(pack_json_file).get("pack_id")
+    except (AttributeError, BadZipFile, KeyError, OSError, ValueError):
+        return None
+
+
+def find_latest_matching_zip(source_dir: Path, pack_id: str) -> Path | None:
+    """Return the most recently modified zip in source_dir with this pack_id."""
+    if not source_dir.is_dir():
+        return None
+
+    matches = [
+        candidate
+        for candidate in source_dir.glob("*.zip")
+        if candidate.is_file() and _peek_pack_id(candidate) == pack_id
+    ]
+    if not matches:
+        return None
+
+    return max(matches, key=lambda candidate: candidate.stat().st_mtime)
 
 
 def _pack_chunks_from_validated_pack(validated_pack, installed_pack_id: int) -> list[PackChunk]:
@@ -192,6 +229,7 @@ def import_pack_zip(
             builder_version=metadata.builder_version,
             pack_created_at=metadata.created_at,
             install_path=str(final_install_dir),
+            source_zip_path=str(zip_path),
         )
 
         pack_chunks = _pack_chunks_from_validated_pack(validated_pack, installed_pack.id)
@@ -234,6 +272,35 @@ def import_pack_zip(
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
         raise
+
+
+def update_installed_pack_from_source(installed_pack_id: int) -> ImportedPack:
+    """Re-import an installed pack from wherever it was last imported from.
+
+    Looks for the most recently modified zip sharing this pack's pack_id in
+    the same directory as its last import, so a student or teacher can say
+    "update my pack" without retyping a file path. Every user's export
+    folder looks different, so this is learned from their own prior import
+    rather than assumed.
+    """
+    installed_pack = get_installed_pack(installed_pack_id)
+    if installed_pack is None:
+        raise PackUpdateSourceNotFoundError(f"Installed pack not found: {installed_pack_id}")
+    if not installed_pack.source_zip_path:
+        raise PackUpdateSourceNotFoundError(
+            f"Installed pack {installed_pack_id} has no recorded source path "
+            "to update from. Import it once with an explicit pack_zip_path."
+        )
+
+    source_dir = Path(installed_pack.source_zip_path).parent
+    latest_zip = find_latest_matching_zip(source_dir, installed_pack.pack_id)
+    if latest_zip is None:
+        raise PackUpdateSourceNotFoundError(
+            f"No pack zip for pack_id={installed_pack.pack_id!r} found in "
+            f"{source_dir}. Provide an explicit pack_zip_path to update it."
+        )
+
+    return import_pack_zip(latest_zip)
 
 
 def _build_parser() -> argparse.ArgumentParser:

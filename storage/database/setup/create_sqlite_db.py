@@ -37,6 +37,16 @@ def create_sqlite_db() -> None:
             """
         )
 
+        # Older databases predate source_zip_path - add it if missing rather
+        # than requiring a full migration tool for one nullable column.
+        existing_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(installed_packs)")
+        }
+        if "source_zip_path" not in existing_columns:
+            connection.execute(
+                "ALTER TABLE installed_packs ADD COLUMN source_zip_path TEXT"
+            )
+
     connection.close()
     print(f"SQLite database created at: {SQLITE_DB_PATH}")
 

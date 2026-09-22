@@ -9,9 +9,14 @@ from backend.routes.ingest import router as ingest_router
 from backend.routes.packs import router as packs_router
 from backend.routes.retrieval import router as retrieval_router
 from backend.routes.summaries import router as summaries_router
+from storage.database.setup.create_sqlite_db import create_sqlite_db
 
 
 logging.basicConfig(level=logging.WARNING)
+
+# Runs schema creation/migration once at startup, so a request never races
+# an on-disk database that predates a newer column (e.g. source_zip_path).
+create_sqlite_db()
 
 app = FastAPI(title="SP2 Backend API")
 app.include_router(health_router)

@@ -26,6 +26,7 @@ class InstalledPack:
     install_path: str
     installed_at: str
     is_active: bool
+    source_zip_path: str | None
 
 
 def _utc_now_iso() -> str:
@@ -47,6 +48,7 @@ def _row_to_installed_pack(row: sqlite3.Row) -> InstalledPack:
         install_path=row["install_path"],
         installed_at=row["installed_at"],
         is_active=bool(row["is_active"]),
+        source_zip_path=row["source_zip_path"],
     )
 
 
@@ -70,6 +72,7 @@ def create_installed_pack(
     install_path: str,
     installed_at: str | None = None,
     is_active: bool = True,
+    source_zip_path: str | None = None,
     connection: sqlite3.Connection | None = None,
 ) -> InstalledPack:
     """Create one installed pack row and return it."""
@@ -90,9 +93,10 @@ def create_installed_pack(
                     pack_created_at,
                     install_path,
                     installed_at,
-                    is_active
+                    is_active,
+                    source_zip_path
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     pack_id,
@@ -107,6 +111,7 @@ def create_installed_pack(
                     install_path,
                     installed_at or _utc_now_iso(),
                     int(is_active),
+                    source_zip_path,
                 ),
             )
             installed_pack_id = int(cursor.lastrowid)
