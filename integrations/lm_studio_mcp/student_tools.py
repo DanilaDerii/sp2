@@ -221,6 +221,10 @@ def register_student_tools(mcp: Any) -> None:
     def sp2_import_pack_from_path(pack_zip_path: str) -> dict[str, Any]:
         """Import a teacher-exported SP2 pack zip from a local filesystem path.
 
+        If a pack with the same logical pack_id is already installed, this
+        updates it in place (the previous install is replaced) instead of
+        failing - there's no separate "update" tool or delete-first step.
+
         Args:
             pack_zip_path: Absolute or user-expanded path to a teacher-exported .zip pack.
         """
@@ -233,6 +237,17 @@ def register_student_tools(mcp: Any) -> None:
         )
         if not isinstance(imported_pack, dict):
             raise RuntimeError("SP2 backend API /packs/import-path response was not an object")
+
+        replaced_installed_pack_ids = imported_pack.get("replaced_installed_pack_ids") or []
+        if replaced_installed_pack_ids:
+            return {
+                "mode": "pack_updated",
+                "imported_pack": imported_pack,
+                "message": (
+                    "This pack was already installed, so it was updated in place. "
+                    f"Replaced previous install(s): {replaced_installed_pack_ids}."
+                ),
+            }
 
         return {
             "mode": "pack_imported",

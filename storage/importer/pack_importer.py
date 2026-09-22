@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import shutil
 import uuid
 from dataclasses import dataclass
@@ -21,10 +22,14 @@ from storage.cruds.sqlite.pack_repository import (
     InstalledPack,
     create_installed_pack,
     delete_installed_pack,
+    list_installed_packs,
 )
+from storage.installed_pack_manager import uninstall_pack
 
 from .pack_validator import PackValidationError, validate_pack_directory
 
+
+logger = logging.getLogger(__name__)
 
 STORAGE_DIR = Path(__file__).resolve().parents[1]
 INSTALLED_PACKS_DIR = STORAGE_DIR / "installed_packs"
@@ -41,6 +46,7 @@ class ImportedPack:
     installed_pack: InstalledPack
     chunk_count: int
     install_path: str
+    replaced_installed_pack_ids: list[int]
 
 
 def _safe_name(value: str) -> str:
@@ -149,18 +155,32 @@ def import_pack_zip(
         validated_pack = validate_pack_directory(temp_dir)
         metadata = validated_pack.metadata
 
+        create_sqlite_db()
+        previous_installs = list_installed_packs(pack_id=metadata.pack_id)
+
         final_install_dir = root / _safe_name(f"{metadata.pack_id}-{metadata.version}")
         if final_install_dir.exists():
-            raise PackImportError(
-                "Pack install directory already exists. "
-                f"Duplicate/update handling is not implemented yet: {final_install_dir}"
+            colliding_install = next(
+                (
+                    previous_install
+                    for previous_install in previous_installs
+                    if Path(previous_install.install_path).resolve() == final_install_dir.resolve()
+                ),
+                None,
+            )
+            if colliding_install is None:
+                raise PackImportError(f"Pack install directory already exists: {final_install_dir}")
+            # Re-importing the same pack_id/version (e.g. a teacher fixing a
+            # typo and regenerating): install into a staging directory so the
+            # previous install stays intact until the new one fully succeeds.
+            final_install_dir = root / _safe_name(
+                f"{metadata.pack_id}-{metadata.version}-{uuid.uuid4().hex[:8]}"
             )
 
         temp_dir.rename(final_install_dir)
         validated_pack = validate_pack_directory(final_install_dir)
         metadata = validated_pack.metadata
 
-        create_sqlite_db()
         installed_pack = create_installed_pack(
             pack_id=metadata.pack_id,
             title=metadata.title,
@@ -181,8 +201,27 @@ def import_pack_zip(
                 f"Inserted {inserted_count} LanceDB rows for {len(pack_chunks)} chunks"
             )
 
+        # The new pack is fully installed and searchable - only now is it
+        # safe to remove whatever this pack_id previously pointed to. A
+        # failure here must not roll back the new pack we just committed to,
+        # so it's isolated from the outer except block below.
+        replaced_installed_pack_ids: list[int] = []
+        for previous_install in previous_installs:
+            try:
+                uninstall_pack(previous_install.id)
+            except Exception:
+                logger.warning(
+                    "Failed to remove superseded pack %s after updating pack_id %s",
+                    previous_install.id,
+                    metadata.pack_id,
+                    exc_info=True,
+                )
+            else:
+                replaced_installed_pack_ids.append(previous_install.id)
+
         return ImportedPack(
             installed_pack=installed_pack,
+            replaced_installed_pack_ids=replaced_installed_pack_ids,
             chunk_count=count_chunks_for_installed_pack(installed_pack.id),
             install_path=str(final_install_dir),
         )
@@ -213,6 +252,8 @@ def main() -> None:
     print(f"version: {imported_pack.installed_pack.version}")
     print(f"chunks: {imported_pack.chunk_count}")
     print(f"install_path: {imported_pack.install_path}")
+    if imported_pack.replaced_installed_pack_ids:
+        print(f"replaced_installed_pack_ids: {imported_pack.replaced_installed_pack_ids}")
 
 
 if __name__ == "__main__":

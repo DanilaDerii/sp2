@@ -57,6 +57,7 @@ class ImportedPackResponse(BaseModel):
     installed_pack: InstalledPackResponse
     chunk_count: int
     install_path: str
+    replaced_installed_pack_ids: list[int]
 
 
 class DeletedInstalledPackResponse(BaseModel):
@@ -91,6 +92,7 @@ def _imported_pack_response(imported_pack: ImportedPack) -> ImportedPackResponse
         installed_pack=_installed_pack_response(imported_pack.installed_pack),
         chunk_count=imported_pack.chunk_count,
         install_path=imported_pack.install_path,
+        replaced_installed_pack_ids=imported_pack.replaced_installed_pack_ids,
     )
 
 
