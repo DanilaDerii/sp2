@@ -1,5 +1,7 @@
 """Unified FastAPI entrypoint for the SP2 backend."""
 
+import logging
+
 from fastapi import FastAPI
 
 from backend.routes.health import router as health_router
@@ -8,6 +10,8 @@ from backend.routes.packs import router as packs_router
 from backend.routes.retrieval import router as retrieval_router
 from backend.routes.summaries import router as summaries_router
 
+
+logging.basicConfig(level=logging.WARNING)
 
 app = FastAPI(title="SP2 Backend API")
 app.include_router(health_router)

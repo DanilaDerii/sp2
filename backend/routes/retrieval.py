@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
@@ -16,6 +17,8 @@ from student.domain.retrieval.embedding_model import EmbeddingModelError
 from student.domain.retrieval.models import CourseContextPacket, RetrievedChunk
 from student.domain.retrieval.query_embedder import QueryEmbeddingError
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/retrieval", tags=["retrieval"])
 
@@ -99,13 +102,28 @@ def get_course_context(request: CourseContextRequest) -> CourseContextResponse:
         status_code = status.HTTP_404_NOT_FOUND
         if "not active" in str(exc):
             status_code = status.HTTP_400_BAD_REQUEST
+        logger.warning(
+            "Course context build failed for pack %s: %s",
+            request.installed_pack_id,
+            exc,
+        )
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     except (EmbeddingModelError, ChunkSearchError, ValueError) as exc:
+        logger.warning(
+            "Course context request rejected for pack %s: %s",
+            request.installed_pack_id,
+            exc,
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
     except QueryEmbeddingError as exc:
+        logger.error(
+            "Query embedding failed for pack %s: %s",
+            request.installed_pack_id,
+            exc,
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),

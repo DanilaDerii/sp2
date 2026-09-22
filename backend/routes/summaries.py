@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, status
@@ -15,6 +16,8 @@ from student.domain.retrieval.summary_context_builder import (
     build_pack_summary_context,
 )
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/summaries", tags=["summaries"])
 
@@ -92,10 +95,12 @@ def _summary_context_response(
 
 def _summary_context_http_error(exc: SummaryContextError) -> HTTPException:
     if isinstance(exc, SummaryContextNotFoundError):
+        logger.warning("Summary context not found: %s", exc)
         return HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         )
+    logger.warning("Summary context request rejected: %s", exc)
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=str(exc),

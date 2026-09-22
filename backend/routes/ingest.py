@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -9,6 +11,8 @@ from teacher.domain.orchestrators.bundle_parsing import build_pack_from_path
 from teacher.domain.rag.common.embedder import EmbeddingRequestError
 from teacher.domain.rag.common.models import TeacherPipelineResult
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -55,21 +59,25 @@ def ingest_file_path(request: IngestFilePathRequest) -> TeacherIngestResponse:
     try:
         result = build_pack_from_path(request.file_path)
     except FileNotFoundError as exc:
+        logger.warning("Ingest source not found at %s: %s", request.file_path, exc)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
     except ValueError as exc:
+        logger.warning("Ingest rejected for %s: %s", request.file_path, exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
     except EmbeddingRequestError as exc:
+        logger.error("Embedding request failed for %s: %s", request.file_path, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
     except RuntimeError as exc:
+        logger.exception("Unexpected ingest failure for %s", request.file_path)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(exc),

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -19,6 +21,8 @@ from storage.cruds.sqlite.pack_repository import (
 from storage.importer.pack_importer import ImportedPack, PackImportError, import_pack_zip
 from storage.importer.pack_validator import PackValidationError
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/packs", tags=["packs"])
 
@@ -138,11 +142,13 @@ def import_pack_from_path(request: ImportPackPathRequest) -> ImportedPackRespons
     try:
         imported_pack = import_pack_zip(request.pack_zip_path)
     except FileNotFoundError as exc:
+        logger.warning("Pack zip not found at %s: %s", request.pack_zip_path, exc)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
     except (PackImportError, PackValidationError, ValueError) as exc:
+        logger.warning("Failed to import pack from %s: %s", request.pack_zip_path, exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
@@ -162,6 +168,7 @@ def delete_pack(installed_pack_id: int) -> DeletedInstalledPackResponse:
             detail=str(exc),
         ) from exc
     except PackUninstallError as exc:
+        logger.warning("Failed to uninstall pack %s: %s", installed_pack_id, exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
