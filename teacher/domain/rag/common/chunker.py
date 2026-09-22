@@ -34,10 +34,10 @@ def _split_text(text: str, chunk_size: int, overlap: int) -> list[str]:
             break
         next_start = max(end - overlap, 0)
         if next_start > 0 and normalized[next_start - 1] != " ":
-            next_space = normalized.find(" ", next_start)
-            if next_space == -1:
-                break
-            next_start = next_space + 1
+            next_space = normalized.find(" ", next_start, end)
+            next_start = next_space + 1 if next_space != -1 else end
+        if next_start <= start:
+            next_start = end
 
         start = next_start
 
