@@ -72,6 +72,31 @@ def _pack_summary(pack_row: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in summary.items() if value is not None}
 
 
+def _import_result(imported_pack: dict[str, Any]) -> dict[str, Any]:
+    """Shape an ImportedPack API response for whichever tool produced it.
+
+    Both sp2_import_pack_from_path and sp2_import_pack_by_name can land on
+    a pack_id that's already installed, which the backend updates in place
+    rather than erroring - surface that distinctly so LM Studio doesn't
+    call an update a fresh import.
+    """
+    replaced_installed_pack_ids = imported_pack.get("replaced_installed_pack_ids") or []
+    if replaced_installed_pack_ids:
+        return {
+            "mode": "pack_updated",
+            "imported_pack": imported_pack,
+            "message": (
+                "This pack was already installed, so it was updated in place. "
+                f"Replaced previous install(s): {replaced_installed_pack_ids}."
+            ),
+        }
+
+    return {
+        "mode": "pack_imported",
+        "imported_pack": imported_pack,
+    }
+
+
 def register_student_tools(mcp: Any) -> None:
     """Register student runtime tools on a FastMCP server."""
 
@@ -240,6 +265,65 @@ def register_student_tools(mcp: Any) -> None:
         }
 
     @mcp.tool()
+    def sp2_get_default_pack_source_dir() -> dict[str, Any]:
+        """Return the folder SP2 currently scans for course pack zips by name.
+
+        None means no default has been set yet - use
+        sp2_set_default_pack_source_dir before sp2_import_pack_by_name
+        will work.
+        """
+        setting = request_backend_json("GET", "/settings/default-pack-source-dir")
+        if not isinstance(setting, dict):
+            raise RuntimeError(
+                "SP2 backend API /settings/default-pack-source-dir response was not an object"
+            )
+
+        path = setting.get("path")
+        return {
+            "mode": "default_pack_source_dir",
+            "path": path,
+            "message": (
+                f"Default pack source directory: {path}."
+                if path
+                else "No default pack source directory is set yet. "
+                "Use sp2_set_default_pack_source_dir to set one."
+            ),
+        }
+
+    @mcp.tool()
+    def sp2_set_default_pack_source_dir(path: str) -> dict[str, Any]:
+        """Set the folder SP2 scans for course pack zips by name.
+
+        Once set, sp2_import_pack_by_name can import "the music pack"
+        without a file path, by scanning this folder for a matching zip.
+        Every teacher/student keeps exports in a different place, so this
+        has to be set explicitly - there's no default to guess.
+
+        Args:
+            path: Absolute or user-expanded path to an existing folder.
+        """
+        normalized_path = required_text(path, "path")
+
+        setting = request_backend_json(
+            "POST",
+            "/settings/default-pack-source-dir",
+            json_body={"path": normalized_path},
+        )
+        if not isinstance(setting, dict):
+            raise RuntimeError(
+                "SP2 backend API /settings/default-pack-source-dir response was not an object"
+            )
+
+        return {
+            "mode": "default_pack_source_dir_set",
+            "path": setting.get("path"),
+            "message": (
+                f"Default pack source directory set to {setting.get('path')}. "
+                "sp2_import_pack_by_name will look here from now on."
+            ),
+        }
+
+    @mcp.tool()
     def sp2_import_pack_from_path(pack_zip_path: str) -> dict[str, Any]:
         """Import a teacher-exported SP2 pack zip from a local filesystem path.
 
@@ -260,21 +344,32 @@ def register_student_tools(mcp: Any) -> None:
         if not isinstance(imported_pack, dict):
             raise RuntimeError("SP2 backend API /packs/import-path response was not an object")
 
-        replaced_installed_pack_ids = imported_pack.get("replaced_installed_pack_ids") or []
-        if replaced_installed_pack_ids:
-            return {
-                "mode": "pack_updated",
-                "imported_pack": imported_pack,
-                "message": (
-                    "This pack was already installed, so it was updated in place. "
-                    f"Replaced previous install(s): {replaced_installed_pack_ids}."
-                ),
-            }
+        return _import_result(imported_pack)
 
-        return {
-            "mode": "pack_imported",
-            "imported_pack": imported_pack,
-        }
+    @mcp.tool()
+    def sp2_import_pack_by_name(pack_name: str) -> dict[str, Any]:
+        """Import a course pack by name - no file path needed.
+
+        Scans the folder set with sp2_set_default_pack_source_dir for a zip
+        whose own pack_id matches pack_name, so a student can say "import
+        the music pack" once a default folder is configured. If no default
+        folder is set yet, or nothing in it matches, fall back to
+        sp2_import_pack_from_path with an explicit path.
+
+        Args:
+            pack_name: The course name to import, e.g. "music" or "csx4213".
+        """
+        normalized_pack_name = required_text(pack_name, "pack_name")
+
+        imported_pack = request_backend_json(
+            "POST",
+            "/packs/import-by-name",
+            json_body={"pack_name": normalized_pack_name},
+        )
+        if not isinstance(imported_pack, dict):
+            raise RuntimeError("SP2 backend API /packs/import-by-name response was not an object")
+
+        return _import_result(imported_pack)
 
     @mcp.tool()
     def sp2_update_pack(pack: int | str) -> dict[str, Any]:
@@ -291,9 +386,8 @@ def register_student_tools(mcp: Any) -> None:
         sp2_import_pack_from_path with an explicit path.
 
         Args:
-            pack: Local SP2 installed pack id returned by SP2 pack tools
-                (e.g. 1). Also accepts a numeric string ("1") or the
-                logical pack_id string shown by sp2_list_packs ("music").
+            pack: The pack name shown by sp2_list_packs (e.g. "music").
+                The internal installed_pack_id number is also accepted.
         """
         resolved_installed_pack_id = _resolve_pack(pack, "pack")
 

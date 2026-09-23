@@ -21,6 +21,7 @@ from storage.cruds.sqlite.pack_repository import (
 from storage.importer.pack_importer import (
     ImportedPack,
     PackImportError,
+    import_pack_from_default_source,
     import_pack_zip,
     update_installed_pack_from_source,
 )
@@ -54,6 +55,12 @@ class ImportPackPathRequest(BaseModel):
     """Request body for importing a local teacher pack zip by path."""
 
     pack_zip_path: str = Field(..., min_length=1)
+
+
+class ImportPackByNameRequest(BaseModel):
+    """Request body for importing a pack by name from the default source dir."""
+
+    pack_name: str = Field(..., min_length=1)
 
 
 class ImportedPackResponse(BaseModel):
@@ -156,6 +163,25 @@ def import_pack_from_path(request: ImportPackPathRequest) -> ImportedPackRespons
         ) from exc
     except (PackImportError, PackValidationError, ValueError) as exc:
         logger.warning("Failed to import pack from %s: %s", request.pack_zip_path, exc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return _imported_pack_response(imported_pack)
+
+
+@router.post(
+    "/import-by-name",
+    response_model=ImportedPackResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def import_pack_by_name(request: ImportPackByNameRequest) -> ImportedPackResponse:
+    """Import a pack by name from the configured default source directory."""
+    try:
+        imported_pack = import_pack_from_default_source(request.pack_name)
+    except (PackImportError, PackValidationError, ValueError) as exc:
+        logger.warning("Failed to import pack by name %r: %s", request.pack_name, exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),

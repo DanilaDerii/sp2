@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
-from config.arguments import REQUIRED_PACK_FILES
+from config.arguments import DEFAULT_PACK_SOURCE_DIR_SETTING_KEY, REQUIRED_PACK_FILES
 from storage.database.setup.create_sqlite_db import create_sqlite_db
 from storage.cruds.lancedb.chunk_repository import (
     PackChunk,
@@ -26,6 +26,7 @@ from storage.cruds.sqlite.pack_repository import (
     get_installed_pack,
     list_installed_packs,
 )
+from storage.cruds.sqlite.settings_repository import get_setting
 from storage.installed_pack_manager import uninstall_pack
 
 from .pack_validator import PackValidationError, validate_pack_directory
@@ -43,6 +44,10 @@ class PackImportError(RuntimeError):
 
 class PackUpdateSourceNotFoundError(PackImportError):
     """Raised when an installed pack has no usable source to update from."""
+
+
+class PackSourceNotFoundError(PackImportError):
+    """Raised when a pack zip cannot be located automatically by name."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,20 +130,43 @@ def _peek_pack_id(zip_path: Path) -> str | None:
         return None
 
 
+def _zip_candidates(source_dir: Path) -> list[tuple[Path, str]]:
+    """List (zip_path, pack_id) for every readable pack zip in source_dir."""
+    if not source_dir.is_dir():
+        return []
+
+    return [
+        (candidate, pack_id)
+        for candidate in source_dir.glob("*.zip")
+        if candidate.is_file() and (pack_id := _peek_pack_id(candidate)) is not None
+    ]
+
+
+def _newest(paths: list[Path]) -> Path | None:
+    return max(paths, key=lambda path: path.stat().st_mtime) if paths else None
+
+
 def find_latest_matching_zip(source_dir: Path, pack_id: str) -> Path | None:
     """Return the most recently modified zip in source_dir with this pack_id."""
-    if not source_dir.is_dir():
-        return None
+    matches = [path for path, candidate_id in _zip_candidates(source_dir) if candidate_id == pack_id]
+    return _newest(matches)
 
-    matches = [
-        candidate
-        for candidate in source_dir.glob("*.zip")
-        if candidate.is_file() and _peek_pack_id(candidate) == pack_id
-    ]
-    if not matches:
-        return None
 
-    return max(matches, key=lambda candidate: candidate.stat().st_mtime)
+def find_pack_zip_by_name(source_dir: Path, pack_name: str) -> Path | None:
+    """Return the most recently modified zip in source_dir matching pack_name.
+
+    Matches by exact pack_id first, falling back to a case-insensitive
+    match - pack ids are lowercase slugs, but a student naming a course
+    from memory may give it back with different capitalisation.
+    """
+    candidates = _zip_candidates(source_dir)
+
+    exact_match = _newest([path for path, pack_id in candidates if pack_id == pack_name])
+    if exact_match is not None:
+        return exact_match
+
+    folded_name = pack_name.casefold()
+    return _newest([path for path, pack_id in candidates if pack_id.casefold() == folded_name])
 
 
 def _pack_chunks_from_validated_pack(validated_pack, installed_pack_id: int) -> list[PackChunk]:
@@ -301,6 +329,32 @@ def update_installed_pack_from_source(installed_pack_id: int) -> ImportedPack:
         )
 
     return import_pack_zip(latest_zip)
+
+
+def import_pack_from_default_source(pack_name: str) -> ImportedPack:
+    """Import a pack by name from the configured default source directory.
+
+    Lets a student say "import test pack" with no file path, once a default
+    directory has been set with sp2_set_default_pack_source_dir. Matches the
+    newest zip in that directory whose own pack_id matches pack_name, so
+    other courses' zips sitting in the same folder are ignored.
+    """
+    default_dir = get_setting(DEFAULT_PACK_SOURCE_DIR_SETTING_KEY)
+    if not default_dir:
+        raise PackSourceNotFoundError(
+            "No default pack source directory is set. Set one with "
+            "sp2_set_default_pack_source_dir, or import with an explicit "
+            "pack_zip_path."
+        )
+
+    matched_zip = find_pack_zip_by_name(Path(default_dir), pack_name)
+    if matched_zip is None:
+        raise PackSourceNotFoundError(
+            f"No pack zip matching {pack_name!r} found in {default_dir}. "
+            "Provide an explicit pack_zip_path to import it."
+        )
+
+    return import_pack_zip(matched_zip)
 
 
 def _build_parser() -> argparse.ArgumentParser:

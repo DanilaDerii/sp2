@@ -70,3 +70,6 @@ DEFAULT_LLM_MODEL_DOWNLOAD = (
 # Teacher ingestion and pack export
 DEFAULT_BUILDER_VERSION = "v1-prototype"
 REQUIRED_PACK_FILES = ("pack.json", "chunks.json", "vectors.npy")
+
+# Settings
+DEFAULT_PACK_SOURCE_DIR_SETTING_KEY = "default_pack_source_dir"

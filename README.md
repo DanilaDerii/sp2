@@ -191,13 +191,17 @@ Use absolute paths. Windows paths are supported.
 
 ## MCP Tool Reference
 
-SP2 registers eight tools. All of them appear in LM Studio under
+SP2 registers 12 tools. All of them appear in LM Studio under
 `mcp/lecture-sense-rag`.
 
 | Tool | What it does | Arguments |
 |---|---|---|
 | `sp2_ingest_file_from_path` | Build a pack from a file or folder, and install it | `file_path` |
+| `sp2_get_default_pack_source_dir` | Show the folder SP2 currently scans for packs by name | none |
+| `sp2_set_default_pack_source_dir` | Set the folder SP2 scans for packs by name | `path` |
 | `sp2_import_pack_from_path` | Install a pack ZIP built elsewhere | `pack_zip_path` |
+| `sp2_import_pack_by_name` | Install a pack by name from the default source folder, no path needed | `pack_name` |
+| `sp2_update_pack` | Re-install a pack from wherever it was last imported from, no path needed | `pack` |
 | `sp2_list_packs` | List installed packs | `pack_id`, `active_only` (both optional) |
 | `sp2_get_pack` | Show details for one pack | `installed_pack_id` |
 | `sp2_get_course_context` | Search a pack and return the most relevant chunks | `pack`, `question` |
@@ -209,6 +213,11 @@ SP2 registers eight tools. All of them appear in LM Studio under
 from `sp2_list_packs` or the pack's name, so `1`, `"1"`, and `"music"` all
 work. The one exception is `sp2_delete_pack`, which requires the number on
 purpose: a deletion should never be ambiguous about which pack it removes.
+
+`sp2_import_pack_by_name`'s `pack_name` is different: there's no installed
+pack yet, so it isn't looked up against `sp2_list_packs`. Instead it's
+matched against the `pack_id` stored inside each ZIP sitting in your default
+pack folder.
 
 ## Talking to SP2
 
@@ -239,6 +248,36 @@ is saved to `<sp2-repository>/artifacts/<pack-id>.zip`, and the response
 includes the exact `zip_path`. Copy that ZIP to another device to share the
 pack.
 
+### Set a default pack folder
+
+> Always look for my course packs in /home/me/Downloads
+
+<details><summary>Explicit form</summary>
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_set_default_pack_source_dir with:
+path: /absolute/path/to/a/folder
+```
+</details>
+
+This is a one-time setup step. Once set, `sp2_import_pack_by_name` can find a
+pack in that folder by name alone, so you don't have to give a full file path
+every time. Every teacher and student keeps their exports in a different
+place, so there's no default to guess - you have to set this yourself.
+
+To check what it's currently set to:
+
+> What's my default pack folder set to?
+
+<details><summary>Explicit form</summary>
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_get_default_pack_source_dir with no arguments.
+```
+</details>
+
 ### Install a pack somebody sent you
 
 > Import the course pack at /home/me/Downloads/psych101.zip
@@ -251,6 +290,43 @@ Call sp2_import_pack_from_path with:
 pack_zip_path: /absolute/path/to/course-pack.zip
 ```
 </details>
+
+### Install a pack by name
+
+> Import my psych101 pack
+
+<details><summary>Explicit form</summary>
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_import_pack_by_name with:
+pack_name: psych101
+```
+</details>
+
+Needs a default folder to already be set (see above). SP2 scans that folder
+for a ZIP whose own `pack_id` matches the name you gave - matched exactly
+first, then case-insensitively - and imports it. If nothing matches, or no
+default folder is set yet, it tells you to use
+`sp2_import_pack_from_path` with an explicit path instead.
+
+### Update a pack with new content
+
+> Update my psych101 pack
+
+<details><summary>Explicit form</summary>
+
+```text
+Use mcp/lecture-sense-rag.
+Call sp2_update_pack with:
+pack: psych101
+```
+</details>
+
+No path needed here either: SP2 remembers where each pack was imported from
+and looks there for a newer export sharing the same `pack_id`, then installs
+it in place of the old one. This is how you refresh a pack after
+regenerating it - no manual delete step required.
 
 ### See what is installed
 
