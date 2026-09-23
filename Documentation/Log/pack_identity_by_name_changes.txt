@@ -1,0 +1,86 @@
+Packs Are Identified by Name, Not by Database Id
+==================================================
+
+Date: 2026-09-23
+
+
+The Feedback
+------------
+From the instructor trying the system:
+
+  "Another small point is that the pack number continues from the previous
+   history. For example, if packs 2 and 3 are deleted and only pack 1
+   remains, the next new pack will still be number 4. This was a little
+   unexpected from a user's perspective."
+
+Correct, and by design at the storage layer. installed_packs.id is
+INTEGER PRIMARY KEY AUTOINCREMENT, so SQLite records the highest id ever
+used in sqlite_sequence and never reuses one. Deleting packs leaves
+permanent gaps: with four packs installed the next is 5, and after
+deleting two the remaining packs read 1, 4, 5.
+
+
+Why the Ids Were Not Renumbered
+---------------------------------
+Dropping AUTOINCREMENT would make SQLite reuse the lowest free id, which
+looks tidier and is worse. LanceDB chunks are keyed by installed_pack_id.
+If a deleted pack left any chunks behind, a new pack reusing that id
+would silently inherit them, and a student would get answers from a
+course they had removed. Confusing numbering is a presentation problem;
+that would be a correctness one.
+
+The real fault was presentation: SP2 showed an internal database key as
+though it were the pack's number or position in a list.
+
+
+What Was Changed
+------------------
+integrations/lm_studio_mcp/student_tools.py
+  New _pack_summary() presents one installed pack name-first: pack,
+  title, version, is_active, installed_at, then installed_pack_id last.
+
+  sp2_list_packs returns those summaries instead of raw backend rows, plus
+  a note stating that packs are referred to by name and that
+  installed_pack_id is an internal key with gaps that does not indicate
+  position or order.
+
+  Docstrings for sp2_list_packs, sp2_get_pack and sp2_get_course_context
+  now lead with the pack name and describe the number as internal.
+
+  sp2_delete_pack still requires the number, deliberately: a deletion must
+  name exactly one install even when several share a name. Its docstring
+  now says where to find that number.
+
+integrations/lm_studio_mcp/teacher_tools.py
+  Ingest response leads with the name: "Course pack 'csx4213' is ready.
+  Use pack=\"csx4213\" for retrieval." The "pack" field carries the name
+  rather than the id, which _resolve_pack already accepts.
+
+
+Verified
+----------
+Direct tool calls: get_pack by name and by number, get_course_context by
+name (5 chunks, top hit Lecture 10), pack summary with "CSX4213"
+(case-insensitive path intact), delete by name still refused.
+
+End to end in LM Studio, "What course packs do I have?", the model called
+sp2_list_packs and answered:
+
+  CSX4213 (Version v1) - Active
+  ml (Version v1) - Active
+  01. Introduction to AI (Version v1) - Active
+  music (Version v1) - Active
+
+No id numbers appeared in the answer, so there were no gaps to explain.
+
+
+Known Limits
+--------------
+- The gaps still exist in the database; they are simply no longer shown.
+  Anyone reading SQLite directly, or using sp2_delete_pack, still sees
+  them.
+- Deleting still requires the number, so that one flow exposes the ids.
+- The remaining points from the same feedback are untouched: image and
+  scanned-page content is still silently skipped (no OCR anywhere), and
+  editing or deleting a message mid-conversation is LM Studio chat
+  behaviour, not something SP2 controls.

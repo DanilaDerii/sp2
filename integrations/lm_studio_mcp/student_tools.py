@@ -58,6 +58,26 @@ def _resolve_pack(pack: int | str, field_name: str) -> int:
     return positive_int(chosen["id"], field_name)
 
 
+def _pack_summary(pack_row: dict[str, Any]) -> dict[str, Any]:
+    """Present one installed pack name-first.
+
+    The numeric id is a SQLite AUTOINCREMENT key, kept because deletions must
+    name exactly one install and because LanceDB chunks are keyed by it. It is
+    never reused, so after deleting packs the remaining numbers have gaps -
+    which reads like a bug when the id is shown as though it were the pack's
+    position. Leading with the name avoids that.
+    """
+    summary = {
+        "pack": pack_row.get("pack_id"),
+        "title": pack_row.get("title"),
+        "version": pack_row.get("version"),
+        "is_active": pack_row.get("is_active"),
+        "installed_at": pack_row.get("installed_at"),
+        "installed_pack_id": pack_row.get("id"),
+    }
+    return {key: value for key, value in summary.items() if value is not None}
+
+
 def register_student_tools(mcp: Any) -> None:
     """Register student runtime tools on a FastMCP server."""
 
@@ -65,8 +85,12 @@ def register_student_tools(mcp: Any) -> None:
     def sp2_list_packs(pack_id: str | None = None, active_only: bool = False) -> dict[str, Any]:
         """List course packs installed in the local SP2 student runtime.
 
+        Each pack is identified by name (e.g. "csx4213"). Use that name for
+        the other tools. installed_pack_id is an internal key with gaps; do
+        not present it to the student as a pack number.
+
         Args:
-            pack_id: Optional logical pack id filter.
+            pack_id: Optional pack name filter.
             active_only: When true, only return active installed packs.
         """
         params = without_none_values(
@@ -82,17 +106,22 @@ def register_student_tools(mcp: Any) -> None:
         return {
             "mode": "installed_packs",
             "count": len(packs),
-            "packs": packs,
+            "packs": [_pack_summary(pack_row) for pack_row in packs],
+            "note": (
+                "Refer to packs by name (the pack field). installed_pack_id is an "
+                "internal database key: it is never reused, so the numbers have gaps "
+                "after a pack is deleted and do not indicate position or order."
+            ),
         }
 
     @mcp.tool()
     def sp2_get_pack(installed_pack_id: int | str) -> dict[str, Any]:
-        """Return one installed course pack by local SP2 installed pack id.
+        """Return one installed course pack.
 
         Args:
-            installed_pack_id: Local SQLite installed_packs.id value (e.g. 1).
-                Also accepts a numeric string ("1") or the logical pack_id
-                string shown by sp2_list_packs (e.g. "music").
+            installed_pack_id: The pack name shown by sp2_list_packs
+                (e.g. "music"). The internal installed_pack_id number is
+                also accepted, as an int or a numeric string.
         """
         resolved_installed_pack_id = _resolve_pack(installed_pack_id, "installed_pack_id")
 
@@ -115,9 +144,8 @@ def register_student_tools(mcp: Any) -> None:
         """Return course-pack retrieval context for one student question.
 
         Args:
-            pack: Local SP2 installed pack id returned by SP2 pack tools
-                (e.g. 1). Also accepts a numeric string ("1") or the
-                logical pack_id string shown by sp2_list_packs ("music").
+            pack: The pack name shown by sp2_list_packs (e.g. "music").
+                The internal installed_pack_id number is also accepted.
             question: Student question to retrieve course context for.
         """
         resolved_installed_pack_id = _resolve_pack(pack, "pack")
@@ -259,10 +287,11 @@ def register_student_tools(mcp: Any) -> None:
         """Delete one installed SP2 course pack by local installed pack id.
 
         Args:
-            pack: Local SP2 installed pack id, as a number or numeric
-                string. Unlike the read-only tools this does NOT accept a
-                pack_id name, so a deletion always names exactly one
-                installed pack.
+            pack: The internal installed_pack_id number shown by
+                sp2_list_packs, as a number or numeric string. Unlike the
+                read-only tools this does NOT accept a pack name, so a
+                deletion always names exactly one installed pack even when
+                several installs share a name.
         """
         resolved_installed_pack_id = positive_int(pack, "pack")
 

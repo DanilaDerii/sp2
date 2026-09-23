@@ -74,13 +74,13 @@ def register_teacher_tools(mcp: Any) -> None:
             "sp2_tool": "sp2_ingest_file_from_path",
             "mode": "course_pack_ready",
             "message": (
-                "Course pack is ready. "
-                f"Use pack={installed_pack_id} for retrieval."
+                f"Course pack {pack_id!r} is ready. "
+                f'Use pack="{pack_id}" for retrieval.'
             ),
-            "pack": installed_pack_id,
-            "installed_pack_id": installed_pack_id,
+            "pack": pack_id,
             "pack_id": pack_id,
             "title": title,
+            "installed_pack_id": installed_pack_id,
             "chunk_count": chunk_count,
             "zip_path": zip_path,
             "install_path": imported_pack.get("install_path"),
