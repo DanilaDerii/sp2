@@ -16,45 +16,39 @@ from integrations.lm_studio_mcp.validators import (
 def _resolve_pack(pack: int | str, field_name: str) -> int:
     """Resolve a pack argument to a local installed pack id.
 
-    Accepts the numeric installed pack id, and also the logical pack_id
-    string (e.g. "music"). Models routinely reach for the latter, because
-    sp2_list_packs returns both `id` and `pack_id` and the parameter is
-    named "pack" - so accepting only the number turns a reasonable guess
-    into a dead end.
+    Accepts the installed pack id and the pack name, the latter matched
+    case-insensitively: pack ids are lowercase slugs, but a model naming the
+    course from the question keeps the original capitalisation ("CSX4213"
+    for "csx4213"). Both are checked against what is actually installed, so
+    a model that skipped sp2_list_packs and guessed gets a message naming
+    the real packs rather than a bare 404.
     """
     text = str(pack).strip()
+    installed = request_backend_json("GET", "/packs")
+    if not isinstance(installed, list):
+        installed = []
+
     if text.lstrip("+-").isdigit():
-        return positive_int(text, field_name)
-
-    name = required_text(text, field_name)
-    matches = request_backend_json("GET", "/packs", params={"pack_id": name})
-    if not isinstance(matches, list):
-        matches = []
-
-    if not matches:
-        # Pack ids are lowercase slugs derived from the filename, but a model
-        # naming the course from the question keeps the original capitalisation
-        # ("CSX4213" for pack_id "csx4213"). The backend match is exact, so
-        # retry case-insensitively before giving up.
-        folded = name.casefold()
-        all_packs = request_backend_json("GET", "/packs")
-        if isinstance(all_packs, list):
-            matches = [
-                pack_row
-                for pack_row in all_packs
-                if str(pack_row.get("pack_id", "")).casefold() == folded
-            ]
+        wanted_id = positive_int(text, field_name)
+        matches = [row for row in installed if row.get("id") == wanted_id]
+    else:
+        wanted_name = required_text(text, field_name).casefold()
+        matches = [
+            row for row in installed
+            if str(row.get("pack_id", "")).casefold() == wanted_name
+        ]
 
     if not matches:
+        names = ", ".join(sorted(str(row.get("pack_id")) for row in installed))
         raise ValueError(
-            f"No installed pack matches {field_name}={name!r}. "
-            "Call sp2_list_packs and use a listed id or pack_id."
+            f"No installed pack matches {field_name}={text!r}. "
+            f"Installed packs: {names or 'none'}. Call sp2_list_packs for details."
         )
 
     # Several installs can share one pack_id (e.g. re-imported versions).
     # Prefer an active pack, then the most recently installed.
-    active = [pack_row for pack_row in matches if pack_row.get("is_active")]
-    chosen = max(active or matches, key=lambda pack_row: int(pack_row.get("id", 0)))
+    active = [row for row in matches if row.get("is_active")]
+    chosen = max(active or matches, key=lambda row: int(row.get("id", 0)))
     return positive_int(chosen["id"], field_name)
 
 
