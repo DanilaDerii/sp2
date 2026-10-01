@@ -59,6 +59,40 @@ def _summary_chunk(chunk: PackChunk) -> SummaryContextChunk:
     )
 
 
+def _resolve_source_id(pack_chunks: list[PackChunk], source_id: str) -> str:
+    """Resolve a requested source id without discarding its stored casing.
+
+    Exact matches remain preferred so packs containing filenames that differ
+    only by case or whitespace are still addressable. A case- and
+    whitespace-insensitive request is accepted only when it identifies one
+    stored source unambiguously.
+    """
+    available_sources = {chunk.source_id for chunk in pack_chunks}
+    if source_id in available_sources:
+        return source_id
+
+    normalized_source_id = "".join(source_id.casefold().split())
+    normalized_matches = sorted(
+        stored_source_id
+        for stored_source_id in available_sources
+        if "".join(stored_source_id.casefold().split()) == normalized_source_id
+    )
+    if len(normalized_matches) == 1:
+        return normalized_matches[0]
+    if len(normalized_matches) > 1:
+        matches_text = ", ".join(normalized_matches)
+        raise SummaryContextError(
+            f"Source reference is ambiguous: {source_id}. "
+            f"Matching source_id values: {matches_text}"
+        )
+
+    available_text = ", ".join(sorted(available_sources)) or "none"
+    raise SummaryContextNotFoundError(
+        f"Source not found in installed pack: {source_id}. "
+        f"Available source_id values: {available_text}"
+    )
+
+
 def build_file_summary_context(
     *,
     installed_pack_id: int,
@@ -71,16 +105,10 @@ def build_file_summary_context(
         raise SummaryContextError("source_id must not be empty")
 
     pack_chunks = _ordered_pack_chunks(installed_pack.id)
+    resolved_source_id = _resolve_source_id(pack_chunks, normalized_source_id)
     source_chunks = [
-        chunk for chunk in pack_chunks if chunk.source_id == normalized_source_id
+        chunk for chunk in pack_chunks if chunk.source_id == resolved_source_id
     ]
-    if not source_chunks:
-        available_sources = sorted({chunk.source_id for chunk in pack_chunks})
-        available_text = ", ".join(available_sources) or "none"
-        raise SummaryContextNotFoundError(
-            f"Source not found in installed pack: {normalized_source_id}. "
-            f"Available source_id values: {available_text}"
-        )
 
     chunks = [_summary_chunk(chunk) for chunk in source_chunks]
     return SummaryContextPacket(
@@ -88,13 +116,13 @@ def build_file_summary_context(
         installed_pack_id=installed_pack.id,
         pack_id=installed_pack.pack_id,
         pack_title=installed_pack.title,
-        source_id=normalized_source_id,
+        source_id=resolved_source_id,
         source_count=1,
         chunk_count=len(chunks),
         chunks=chunks,
         message=(
             f"Returned all {len(chunks)} chunk(s) from source "
-            f"{normalized_source_id!r} for LM Studio to summarize."
+            f"{resolved_source_id!r} for LM Studio to summarize."
         ),
     )
 

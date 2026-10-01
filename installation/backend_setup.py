@@ -1,21 +1,15 @@
-"""Start the SP2 backend and print its reusable start command."""
+"""Build and print the command used to start the SP2 backend."""
 
 from __future__ import annotations
 
 import os
 import shlex
 import subprocess
-import time
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
 
 from config.arguments import DEFAULT_SP2_BACKEND_BASE_URL, REPO_ROOT
-from installation.setup_helpers import SetupError, _command_text, _ok, _print_step
-
-
-BACKEND_WAIT_SECONDS = 30
+from installation.setup_helpers import _print_step
 
 
 def _backend_address() -> tuple[str, int]:
@@ -35,68 +29,6 @@ def _backend_command(python_path: Path) -> list[str]:
         "--port",
         str(backend_port),
     ]
-
-
-def _backend_is_ready() -> bool:
-    health_url = f"{DEFAULT_SP2_BACKEND_BASE_URL.rstrip('/')}/health"
-    request = Request(health_url, method="GET")
-    try:
-        with urlopen(request, timeout=2) as response:
-            return 200 <= response.status < 300
-    except (HTTPError, URLError, OSError):
-        return False
-
-
-def _start_backend(python_path: Path) -> bool:
-    _print_step("Starting the SP2 backend")
-    if _backend_is_ready():
-        _ok(f"SP2 backend is already running at {DEFAULT_SP2_BACKEND_BASE_URL}")
-        return False
-
-    process_options: dict[str, object] = {
-        "cwd": REPO_ROOT,
-        "stdin": subprocess.DEVNULL,
-        "stdout": subprocess.DEVNULL,
-        "stderr": subprocess.DEVNULL,
-        "close_fds": True,
-    }
-    if os.name == "nt":
-        process_options["creationflags"] = (
-            subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-        )
-    else:
-        process_options["start_new_session"] = True
-
-    command = _backend_command(python_path)
-    try:
-        process = subprocess.Popen(
-            command,
-            **process_options,
-        )
-    except OSError as exc:
-        raise SetupError(f"Could not start the SP2 backend: {exc}") from exc
-
-    deadline = time.monotonic() + BACKEND_WAIT_SECONDS
-    while time.monotonic() < deadline:
-        if _backend_is_ready():
-            _ok(
-                f"SP2 backend is running at {DEFAULT_SP2_BACKEND_BASE_URL} "
-                f"(process {process.pid})"
-            )
-            return True
-        exit_code = process.poll()
-        if exit_code is not None:
-            raise SetupError(
-                "SP2 backend stopped during startup with exit code "
-                f"{exit_code}. Run this command from {REPO_ROOT} to see its error: "
-                f"{_command_text(command)}"
-            )
-        time.sleep(1)
-
-    process.terminate()
-    raise SetupError(
-        f"SP2 backend did not become ready within {BACKEND_WAIT_SECONDS} seconds"
-    )
 
 
 def _powershell_quote(value: str) -> str:
@@ -120,10 +52,10 @@ def _print_backend_command(python_path: Path) -> None:
     print(shlex.join(command))
 
 
-def _print_future_backend_command(python_path: Path) -> None:
-    _print_step("Backend command for future starts")
-    print("The backend is running now.")
-    print("After a restart, use these commands to start it again:")
+def _print_backend_start_command(python_path: Path) -> None:
+    _print_step("Start the backend")
+    print("Setup does not start the backend automatically.")
+    print("Run these commands in a terminal when you are ready:")
     print()
     _print_backend_command(python_path)
     print()

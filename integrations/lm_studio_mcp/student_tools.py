@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from config.arguments import COURSE_ANSWER_GUIDANCE
-from integrations.lm_studio_mcp.client import request_backend_json
+from integrations.backend_api import request_backend_json
 from integrations.lm_studio_mcp.validators import (
     positive_int,
     required_text,
@@ -13,15 +13,27 @@ from integrations.lm_studio_mcp.validators import (
 )
 
 
+_SOURCE_FILE_SUFFIXES = (".pdf", ".odt", ".docx", ".pptx")
+
+
+def _pack_title_reference(value: object) -> str:
+    """Normalize a pack title or single-source filename for comparison."""
+    reference = str(value).strip().replace("\\", "/").rsplit("/", 1)[-1]
+    folded_reference = reference.casefold()
+    for suffix in _SOURCE_FILE_SUFFIXES:
+        if folded_reference.endswith(suffix):
+            reference = reference[: -len(suffix)]
+            break
+    return "".join(reference.casefold().split())
+
+
 def _resolve_pack(pack: int | str, field_name: str) -> int:
     """Resolve a pack argument to a local installed pack id.
 
-    Accepts the installed pack id and the pack name, the latter matched
-    case-insensitively: pack ids are lowercase slugs, but a model naming the
-    course from the question keeps the original capitalisation ("CSX4213"
-    for "csx4213"). Both are checked against what is actually installed, so
-    a model that skipped sp2_list_packs and guessed gets a message naming
-    the real packs rather than a bare 404.
+    Accepts the installed pack id, logical pack_id, displayed title, or the
+    original filename for a single-file pack. Text matches are
+    case- and whitespace-insensitive, and an optional supported source
+    extension is ignored for title matching.
     """
     text = str(pack).strip()
     installed = request_backend_json("GET", "/packs")
@@ -32,14 +44,55 @@ def _resolve_pack(pack: int | str, field_name: str) -> int:
         wanted_id = positive_int(text, field_name)
         matches = [row for row in installed if row.get("id") == wanted_id]
     else:
-        wanted_name = required_text(text, field_name).casefold()
-        matches = [
+        wanted_text = required_text(text, field_name)
+        exact_matches = [
             row for row in installed
-            if str(row.get("pack_id", "")).casefold() == wanted_name
+            if str(row.get("pack_id", "")) == wanted_text
         ]
+        wanted_name = "".join(wanted_text.casefold().split())
+        matches = exact_matches or [
+            row for row in installed
+            if "".join(str(row.get("pack_id", "")).casefold().split()) == wanted_name
+        ]
+        if not matches:
+            exact_title_matches = [
+                row for row in installed
+                if str(row.get("title", "")) == wanted_text
+            ]
+            matches = exact_title_matches or [
+                row for row in installed
+                if "".join(str(row.get("title", "")).casefold().split()) == wanted_name
+            ]
+        if not matches:
+            wanted_title = _pack_title_reference(text)
+            matches = [
+                row for row in installed
+                if _pack_title_reference(row.get("title", "")) == wanted_title
+            ]
+
+        matched_pack_ids = {
+            "".join(str(row.get("pack_id", "")).casefold().split())
+            for row in matches
+        }
+        if len(matched_pack_ids) > 1:
+            choices = ", ".join(
+                sorted(
+                    f"{row.get('pack_id')} ({row.get('title')})"
+                    for row in matches
+                )
+            )
+            raise ValueError(
+                f"More than one installed pack matches {field_name}={text!r}: "
+                f"{choices}. Use the pack name from sp2_list_packs."
+            )
 
     if not matches:
-        names = ", ".join(sorted(str(row.get("pack_id")) for row in installed))
+        names = ", ".join(
+            sorted(
+                f"{row.get('pack_id')} ({row.get('title')})"
+                for row in installed
+            )
+        )
         raise ValueError(
             f"No installed pack matches {field_name}={text!r}. "
             f"Installed packs: {names or 'none'}. Call sp2_list_packs for details."
@@ -53,48 +106,21 @@ def _resolve_pack(pack: int | str, field_name: str) -> int:
 
 
 def _pack_summary(pack_row: dict[str, Any]) -> dict[str, Any]:
-    """Present one installed pack name-first.
+    """Present one installed pack with both stable and local identifiers.
 
     The numeric id is a SQLite AUTOINCREMENT key, kept because deletions must
     name exactly one install and because LanceDB chunks are keyed by it. It is
-    never reused, so after deleting packs the remaining numbers have gaps -
-    which reads like a bug when the id is shown as though it were the pack's
-    position. Leading with the name avoids that.
+    never reused, so after deleting packs the remaining numbers can have gaps.
     """
     summary = {
-        "pack": pack_row.get("pack_id"),
+        "pack_id": pack_row.get("pack_id"),
+        "installed_pack_id": pack_row.get("id"),
         "title": pack_row.get("title"),
         "version": pack_row.get("version"),
         "is_active": pack_row.get("is_active"),
         "installed_at": pack_row.get("installed_at"),
-        "installed_pack_id": pack_row.get("id"),
     }
     return {key: value for key, value in summary.items() if value is not None}
-
-
-def _import_result(imported_pack: dict[str, Any]) -> dict[str, Any]:
-    """Shape an ImportedPack API response for whichever tool produced it.
-
-    Both sp2_import_pack_from_path and sp2_import_pack_by_name can land on
-    a pack_id that's already installed, which the backend updates in place
-    rather than erroring - surface that distinctly so LM Studio doesn't
-    call an update a fresh import.
-    """
-    replaced_installed_pack_ids = imported_pack.get("replaced_installed_pack_ids") or []
-    if replaced_installed_pack_ids:
-        return {
-            "mode": "pack_updated",
-            "imported_pack": imported_pack,
-            "message": (
-                "This pack was already installed, so it was updated in place. "
-                f"Replaced previous install(s): {replaced_installed_pack_ids}."
-            ),
-        }
-
-    return {
-        "mode": "pack_imported",
-        "imported_pack": imported_pack,
-    }
 
 
 def register_student_tools(mcp: Any) -> None:
@@ -104,55 +130,62 @@ def register_student_tools(mcp: Any) -> None:
     def sp2_list_packs(pack_id: str | None = None, active_only: bool = False) -> dict[str, Any]:
         """List course packs installed in the local SP2 student runtime.
 
-        Each pack is identified by name (e.g. "csx4213"). Use that name for
-        the other tools. installed_pack_id is an internal key with gaps; do
-        not present it to the student as a pack number.
+        Each result includes both pack_id (the logical name) and
+        installed_pack_id (the local numeric id). Always show both identifiers
+        to the student so either can be used in a later question. Other tools
+        also accept the displayed title and, for single-file packs, the
+        original filename.
 
         Args:
-            pack_id: Optional pack name filter.
+            pack_id: Optional pack name or title filter. Matching ignores case
+                and whitespace.
             active_only: When true, only return active installed packs.
         """
         params = without_none_values(
             {
-                "pack_id": pack_id,
                 "active_only": active_only,
             }
         )
         packs = request_backend_json("GET", "/packs", params=params)
         if not isinstance(packs, list):
             raise RuntimeError("SP2 backend API /packs response was not a list")
+        if pack_id is not None:
+            wanted = required_text(pack_id, "pack_id")
+            wanted_key = "".join(wanted.casefold().split())
+            exact_matches = [
+                row
+                for row in packs
+                if str(row.get("pack_id", "")) == wanted
+                or str(row.get("title", "")) == wanted
+            ]
+            packs = exact_matches or [
+                row
+                for row in packs
+                if "".join(str(row.get("pack_id", "")).casefold().split()) == wanted_key
+                or _pack_title_reference(row.get("title", ""))
+                == _pack_title_reference(wanted)
+            ]
 
         return {
             "mode": "installed_packs",
             "count": len(packs),
             "packs": [_pack_summary(pack_row) for pack_row in packs],
-            "note": (
-                "Refer to packs by name (the pack field). installed_pack_id is an "
-                "internal database key: it is never reused, so the numbers have gaps "
-                "after a pack is deleted and do not indicate position or order."
+            "presentation_instruction": (
+                "Show pack_id, installed_pack_id, and title for every pack in your "
+                "answer. The student may use either identifier in later questions."
             ),
-        }
-
-    @mcp.tool()
-    def sp2_get_pack(installed_pack_id: int | str) -> dict[str, Any]:
-        """Return one installed course pack.
-
-        Args:
-            installed_pack_id: The pack name shown by sp2_list_packs
-                (e.g. "music"). The internal installed_pack_id number is
-                also accepted, as an int or a numeric string.
-        """
-        resolved_installed_pack_id = _resolve_pack(installed_pack_id, "installed_pack_id")
-
-        pack = request_backend_json("GET", f"/packs/{resolved_installed_pack_id}")
-        if not isinstance(pack, dict):
-            raise RuntimeError(
-                "SP2 backend API /packs/{installed_pack_id} response was not an object"
-            )
-
-        return {
-            "mode": "installed_pack",
-            "pack": pack,
+            "reference_note": (
+                "A pack can be referenced by pack_id, installed_pack_id, displayed "
+                "title, or the original filename for a single-file pack. Numeric "
+                "installed_pack_id values can have gaps and do not indicate list order. "
+                "Text references ignore capitalization and whitespace. Deletion is "
+                "the exception: sp2_delete_pack requires installed_pack_id."
+            ),
+            "question_hint": (
+                "The student can ask naturally, for example: 'Use pack Week02 - "
+                "Unit Testing and explain dynamic unit testing.' Automatically call "
+                "sp2_get_course_context; do not ask for function-call syntax."
+            ),
         }
 
     @mcp.tool()
@@ -160,12 +193,23 @@ def register_student_tools(mcp: Any) -> None:
         pack: int | str,
         question: str,
     ) -> dict[str, Any]:
-        """Return course-pack retrieval context for one student question.
+        """Answer a normal-language question using one installed course pack.
+
+        Explicit calls with pack and question arguments remain supported. When
+        that syntax is omitted, call this tool automatically whenever the user
+        names or references an installed pack and asks a factual, explanatory,
+        or study question about it. Extract the pack reference and the complete
+        question from their prose.
+
+        Examples that should call this tool:
+        - "Use pack Week02 - Unit Testing and explain dynamic unit testing."
+        - "From week02-unit-testing, what is mutation testing?"
+        - "Ask pack 7 to compare static and dynamic unit testing."
 
         Args:
-            pack: The pack name shown by sp2_list_packs (e.g. "music").
-                The internal installed_pack_id number is also accepted.
-            question: Student question to retrieve course context for.
+            pack: Pack name, displayed title, or a single-file pack's original
+                filename. The internal installed_pack_id is also accepted.
+            question: The user's complete course question in ordinary language.
         """
         resolved_installed_pack_id = _resolve_pack(pack, "pack")
         normalized_question = required_text(
@@ -200,9 +244,11 @@ def register_student_tools(mcp: Any) -> None:
         """Return every chunk from one source file for LM Studio to summarize.
 
         Args:
-            pack: Local SP2 installed pack id returned by SP2 pack tools.
-                Also accepts a numeric string or logical pack_id name.
-            source_id: Exact source_id stored for the file inside the pack.
+            pack: Pack name, displayed title, or a single-file pack's original
+                filename. The internal installed_pack_id is also accepted.
+            source_id: Source_id stored for the file inside the pack. Matching
+                ignores case and whitespace when it identifies one file
+                unambiguously.
         """
         resolved_installed_pack_id = _resolve_pack(pack, "pack")
         normalized_source_id = required_text(source_id, "source_id")
@@ -240,8 +286,8 @@ def register_student_tools(mcp: Any) -> None:
         complete content of one file use sp2_get_file_summary_context.
 
         Args:
-            pack: Local SP2 installed pack id returned by SP2 pack tools.
-                Also accepts a numeric string or logical pack_id name.
+            pack: Pack name, displayed title, or a single-file pack's original
+                filename. The internal installed_pack_id is also accepted.
         """
         resolved_installed_pack_id = _resolve_pack(pack, "pack")
 
@@ -265,163 +311,16 @@ def register_student_tools(mcp: Any) -> None:
         }
 
     @mcp.tool()
-    def sp2_get_default_pack_source_dir() -> dict[str, Any]:
-        """Return the folder SP2 currently scans for course pack zips by name.
-
-        None means no default has been set yet - use
-        sp2_set_default_pack_source_dir before sp2_import_pack_by_name
-        will work.
-        """
-        setting = request_backend_json("GET", "/settings/default-pack-source-dir")
-        if not isinstance(setting, dict):
-            raise RuntimeError(
-                "SP2 backend API /settings/default-pack-source-dir response was not an object"
-            )
-
-        path = setting.get("path")
-        return {
-            "mode": "default_pack_source_dir",
-            "path": path,
-            "message": (
-                f"Default pack source directory: {path}."
-                if path
-                else "No default pack source directory is set yet. "
-                "Use sp2_set_default_pack_source_dir to set one."
-            ),
-        }
-
-    @mcp.tool()
-    def sp2_set_default_pack_source_dir(path: str) -> dict[str, Any]:
-        """Set the folder SP2 scans for course pack zips by name.
-
-        Once set, sp2_import_pack_by_name can import "the music pack"
-        without a file path, by scanning this folder for a matching zip.
-        Every teacher/student keeps exports in a different place, so this
-        has to be set explicitly - there's no default to guess.
+    def sp2_delete_pack(installed_pack_id: int | str) -> dict[str, Any]:
+        """Delete one installed SP2 course pack by its exact database id.
 
         Args:
-            path: Absolute or user-expanded path to an existing folder.
+            installed_pack_id: Positive numeric id shown by sp2_list_packs.
         """
-        normalized_path = required_text(path, "path")
-
-        setting = request_backend_json(
-            "POST",
-            "/settings/default-pack-source-dir",
-            json_body={"path": normalized_path},
+        resolved_installed_pack_id = positive_int(
+            installed_pack_id,
+            "installed_pack_id",
         )
-        if not isinstance(setting, dict):
-            raise RuntimeError(
-                "SP2 backend API /settings/default-pack-source-dir response was not an object"
-            )
-
-        return {
-            "mode": "default_pack_source_dir_set",
-            "path": setting.get("path"),
-            "message": (
-                f"Default pack source directory set to {setting.get('path')}. "
-                "sp2_import_pack_by_name will look here from now on."
-            ),
-        }
-
-    @mcp.tool()
-    def sp2_import_pack_from_path(pack_zip_path: str) -> dict[str, Any]:
-        """Import a teacher-exported SP2 pack zip from a local filesystem path.
-
-        If a pack with the same logical pack_id is already installed, this
-        updates it in place (the previous install is replaced) instead of
-        failing - there's no separate "update" tool or delete-first step.
-
-        Args:
-            pack_zip_path: Absolute or user-expanded path to a teacher-exported .zip pack.
-        """
-        normalized_path = required_text(pack_zip_path, "pack_zip_path")
-
-        imported_pack = request_backend_json(
-            "POST",
-            "/packs/import-path",
-            json_body={"pack_zip_path": normalized_path},
-        )
-        if not isinstance(imported_pack, dict):
-            raise RuntimeError("SP2 backend API /packs/import-path response was not an object")
-
-        return _import_result(imported_pack)
-
-    @mcp.tool()
-    def sp2_import_pack_by_name(pack_name: str) -> dict[str, Any]:
-        """Import a course pack by name - no file path needed.
-
-        Scans the folder set with sp2_set_default_pack_source_dir for a zip
-        whose own pack_id matches pack_name, so a student can say "import
-        the music pack" once a default folder is configured. If no default
-        folder is set yet, or nothing in it matches, fall back to
-        sp2_import_pack_from_path with an explicit path.
-
-        Args:
-            pack_name: The course name to import, e.g. "music" or "csx4213".
-        """
-        normalized_pack_name = required_text(pack_name, "pack_name")
-
-        imported_pack = request_backend_json(
-            "POST",
-            "/packs/import-by-name",
-            json_body={"pack_name": normalized_pack_name},
-        )
-        if not isinstance(imported_pack, dict):
-            raise RuntimeError("SP2 backend API /packs/import-by-name response was not an object")
-
-        return _import_result(imported_pack)
-
-    @mcp.tool()
-    def sp2_update_pack(pack: int | str) -> dict[str, Any]:
-        """Update an installed SP2 course pack - no file path needed.
-
-        Looks for the newest exported zip next to wherever this pack was
-        last imported from (every teacher/student has a different folder
-        layout, so this is learned from their own prior import, not
-        assumed) and re-imports it in place. Use this when a student asks
-        to update/refresh a course pack without giving a path.
-
-        If this fails (e.g. the pack was never imported with a path, or no
-        newer export can be found in that folder), fall back to
-        sp2_import_pack_from_path with an explicit path.
-
-        Args:
-            pack: The pack name shown by sp2_list_packs (e.g. "music").
-                The internal installed_pack_id number is also accepted.
-        """
-        resolved_installed_pack_id = _resolve_pack(pack, "pack")
-
-        imported_pack = request_backend_json(
-            "POST", f"/packs/{resolved_installed_pack_id}/update"
-        )
-        if not isinstance(imported_pack, dict):
-            raise RuntimeError("SP2 backend API /packs/{id}/update response was not an object")
-
-        new_installed_pack_id = (imported_pack.get("installed_pack") or {}).get("id")
-        replaced_installed_pack_ids = imported_pack.get("replaced_installed_pack_ids") or []
-
-        return {
-            "mode": "pack_updated",
-            "imported_pack": imported_pack,
-            "message": (
-                f"Found a newer export automatically and updated the pack. "
-                f"New installed pack id: {new_installed_pack_id}. "
-                f"Replaced previous install(s): {replaced_installed_pack_ids}."
-            ),
-        }
-
-    @mcp.tool()
-    def sp2_delete_pack(pack: int | str) -> dict[str, Any]:
-        """Delete one installed SP2 course pack by local installed pack id.
-
-        Args:
-            pack: The internal installed_pack_id number shown by
-                sp2_list_packs, as a number or numeric string. Unlike the
-                read-only tools this does NOT accept a pack name, so a
-                deletion always names exactly one installed pack even when
-                several installs share a name.
-        """
-        resolved_installed_pack_id = positive_int(pack, "pack")
 
         deleted_pack = request_backend_json("DELETE", f"/packs/{resolved_installed_pack_id}")
         if not isinstance(deleted_pack, dict):
@@ -429,5 +328,6 @@ def register_student_tools(mcp: Any) -> None:
 
         return {
             "mode": "pack_deleted",
+            "resolved_installed_pack_id": resolved_installed_pack_id,
             "deleted_pack": deleted_pack,
         }

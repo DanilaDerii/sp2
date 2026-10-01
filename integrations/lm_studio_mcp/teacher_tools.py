@@ -4,87 +4,48 @@ from __future__ import annotations
 
 from typing import Any
 
-from integrations.lm_studio_mcp.client import request_backend_json
+from integrations.backend_api import request_backend_json
 from integrations.lm_studio_mcp.validators import required_text
 
 
 def register_teacher_tools(mcp: Any) -> None:
-    """Register teacher workflow tools on a FastMCP server."""
+    """Register the single course installation tool."""
 
     @mcp.tool()
-    def sp2_ingest_file_from_path(file_path: str) -> dict[str, Any]:
-        """Build and install one pack from a supported file or directory tree.
+    def sp2_ingest_source(source_path: str) -> dict[str, Any]:
+        """Build or install a course from one local path.
+
+        The backend decides what to do with the path. A PDF, ODT, DOCX, PPTX,
+        or directory is built into a pack and installed. An SP2 ZIP pack is
+        installed directly.
 
         Args:
-            file_path: Absolute or user-expanded path to a source file or directory.
+            source_path: Absolute or user-expanded path to course material or
+                an exported SP2 ZIP pack.
         """
-        normalized_path = required_text(file_path, "file_path")
-
-        teacher_ingest = request_backend_json(
+        normalized_path = required_text(source_path, "source_path")
+        result = request_backend_json(
             "POST",
-            "/ingest/file-path",
-            json_body={"file_path": normalized_path},
+            "/ingest/source",
+            json_body={"source_path": normalized_path},
         )
-        if not isinstance(teacher_ingest, dict):
-            raise RuntimeError(
-                "SP2 backend API /ingest/file-path response was not an object"
-            )
+        if not isinstance(result, dict):
+            raise RuntimeError("SP2 backend API /ingest/source response was not an object")
 
-        zip_path = teacher_ingest.get("zip_path")
-        if not isinstance(zip_path, str) or not zip_path.strip():
-            raise RuntimeError(
-                "SP2 teacher ingest response did not include a usable zip_path"
-            )
-
-        imported_pack = request_backend_json(
-            "POST",
-            "/packs/import-path",
-            json_body={"pack_zip_path": zip_path},
-        )
-        if not isinstance(imported_pack, dict):
-            raise RuntimeError(
-                "SP2 backend API /packs/import-path response was not an object"
-            )
-
-        installed_pack = imported_pack.get("installed_pack")
-        if not isinstance(installed_pack, dict):
-            raise RuntimeError("SP2 student import response did not include installed_pack")
-
-        installed_pack_id = installed_pack.get("id")
-        pack_id = installed_pack.get("pack_id")
-        title = installed_pack.get("title")
-        chunk_count = imported_pack.get("chunk_count")
-
-        if not isinstance(installed_pack_id, int):
-            raise RuntimeError(
-                "SP2 student import response did not include installed_pack.id"
-            )
+        pack_id = result.get("pack_id")
+        installed_pack_id = result.get("installed_pack_id")
         if not isinstance(pack_id, str) or not pack_id.strip():
-            raise RuntimeError(
-                "SP2 student import response did not include installed_pack.pack_id"
-            )
-        if not isinstance(title, str) or not title.strip():
-            raise RuntimeError(
-                "SP2 student import response did not include installed_pack.title"
-            )
-        if not isinstance(chunk_count, int):
-            raise RuntimeError("SP2 student import response did not include chunk_count")
+            raise RuntimeError("SP2 install response did not include pack_id")
+        if not isinstance(installed_pack_id, int):
+            raise RuntimeError("SP2 install response did not include installed_pack_id")
 
         return {
-            "sp2_tool": "sp2_ingest_file_from_path",
+            "sp2_tool": "sp2_ingest_source",
             "mode": "course_pack_ready",
             "message": (
-                f"Course pack {pack_id!r} is ready. "
-                f'Use pack="{pack_id}" for retrieval.'
+                f"Course pack {pack_id!r} is ready. Its installed_pack_id is "
+                f"{installed_pack_id}."
             ),
-            "pack": pack_id,
-            "pack_id": pack_id,
-            "title": title,
-            "installed_pack_id": installed_pack_id,
-            "chunk_count": chunk_count,
-            "zip_path": zip_path,
-            "install_path": imported_pack.get("install_path"),
-            "embedding_model": installed_pack.get("embedding_model"),
-            "embedding_dim": installed_pack.get("embedding_dim"),
+            **result,
             "next_tool": "sp2_get_course_context",
         }

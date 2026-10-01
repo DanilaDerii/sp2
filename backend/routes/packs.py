@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from storage.installed_pack_manager import (
     InstalledPackNotFoundError,
@@ -18,14 +18,6 @@ from storage.cruds.sqlite.pack_repository import (
     get_installed_pack,
     list_installed_packs,
 )
-from storage.importer.pack_importer import (
-    ImportedPack,
-    PackImportError,
-    import_pack_from_default_source,
-    import_pack_zip,
-    update_installed_pack_from_source,
-)
-from storage.importer.pack_validator import PackValidationError
 
 
 logger = logging.getLogger(__name__)
@@ -49,27 +41,6 @@ class InstalledPackResponse(BaseModel):
     install_path: str
     installed_at: str
     is_active: bool
-
-
-class ImportPackPathRequest(BaseModel):
-    """Request body for importing a local teacher pack zip by path."""
-
-    pack_zip_path: str = Field(..., min_length=1)
-
-
-class ImportPackByNameRequest(BaseModel):
-    """Request body for importing a pack by name from the default source dir."""
-
-    pack_name: str = Field(..., min_length=1)
-
-
-class ImportedPackResponse(BaseModel):
-    """Summary returned after importing a teacher pack."""
-
-    installed_pack: InstalledPackResponse
-    chunk_count: int
-    install_path: str
-    replaced_installed_pack_ids: list[int]
 
 
 class DeletedInstalledPackResponse(BaseModel):
@@ -96,15 +67,6 @@ def _installed_pack_response(installed_pack: InstalledPack) -> InstalledPackResp
         install_path=installed_pack.install_path,
         installed_at=installed_pack.installed_at,
         is_active=installed_pack.is_active,
-    )
-
-
-def _imported_pack_response(imported_pack: ImportedPack) -> ImportedPackResponse:
-    return ImportedPackResponse(
-        installed_pack=_installed_pack_response(imported_pack.installed_pack),
-        chunk_count=imported_pack.chunk_count,
-        install_path=imported_pack.install_path,
-        replaced_installed_pack_ids=imported_pack.replaced_installed_pack_ids,
     )
 
 
@@ -144,69 +106,6 @@ def get_pack(installed_pack_id: int) -> InstalledPackResponse:
             detail=f"Installed pack not found: {installed_pack_id}",
         )
     return _installed_pack_response(installed_pack)
-
-
-@router.post(
-    "/import-path",
-    response_model=ImportedPackResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def import_pack_from_path(request: ImportPackPathRequest) -> ImportedPackResponse:
-    """Import a local teacher-exported .zip pack by filesystem path."""
-    try:
-        imported_pack = import_pack_zip(request.pack_zip_path)
-    except FileNotFoundError as exc:
-        logger.warning("Pack zip not found at %s: %s", request.pack_zip_path, exc)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-    except (PackImportError, PackValidationError, ValueError) as exc:
-        logger.warning("Failed to import pack from %s: %s", request.pack_zip_path, exc)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    return _imported_pack_response(imported_pack)
-
-
-@router.post(
-    "/import-by-name",
-    response_model=ImportedPackResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def import_pack_by_name(request: ImportPackByNameRequest) -> ImportedPackResponse:
-    """Import a pack by name from the configured default source directory."""
-    try:
-        imported_pack = import_pack_from_default_source(request.pack_name)
-    except (PackImportError, PackValidationError, ValueError) as exc:
-        logger.warning("Failed to import pack by name %r: %s", request.pack_name, exc)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    return _imported_pack_response(imported_pack)
-
-
-@router.post("/{installed_pack_id}/update", response_model=ImportedPackResponse)
-def update_pack(installed_pack_id: int) -> ImportedPackResponse:
-    """Re-import an installed pack from wherever it was last imported from.
-
-    No path required: this looks for the newest matching export next to
-    the file this pack was originally imported from.
-    """
-    try:
-        imported_pack = update_installed_pack_from_source(installed_pack_id)
-    except (PackImportError, PackValidationError, ValueError) as exc:
-        logger.warning("Failed to auto-update pack %s: %s", installed_pack_id, exc)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    return _imported_pack_response(imported_pack)
 
 
 @router.delete("/{installed_pack_id}", response_model=DeletedInstalledPackResponse)

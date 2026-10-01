@@ -12,10 +12,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from installation.lm_studio_setup import _find_lms, _setup_lm_studio  # noqa: E402
-from installation.backend_setup import (  # noqa: E402
-    _print_future_backend_command,
-    _start_backend,
-)
+from installation.backend_setup import _print_backend_start_command  # noqa: E402
 from installation.setup_helpers import (  # noqa: E402
     SetupError,
     _check_python_version,
@@ -32,7 +29,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Install SP2, download its default LM Studio models, load the "
-            "models, initialize local storage, and start the backend."
+            "models, initialize local storage, and print the backend start command."
         )
     )
     parser.add_argument(
@@ -59,12 +56,11 @@ def main() -> int:
         if lms_path is not None:
             _setup_lm_studio(lms_path)
 
-        _start_backend(python_path)
         _print_next_steps(
             python_path,
             model_setup_complete=lms_path is not None,
         )
-        _print_future_backend_command(python_path)
+        _print_backend_start_command(python_path)
     except SetupError as exc:
         print()
         print(f"[error] {exc}")

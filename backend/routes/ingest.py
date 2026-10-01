@@ -1,4 +1,4 @@
-"""Teacher ingest API routes."""
+"""Course source installation API route."""
 
 from __future__ import annotations
 
@@ -7,9 +7,10 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from teacher.domain.orchestrators.bundle_parsing import build_pack_from_path
+from backend.services.course_installer import install_course_source
+from storage.importer.pack_importer import PackImportError
+from storage.importer.pack_validator import PackValidationError
 from teacher.domain.rag.common.embedder import EmbeddingRequestError
-from teacher.domain.rag.common.models import TeacherPipelineResult
 
 
 logger = logging.getLogger(__name__)
@@ -17,70 +18,74 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
 
-class IngestFilePathRequest(BaseModel):
-    """Request body for building a teacher pack from a local source path."""
+class InstallSourceRequest(BaseModel):
+    """Request body for installing one local course source."""
 
-    file_path: str = Field(..., min_length=1)
+    source_path: str = Field(..., min_length=1)
 
 
-class TeacherIngestResponse(BaseModel):
-    """Summary returned after building a teacher pack."""
+class InstalledSourceResponse(BaseModel):
+    """Small response used by the MCP install tool."""
 
     source_path: str
+    source_kind: str
+    zip_path: str
+    installed_pack_id: int
     pack_id: str
     title: str
-    page_count: int
     chunk_count: int
+    install_path: str
     embedding_model: str
     embedding_dim: int
-    zip_path: str
-
-
-def _teacher_ingest_response(result: TeacherPipelineResult) -> TeacherIngestResponse:
-    return TeacherIngestResponse(
-        source_path=result.source_path,
-        pack_id=result.metadata.pack_id,
-        title=result.metadata.title,
-        page_count=result.page_count,
-        chunk_count=result.chunk_count,
-        embedding_model=result.metadata.embedding_model,
-        embedding_dim=result.metadata.embedding_dim,
-        zip_path=result.zip_path,
-    )
+    replaced_installed_pack_ids: list[int]
 
 
 @router.post(
-    "/file-path",
-    response_model=TeacherIngestResponse,
+    "/source",
+    response_model=InstalledSourceResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def ingest_file_path(request: IngestFilePathRequest) -> TeacherIngestResponse:
-    """Build a teacher pack from a local supported source path."""
+def install_source(request: InstallSourceRequest) -> InstalledSourceResponse:
+    """Install a raw course file, a source directory, or an SP2 pack ZIP."""
     try:
-        result = build_pack_from_path(request.file_path)
+        result = install_course_source(request.source_path)
     except FileNotFoundError as exc:
-        logger.warning("Ingest source not found at %s: %s", request.file_path, exc)
+        logger.warning("Course source not found at %s: %s", request.source_path, exc)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
-    except ValueError as exc:
-        logger.warning("Ingest rejected for %s: %s", request.file_path, exc)
+    except (PackImportError, PackValidationError, ValueError) as exc:
+        logger.warning("Course source rejected for %s: %s", request.source_path, exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
     except EmbeddingRequestError as exc:
-        logger.error("Embedding request failed for %s: %s", request.file_path, exc)
+        logger.error("Embedding request failed for %s: %s", request.source_path, exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         ) from exc
     except RuntimeError as exc:
-        logger.exception("Unexpected ingest failure for %s", request.file_path)
+        logger.exception("Unexpected install failure for %s", request.source_path)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(exc),
         ) from exc
 
-    return _teacher_ingest_response(result)
+    imported = result.imported_pack
+    installed = imported.installed_pack
+    return InstalledSourceResponse(
+        source_path=result.source_path,
+        source_kind=result.source_kind,
+        zip_path=result.zip_path,
+        installed_pack_id=installed.id,
+        pack_id=installed.pack_id,
+        title=installed.title,
+        chunk_count=imported.chunk_count,
+        install_path=imported.install_path,
+        embedding_model=installed.embedding_model,
+        embedding_dim=installed.embedding_dim,
+        replaced_installed_pack_ids=imported.replaced_installed_pack_ids,
+    )

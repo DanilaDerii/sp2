@@ -17,5 +17,6 @@ storage/database/sqlite_storage/
 storage/database/lance_storage/
 storage/installed_packs/*
 !storage/installed_packs/.gitkeep
+student/storage/
 .agents/
 .codex

@@ -31,10 +31,13 @@ logger = logging.getLogger(__name__)
 mcp = FastMCP(
     MCP_SERVER_NAME,
     instructions=(
-        "Expose SP2 tools to LM Studio. Tools can build teacher packs, import "
-        "packs, return installed pack metadata, return retrieval context, and "
-        "return complete file or pack context for summaries. LM Studio writes "
-        "final answers and summaries."
+        "Expose SP2 tools to LM Studio. LM Studio writes final answers and summaries. "
+        "Use sp2_ingest_source for every local course path; the backend decides "
+        "whether to build raw material or install a ZIP pack. When a user says "
+        "'use pack X and tell me Y', call sp2_get_course_context with X as pack and "
+        "the full question as question. Read tools accept pack names, titles, source "
+        "filenames, or installed_pack_id. sp2_delete_pack is different: it requires "
+        "the exact numeric installed_pack_id shown by sp2_list_packs."
     ),
 )
 

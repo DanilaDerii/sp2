@@ -47,14 +47,15 @@ def _api_error_detail(response: httpx.Response) -> str:
     return str(payload)
 
 
-def _request_json(
-    url: str,
+def request_backend_json(
     method: str,
     path: str,
     *,
     params: dict[str, Any] | None = None,
     json_body: dict[str, Any] | None = None,
 ) -> Any:
+    """Send one request to the backend and return its JSON response."""
+    url = backend_api_url(path)
     try:
         with httpx.Client(timeout=HTTP_TIMEOUT_SECONDS) as client:
             response = client.request(method, url, params=params, json=json_body)
@@ -81,21 +82,6 @@ def _request_json(
     try:
         return response.json()
     except ValueError as exc:
-        raise RuntimeError(f"SP2 backend API returned invalid JSON for {method} {path}") from exc
-
-
-def request_backend_json(
-    method: str,
-    path: str,
-    *,
-    params: dict[str, Any] | None = None,
-    json_body: dict[str, Any] | None = None,
-) -> Any:
-    """Request JSON from the unified SP2 backend API."""
-    return _request_json(
-        backend_api_url(path),
-        method,
-        path,
-        params=params,
-        json_body=json_body,
-    )
+        raise RuntimeError(
+            f"SP2 backend API returned invalid JSON for {method} {path}"
+        ) from exc

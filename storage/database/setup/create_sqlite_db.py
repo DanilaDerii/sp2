@@ -33,12 +33,6 @@ def create_sqlite_db() -> None:
                 installed_at TEXT NOT NULL,
                 is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
             );
-
-            CREATE TABLE IF NOT EXISTS app_settings (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            );
-
             """
         )
 
